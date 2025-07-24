@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Funções auxiliares
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidEmail(email) {
+      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    // Dados do usuário - mais restritivo
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && 
+        hasRequiredFields(['email', 'createdAt']) &&
+        isValidEmail(request.resource.data.email) &&
+        request.resource.data.createdAt == request.time;
+      allow update: if isOwner(userId) &&
+        request.resource.data.email == resource.data.email && // Email não pode mudar
+        request.resource.data.createdAt == resource.data.createdAt; // CreatedAt não pode mudar
+      allow delete: if false; // Usuários não podem deletar suas contas diretamente
+    }
+    
+    // Subcoleções do usuário
+    match /users/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Campanhas publicitárias
+    match /campaigns/{campaignId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        hasRequiredFields(['name', 'budget', 'status', 'createdAt', 'userId']) &&
+        request.resource.data.status == 'draft' &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.budget >= 0;
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId && // userId não pode mudar
+        request.resource.data.createdAt == resource.data.createdAt; // createdAt não pode mudar
+      allow delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid &&
+        resource.data.status == 'draft'; // Só pode deletar rascunhos
+    }
+    
+    // Relatórios - CORRIGIDO: removida validação estrita de timestamp
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        hasRequiredFields(['userId', 'type', 'createdAt']);
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false; // Relatórios não podem ser deletados
+    }
+    
+    // ✅ Preços de produtos - qualquer usuário autenticado pode ler
+    match /productPrices/{priceId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Apenas admins via Admin SDK/Cloud Functions
+    }
+    
+    // Templates de relatórios
+    match /reportTemplates/{template} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Apenas admins via Admin SDK
+    }
+    
+    // Configurações do sistema
+    match /systemConfig/{document} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Apenas admins via Admin SDK
+    }
+    
+    // Logs de atividade (audit trail)
+    match /activityLogs/{logId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.timestamp == request.time;
+      allow update, delete: if false; // Logs são imutáveis
+    }
+    
+    // Rate limiting (contador de requisições)
+    match /rateLimits/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) &&
+        request.resource.data.count <= 1000; // Max 1000 requisições
+    }
+    
+    // ✅ Logs de segurança (apenas leitura via Cloud Functions)
+    match /securityLogs/{logId} {
+      allow read: if false; // Leitura apenas via Cloud Functions
+      allow write: if false; // Escrita apenas via Admin SDK
+    }
+    
+    // ✅ Metadata de backup
+    match /backupMetadata/{backupId} {
+      allow read: if false; // Leitura apenas via Cloud Functions
+      allow write: if false; // Escrita apenas via Admin SDK
+    }
+  }
+}

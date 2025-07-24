@@ -1,0 +1,351 @@
+import { useState } from 'react'
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { doc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from '@/firebase/config'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { MainLayout } from '@/components/layout/MainLayout'
+import { Loader2, CheckCircle, XCircle } from 'lucide-react'
+
+export function CreateTestUser() {
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [userUid, setUserUid] = useState<string | null>(null)
+
+  const addStatus = (message: string, isError = false) => {
+    setStatus(prev => [...prev, `${isError ? '❌' : '✅'} ${message}`])
+  }
+
+  const createTestUserData = async () => {
+    setLoading(true)
+    setStatus([])
+    setError(null)
+    setSuccess(false)
+
+    try {
+      addStatus('Iniciando criação do usuário de teste...')
+
+      // 1. Criar usuário de autenticação
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        'review.user@adsmart.app',
+        'Test!Review2025'
+      )
+      
+      const user = userCredential.user
+      setUserUid(user.uid)
+      
+      // Atualizar perfil
+      await updateProfile(user, {
+        displayName: 'Meta Review User'
+      })
+      
+      addStatus(`Usuário criado com UID: ${user.uid}`)
+
+      // 2. Criar perfil no Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        email: 'review.user@adsmart.app',
+        displayName: 'Meta Review User',
+        role: 'reviewer',
+        createdAt: serverTimestamp(),
+        isTestUser: true
+      })
+      addStatus('Perfil criado no Firestore')
+
+      // 3. Criar carteira com créditos
+      await setDoc(doc(db, 'wallets', user.uid), {
+        userId: user.uid,
+        balance: 50000, // R$ 500,00 em centavos
+        currency: 'BRL',
+        updatedAt: serverTimestamp()
+      })
+      addStatus('Carteira criada com R$ 500,00')
+
+      // 4. Adicionar transação de crédito
+      await addDoc(collection(db, 'transactions'), {
+        userId: user.uid,
+        type: 'credit',
+        amount: 50000,
+        description: 'Crédito inicial para teste de revisão Meta',
+        status: 'completed',
+        createdAt: serverTimestamp()
+      })
+      addStatus('Transação de crédito registrada')
+
+      // 5. Criar contas de anúncios mock
+      const mockAccounts = [
+        {
+          platform: 'meta_ads',
+          accountId: 'act_123456789',
+          accountName: 'Test Business Account',
+          email: 'review.user@adsmart.app',
+          currency: 'USD',
+          timezone: 'America/New_York',
+          isActive: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastSyncAt: serverTimestamp()
+        },
+        {
+          platform: 'google_ads',
+          accountId: '123-456-7890',
+          accountName: 'Test Google Ads Account',
+          email: 'review.user@adsmart.app',
+          isActive: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastSyncAt: serverTimestamp()
+        }
+      ]
+
+      for (const account of mockAccounts) {
+        await setDoc(
+          doc(db, 'users', user.uid, 'adAccounts', `${account.platform}_${account.accountId}`),
+          account
+        )
+      }
+      addStatus('Contas de anúncios mock criadas')
+
+      // 6. Criar campanhas mock
+      const mockCampaigns = [
+        {
+          accountId: 'act_123456789',
+          platform: 'meta_ads',
+          campaignId: 'camp_001',
+          campaignName: 'Summer Sale Campaign',
+          status: 'active',
+          objective: 'CONVERSIONS',
+          budget: 10000,
+          spend: 7500,
+          impressions: 125000,
+          clicks: 3200,
+          lastSyncAt: serverTimestamp()
+        },
+        {
+          accountId: 'act_123456789',
+          platform: 'meta_ads',
+          campaignId: 'camp_002',
+          campaignName: 'Brand Awareness Campaign',
+          status: 'paused',
+          objective: 'BRAND_AWARENESS',
+          budget: 5000,
+          spend: 2500,
+          impressions: 85000,
+          clicks: 1200,
+          lastSyncAt: serverTimestamp()
+        },
+        {
+          accountId: 'act_123456789',
+          platform: 'meta_ads',
+          campaignId: 'camp_003',
+          campaignName: 'Holiday Promotion',
+          status: 'active',
+          objective: 'TRAFFIC',
+          budget: 20000,
+          spend: 18500,
+          impressions: 450000,
+          clicks: 8900,
+          lastSyncAt: serverTimestamp()
+        }
+      ]
+
+      for (const campaign of mockCampaigns) {
+        await setDoc(
+          doc(db, 'users', user.uid, 'campaigns', `${campaign.platform}_${campaign.campaignId}`),
+          campaign
+        )
+      }
+      addStatus('Campanhas mock criadas')
+
+      // 7. Criar páginas mock
+      const mockPages = [
+        {
+          pageId: 'page_001',
+          pageName: 'Adsmart Official Page',
+          followers: 15420,
+          likes: 14890,
+          engagement: {
+            posts: 125,
+            comments: 3420,
+            shares: 890,
+            reactions: 12500
+          },
+          lastSyncAt: serverTimestamp()
+        },
+        {
+          pageId: 'page_002',
+          pageName: 'Adsmart Support',
+          followers: 8930,
+          likes: 8520,
+          engagement: {
+            posts: 89,
+            comments: 1250,
+            shares: 340,
+            reactions: 5600
+          },
+          lastSyncAt: serverTimestamp()
+        }
+      ]
+
+      for (const page of mockPages) {
+        await setDoc(
+          doc(db, 'users', user.uid, 'pages', page.pageId),
+          page
+        )
+      }
+      addStatus('Páginas Facebook mock criadas')
+
+      // 8. Criar relatório de exemplo
+      await addDoc(collection(db, 'reports'), {
+        userId: user.uid,
+        type: 'meta_ads',
+        templateId: 'meta_lancamento',
+        name: 'Q4 2024 Performance Report',
+        status: 'completed',
+        campaignIds: ['camp_001', 'camp_003'],
+        allCampaigns: false,
+        dateRange: {
+          startDate: '2024-10-01',
+          endDate: '2024-12-31'
+        },
+        lookerStudioUrl: 'https://lookerstudio.google.com/reporting/sample-report-1',
+        cost: 500,
+        paidAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        completedAt: serverTimestamp()
+      })
+      addStatus('Relatório de exemplo criado')
+
+      setSuccess(true)
+      addStatus('🎉 Usuário de teste criado com sucesso!')
+
+    } catch (error: any) {
+      console.error('Erro:', error)
+      setError(error.message)
+      addStatus(`Erro: ${error.message}`, true)
+      
+      // Se o usuário já existe, mostrar as credenciais
+      if (error.code === 'auth/email-already-in-use') {
+        addStatus('O usuário já existe. Use as credenciais abaixo para login.', true)
+        setSuccess(true)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <MainLayout>
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Criar Usuário de Teste para Revisão Meta</CardTitle>
+              <CardDescription>
+                Este utilitário cria um usuário de teste com dados mock para a revisão do Meta
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={createTestUserData}
+                disabled={loading}
+                className="w-full"
+                size="lg"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando usuário de teste...
+                  </>
+                ) : (
+                  'Criar Usuário de Teste'
+                )}
+              </Button>
+
+              {status.length > 0 && (
+                <Card className="bg-gray-50 dark:bg-gray-900">
+                  <CardContent className="pt-6">
+                    <div className="space-y-1 font-mono text-sm">
+                      {status.map((msg, idx) => (
+                        <div key={idx}>{msg}</div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {error && !success && (
+                <Card className="border-red-500 bg-red-50 dark:bg-red-900/20">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-2">
+                        <p className="font-medium text-red-900 dark:text-red-100">
+                          Erro ao criar usuário
+                        </p>
+                        <p className="text-sm text-red-700 dark:text-red-300">
+                          {error}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {success && (
+                <Card className="border-green-500 bg-green-50 dark:bg-green-900/20">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-4">
+                        <p className="font-medium text-green-900 dark:text-green-100">
+                          Usuário de teste pronto!
+                        </p>
+                        <div className="space-y-2 text-sm">
+                          <p className="font-medium">Credenciais:</p>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-md space-y-1 font-mono">
+                            <p>Email: review.user@adsmart.app</p>
+                            <p>Senha: Test!Review2025</p>
+                            {userUid && <p>UID: {userUid}</p>}
+                          </div>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <p className="font-medium">Dados criados:</p>
+                          <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400">
+                            <li>R$ 500,00 de crédito na carteira</li>
+                            <li>2 contas de anúncios (Meta e Google)</li>
+                            <li>3 campanhas Meta Ads com métricas</li>
+                            <li>2 páginas Facebook com engajamento</li>
+                            <li>1 relatório de exemplo</li>
+                          </ul>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <p className="font-medium">URLs para teste:</p>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-md space-y-1">
+                            <p>Login: https://adsmart-web.web.app/login</p>
+                            <p>Demo: https://adsmart-web.web.app/meta-review-demo</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card className="bg-blue-50 dark:bg-blue-900/20">
+                <CardContent className="pt-6">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <strong>Nota:</strong> Esta página deve ser usada apenas para criar o usuário de teste 
+                    para revisão do Meta. Após a criação, remova esta rota do projeto em produção.
+                  </p>
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </MainLayout>
+  )
+}
