@@ -19,22 +19,45 @@ class PaymentService {
   /**
    * Cria um pagamento PIX
    * @param amount Valor em reais (ex: 10.00 para R$ 10,00)
+   * @param userCpf CPF do usuário (opcional se já cadastrado)
    */
-  async createPixPayment(amount: number): Promise<CreatePixPaymentResponse> {
+  async createPixPayment(amount: number, userCpf?: string): Promise<CreatePixPaymentResponse> {
     try {
       console.log('💳 Criando pagamento PIX:', amount)
       
-      const createPayment = httpsCallable<{ amount: number }, CreatePixPaymentResponse>(
-        functions, 
-        'createPixPayment'
-      )
+      const createPayment = httpsCallable<
+        { amount: number; userCpf?: string }, 
+        CreatePixPaymentResponse
+      >(functions, 'createPixPayment')
       
-      const result = await createPayment({ amount })
+      const data: any = { amount }
+      
+      // Adicionar CPF se fornecido
+      if (userCpf) {
+        // Remover formatação do CPF
+        data.userCpf = userCpf.replace(/\D/g, '')
+      }
+      
+      const result = await createPayment(data)
       console.log('✅ Pagamento criado:', result.data)
       
       return result.data
     } catch (error: any) {
       console.error('❌ Erro ao criar pagamento:', error)
+      
+      // Tratar erros específicos
+      if (error.code === 'functions/invalid-argument') {
+        throw new Error(error.message)
+      }
+      
+      if (error.code === 'functions/unauthenticated') {
+        throw new Error('Erro de autenticação. Faça login novamente.')
+      }
+      
+      if (error.code === 'functions/not-found') {
+        throw new Error('Serviço de pagamento indisponível')
+      }
+      
       throw new Error(error.message || 'Erro ao processar pagamento')
     }
   }
@@ -44,10 +67,10 @@ class PaymentService {
    */
   async checkPaymentStatus(paymentId: string): Promise<CheckPaymentStatusResponse> {
     try {
-      const checkStatus = httpsCallable<{ paymentId: string }, CheckPaymentStatusResponse>(
-        functions,
-        'checkPaymentStatus'
-      )
+      const checkStatus = httpsCallable<
+        { paymentId: string }, 
+        CheckPaymentStatusResponse
+      >(functions, 'checkPaymentStatus')
       
       const result = await checkStatus({ paymentId })
       return result.data

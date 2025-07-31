@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useWallet } from '@/hooks/useWallet'
-import { CreditCard, Loader2 } from 'lucide-react'
+import { CreditCard } from 'lucide-react'
 import { PixPaymentModal } from './PixPaymentModal'
 
 interface AddCreditsModalProps {

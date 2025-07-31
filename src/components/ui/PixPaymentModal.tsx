@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
@@ -9,8 +11,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { paymentService } from '@/services/paymentService'
-import { Loader2, Copy, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Loader2, Copy, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
+import { useAuth } from '@/contexts/AuthContext'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/firebase/config'
 
 interface PixPaymentModalProps {
   open: boolean
@@ -25,19 +30,53 @@ export function PixPaymentModal({
   amount,
   onSuccess 
 }: PixPaymentModalProps) {
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [paymentData, setPaymentData] = useState<any>(null)
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'completed' | 'expired' | 'error'>('pending')
   const [error, setError] = useState<string | null>(null)
   const [checking, setChecking] = useState(false)
   const [copied, setCopied] = useState(false)
+  
+  // Estados para CPF
+  const [userCpf, setUserCpf] = useState('')
+  const [cpfError, setCpfError] = useState('')
+  const [needsCpf, setNeedsCpf] = useState(false)
+  const [checkingCpf, setCheckingCpf] = useState(true)
 
-  // Criar pagamento quando abrir o modal
+  // Verificar se usuário já tem CPF cadastrado
   useEffect(() => {
-    if (open && !paymentData) {
+    const checkUserCpf = async () => {
+      if (!user || !open) return
+      
+      try {
+        setCheckingCpf(true)
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userData = userDoc.data()
+        
+        if (userData?.cpf) {
+          setUserCpf(userData.cpf)
+          setNeedsCpf(false)
+        } else {
+          setNeedsCpf(true)
+        }
+      } catch (error) {
+        console.error('Erro ao verificar CPF:', error)
+        setNeedsCpf(true)
+      } finally {
+        setCheckingCpf(false)
+      }
+    }
+
+    checkUserCpf()
+  }, [user, open])
+
+  // Criar pagamento quando tiver CPF
+  useEffect(() => {
+    if (open && !checkingCpf && !needsCpf && !paymentData) {
       createPayment()
     }
-  }, [open])
+  }, [open, checkingCpf, needsCpf])
 
   // Verificar status do pagamento periodicamente
   useEffect(() => {
@@ -71,6 +110,47 @@ export function PixPaymentModal({
     return () => clearInterval(interval)
   }, [paymentData, paymentStatus, onSuccess])
 
+  const formatCpf = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '')
+    
+    // Aplica a máscara
+    if (numbers.length <= 11) {
+      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+        .replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3')
+        .replace(/(\d{3})(\d{3})/, '$1.$2')
+    }
+    
+    return value
+  }
+
+  const validateCpf = (cpf: string) => {
+    const numbers = cpf.replace(/\D/g, '')
+    
+    if (numbers.length !== 11) {
+      return 'CPF deve ter 11 dígitos'
+    }
+    
+    // Validação básica de CPF (evita números sequenciais)
+    if (/^(\d)\1{10}$/.test(numbers)) {
+      return 'CPF inválido'
+    }
+    
+    return ''
+  }
+
+  const handleCpfSubmit = async () => {
+    const error = validateCpf(userCpf)
+    if (error) {
+      setCpfError(error)
+      return
+    }
+    
+    setCpfError('')
+    setNeedsCpf(false)
+    createPayment()
+  }
+
   const createPayment = async () => {
     try {
       setLoading(true)
@@ -78,15 +158,11 @@ export function PixPaymentModal({
       
       console.log('🔍 Iniciando criação de pagamento PIX...')
       console.log('🔍 Valor:', amount)
+      console.log('🔍 CPF:', userCpf.replace(/\D/g, '').substring(0, 3) + '***')
       
-      const data = await paymentService.createPixPayment(amount)
+      const data = await paymentService.createPixPayment(amount, userCpf)
       
       console.log('✅ Resposta do pagamento:', data)
-      console.log('🔍 Resposta completa (JSON):', JSON.stringify(data, null, 2))
-      console.log('🔍 Payment ID:', data.paymentId)
-      console.log('🔍 QR Code Text:', data.qrCodeText)
-      console.log('🔍 QR Code Image:', data.qrCode)
-      console.log('🔍 Expires At:', data.expiresAt)
       
       setPaymentData(data)
       setPaymentStatus('pending')
@@ -115,6 +191,7 @@ export function PixPaymentModal({
     setPaymentData(null)
     setPaymentStatus('pending')
     setError(null)
+    setCpfError('')
     onOpenChange(false)
   }
 
@@ -131,7 +208,9 @@ export function PixPaymentModal({
         <DialogHeader>
           <DialogTitle>Pagamento via PIX</DialogTitle>
           <DialogDescription>
-            {paymentStatus === 'pending' && 'Escaneie o QR Code ou copie o código PIX para fazer o pagamento'}
+            {checkingCpf && 'Verificando dados...'}
+            {!checkingCpf && needsCpf && 'Precisamos do seu CPF para gerar o PIX'}
+            {!checkingCpf && !needsCpf && paymentStatus === 'pending' && 'Escaneie o QR Code ou copie o código PIX'}
             {paymentStatus === 'completed' && 'Pagamento confirmado com sucesso!'}
             {paymentStatus === 'expired' && 'Este pagamento expirou'}
             {paymentStatus === 'error' && 'Erro ao processar pagamento'}
@@ -139,14 +218,69 @@ export function PixPaymentModal({
         </DialogHeader>
         
         <div className="py-6">
-          {loading && (
+          {checkingCpf && (
+            <div className="flex flex-col items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin mb-4" />
+              <p className="text-gray-600">Verificando dados...</p>
+            </div>
+          )}
+
+          {!checkingCpf && needsCpf && (
+            <div className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-medium mb-1">CPF necessário para pagamento PIX</p>
+                    <p>Por questões de segurança, o PIX requer um CPF válido.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF</Label>
+                <Input
+                  id="cpf"
+                  type="text"
+                  placeholder="000.000.000-00"
+                  value={userCpf}
+                  onChange={(e) => {
+                    setUserCpf(formatCpf(e.target.value))
+                    setCpfError('')
+                  }}
+                  maxLength={14}
+                  className={cpfError ? 'border-red-500' : ''}
+                />
+                {cpfError && (
+                  <p className="text-sm text-red-600">{cpfError}</p>
+                )}
+              </div>
+
+              <Button 
+                onClick={handleCpfSubmit}
+                disabled={!userCpf || loading}
+                className="w-full"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  'Continuar para pagamento'
+                )}
+              </Button>
+            </div>
+          )}
+
+          {!checkingCpf && !needsCpf && loading && (
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="w-8 h-8 animate-spin mb-4" />
               <p className="text-gray-600">Gerando QR Code...</p>
             </div>
           )}
 
-          {!loading && paymentStatus === 'pending' && paymentData && (
+          {!checkingCpf && !needsCpf && !loading && paymentStatus === 'pending' && paymentData && (
             <div className="space-y-4">
               {/* Valor */}
               <div className="text-center">
@@ -216,7 +350,7 @@ export function PixPaymentModal({
               {/* Tempo de expiração */}
               <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
                 <Clock className="w-4 h-4" />
-                <span>Este código expira em 1 hora</span>
+                <span>Este código expira em 24 horas</span>
               </div>
             </div>
           )}
@@ -236,7 +370,11 @@ export function PixPaymentModal({
               <p className="text-gray-600 mt-2">Este código PIX não é mais válido</p>
               <Button 
                 className="mt-4"
-                onClick={createPayment}
+                onClick={() => {
+                  setPaymentStatus('pending')
+                  setPaymentData(null)
+                  createPayment()
+                }}
               >
                 Gerar Novo Código
               </Button>
@@ -250,7 +388,11 @@ export function PixPaymentModal({
               <p className="text-gray-600 mt-2">{error || 'Ocorreu um erro ao processar o pagamento'}</p>
               <Button 
                 className="mt-4"
-                onClick={createPayment}
+                onClick={() => {
+                  setPaymentStatus('pending')
+                  setError(null)
+                  createPayment()
+                }}
               >
                 Tentar Novamente
               </Button>
@@ -259,7 +401,7 @@ export function PixPaymentModal({
         </div>
 
         <DialogFooter>
-          {paymentStatus === 'pending' && (
+          {(needsCpf || paymentStatus === 'pending') && (
             <Button variant="outline" onClick={handleClose}>
               Cancelar
             </Button>
