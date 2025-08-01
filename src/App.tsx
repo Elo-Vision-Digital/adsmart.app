@@ -15,6 +15,7 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { DeleteDataPage } from '@/pages/DeleteDataPage'
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
 import { MetaReviewDemo } from '@/pages/MetaReviewDemo'
+import { PaymentSuccessPage } from '@/pages/PaymentSuccessPage'
 
 function App() {
   return (
@@ -36,6 +37,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <TransactionsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment-success"
+              element={
+                <PrivateRoute>
+                  <PaymentSuccessPage />
                 </PrivateRoute>
               }
             />

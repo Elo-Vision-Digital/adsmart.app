@@ -217,7 +217,25 @@ export const createPixPayment = onCall(
           createdAt: admin.firestore.FieldValue.serverTimestamp()
         })
 
+      // NOVO: Criar transação pendente para aparecer imediatamente
+      await admin.firestore()
+        .collection('users')
+        .doc(userId)
+        .collection('transactions')
+        .doc(responseData.idTransaction) // Usar mesmo ID para atualizar depois
+        .set({
+          type: 'credit',
+          amount: Math.round(amount * 100), // Em centavos
+          description: 'Adição de créditos via PIX',
+          status: 'pending',
+          paymentId: responseData.idTransaction,
+          payerName: userName,
+          payerCpf: cpf.substring(0, 3) + '***', // Ofuscar CPF
+          createdAt: admin.firestore.FieldValue.serverTimestamp()
+        })
+
       console.log('✅ Pagamento PIX criado com sucesso')
+      console.log('✅ Transação pendente criada')
 
       // Retornar dados do PIX para o frontend
       return {

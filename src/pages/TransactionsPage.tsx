@@ -2,7 +2,7 @@ import { useWallet } from '@/hooks/useWallet'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { ArrowLeft, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
+import { ArrowLeft, TrendingDown, TrendingUp, Wallet, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export function TransactionsPage() {
@@ -83,7 +83,11 @@ export function TransactionsPage() {
                           className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 bg-white dark:bg-gray-700 rounded-lg border border-[#EDEDED] dark:border-gray-600 gap-3"
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {transaction.type === 'credit' ? (
+                            {transaction.status === 'pending' ? (
+                              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full flex-shrink-0">
+                                <Clock className="h-4 w-4 md:h-5 md:w-5 text-amber-600 dark:text-amber-400" />
+                              </div>
+                            ) : transaction.type === 'credit' ? (
                               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full flex-shrink-0">
                                 <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
                               </div>
@@ -97,7 +101,7 @@ export function TransactionsPage() {
                               <p className="font-medium text-gray-900 dark:text-white text-sm md:text-base truncate">
                                 {transaction.description}
                               </p>
-                                                            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                                 {(() => {
                                   try {
                                     const createdAt: any = transaction.createdAt;
@@ -150,14 +154,20 @@ export function TransactionsPage() {
                           
                           <div className="text-right flex-shrink-0 ml-auto md:ml-0">
                             <p className={`font-semibold text-sm md:text-base ${
-                              transaction.type === 'credit' 
-                                ? 'text-green-600 dark:text-green-400' 
-                                : 'text-red-600 dark:text-red-400'
+                              transaction.status === 'pending'
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : transaction.type === 'credit' 
+                                  ? 'text-green-600 dark:text-green-400' 
+                                  : 'text-red-600 dark:text-red-400'
                             }`}>
                               {transaction.type === 'credit' ? '+' : '-'}
                               {formatCurrency(transaction.amount)}
                             </p>
-                            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                            <p className={`text-xs md:text-sm ${
+                              transaction.status === 'pending'
+                                ? 'text-amber-600 dark:text-amber-400 font-medium'
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`}>
                               {transaction.status === 'completed' ? 'Concluída' : 
                                transaction.status === 'pending' ? 'Pendente' : 'Falhou'}
                             </p>

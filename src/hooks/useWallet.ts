@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { doc, onSnapshot, setDoc, collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore'
+import { doc, onSnapshot, setDoc, collection, addDoc, query, orderBy, limit } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -53,29 +53,29 @@ export function useWallet() {
     return () => unsubscribe()
   }, [user])
 
-  // Buscar transações recentes
+  // Observar transações em tempo real
   useEffect(() => {
     if (!user) return
 
-    const fetchTransactions = async () => {
-      const transactionsRef = collection(db, 'users', user.uid, 'transactions')
-      const q = query(
-        transactionsRef,
-        orderBy('createdAt', 'desc'),
-        limit(50) // Aumentado para 50 transações
-      )
-      
-      const snapshot = await getDocs(q)
+    const transactionsRef = collection(db, 'users', user.uid, 'transactions')
+    const q = query(
+      transactionsRef,
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    )
+    
+    // Usar onSnapshot para atualizações em tempo real
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const trans = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Transaction))
       
       setTransactions(trans)
-    }
+    })
 
-    fetchTransactions()
-  }, [user, wallet]) // Refetch quando wallet mudar
+    return () => unsubscribe()
+  }, [user]) // Removido wallet das dependências
 
   // Adicionar créditos
   const addCredits = async (amount: number) => {
