@@ -1,7 +1,7 @@
-import * as functions from 'firebase-functions'
+import { onCall, HttpsError } from 'firebase-functions/v2/https'
+import { onSchedule } from 'firebase-functions/v2/scheduler'
 import * as admin from 'firebase-admin'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
-import { onSchedule } from 'firebase-functions/v2/scheduler'
 
 // Inicializar admin se ainda não foi
 if (!admin.apps.length) {
@@ -221,10 +221,10 @@ async function cleanOldBackups(): Promise<void> {
 }
 
 // Função manual para restaurar backup (apenas admins)
-export const restoreBackup = functions.https.onCall(async (request) => {
+export const restoreBackup = onCall(async (request) => {
   // Verificar autenticação
   if (!request.auth) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'unauthenticated',
       'Usuário não autenticado'
     )
@@ -237,7 +237,7 @@ export const restoreBackup = functions.https.onCall(async (request) => {
   ]
   
   if (!adminEmails.includes(request.auth.token.email || '')) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'permission-denied',
       'Apenas administradores podem restaurar backups'
     )
@@ -246,7 +246,7 @@ export const restoreBackup = functions.https.onCall(async (request) => {
   const { backupId, collections } = request.data
 
   if (!backupId) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'ID do backup é obrigatório'
     )
@@ -327,7 +327,7 @@ export const restoreBackup = functions.https.onCall(async (request) => {
 
   } catch (error: any) {
     console.error('❌ Erro durante a restauração:', error)
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'internal',
       `Erro ao restaurar backup: ${error.message}`
     )

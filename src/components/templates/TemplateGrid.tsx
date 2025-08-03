@@ -23,6 +23,8 @@ export function TemplateGrid({
           type={template.type}
           imageUrl={template.imageUrl}
           features={template.features}
+          nameKey={template.nameKey}
+          descriptionKey={template.descriptionKey}
           onSelect={onSelectTemplate}
         />
       ))}

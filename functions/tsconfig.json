@@ -13,7 +13,6 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "incremental": true,
     "lib": ["es2017"],
     "typeRoots": ["./node_modules/@types"]
   },

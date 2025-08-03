@@ -2,14 +2,18 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Plus, Trash2, RefreshCw, AlertCircle, Database, Loader2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { addMockAccounts } from '@/utils/mockAccounts'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { oauthService } from '@/services/oauthServices'
+import { AccountSelectionModal, AccountOption, BusinessManagerGroup } from '@/components/ui/AccountSelectionModal'
+import { httpsCallable } from 'firebase/functions'
+import { functions } from '@/firebase/config'
 import type { AdAccount } from '@/types'
+import { Toast, useToast } from '@/components/ui/toast'
 
 // Componente para ícone do Google Ads
 const GoogleAdsIcon = () => (
@@ -35,13 +39,29 @@ const MetaAdsIcon = () => (
   </svg>
 )
 
+interface OAuthData {
+  success: boolean
+  accountsAvailable: AccountOption[]
+  businessManagers?: BusinessManagerGroup[]
+  mainAccount: {
+    name: string
+    email?: string
+  }
+  temporaryToken: string
+}
+
 export function AccountsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
   const [accounts, setAccounts] = useState<AdAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [connectingGoogle, setConnectingGoogle] = useState(false)
   const [connectingMeta, setConnectingMeta] = useState(false)
+  const [showAccountSelection, setShowAccountSelection] = useState(false)
+  const [oauthData, setOauthData] = useState<OAuthData | null>(null)
+  const [oauthPlatform, setOauthPlatform] = useState<'google_ads' | 'meta_ads'>('meta_ads')
+  const { toasts, showToast, removeToast } = useToast()
 
   useEffect(() => {
     if (!user) return
@@ -62,6 +82,40 @@ export function AccountsPage() {
     return () => unsubscribe()
   }, [user])
 
+  // Processar dados OAuth vindos do callback
+  useEffect(() => {
+    if (location.state?.oauthData && location.state?.platform) {
+      const data = location.state.oauthData as OAuthData
+      const platform = location.state.platform as 'google_ads' | 'meta_ads'
+      
+      // Limpar o state para evitar reprocessamento
+      window.history.replaceState({}, document.title)
+      
+      // Mostrar modal de seleção
+      setOauthData(data)
+      setOauthPlatform(platform)
+      setShowAccountSelection(true)
+    }
+    
+    // Mostrar erro se houver
+    if (location.state?.error) {
+      showToast({
+        message: location.state.error,
+        type: 'error'
+      })
+      window.history.replaceState({}, document.title)
+    }
+    
+    // Mostrar mensagem de sucesso se houver
+    if (location.state?.success && location.state?.message) {
+      showToast({
+        message: location.state.message,
+        type: 'success'
+      })
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
+
   const handleConnectGoogle = async () => {
     try {
       setConnectingGoogle(true)
@@ -76,7 +130,10 @@ export function AccountsPage() {
       
     } catch (error: any) {
       console.error('Erro ao conectar Google Ads:', error)
-      alert(error.message || 'Erro ao conectar com Google Ads. Tente novamente.')
+      showToast({
+        message: error.message || 'Erro ao conectar com Google Ads. Tente novamente.',
+        type: 'error'
+      })
     } finally {
       setConnectingGoogle(false)
     }
@@ -96,7 +153,10 @@ export function AccountsPage() {
       
     } catch (error: any) {
       console.error('Erro ao conectar Meta Ads:', error)
-      alert(error.message || 'Erro ao conectar com Meta Ads. Tente novamente.')
+      showToast({
+        message: error.message || 'Erro ao conectar com Meta Ads. Tente novamente.',
+        type: 'error'
+      })
     } finally {
       setConnectingMeta(false)
     }
@@ -118,9 +178,49 @@ export function AccountsPage() {
     if (!user) return
     try {
       await addMockAccounts(user.uid)
-      alert('Contas de demonstração adicionadas!')
+      showToast({
+        message: 'Contas de demonstração adicionadas!',
+        type: 'success'
+      })
     } catch (error) {
       console.error('Erro ao adicionar contas mock:', error)
+    }
+  }
+
+  const handleAccountSelection = async (selectedAccountIds: string[]) => {
+    if (!oauthData || !user) return
+
+    try {
+      // Confirmar seleção de contas
+      const functionName = oauthPlatform === 'google_ads' 
+        ? 'confirmGoogleAdsAccountSelection' 
+        : 'confirmMetaAdsAccountSelection'
+      
+      const confirmSelection = httpsCallable<
+        { temporaryToken: string; selectedAccountIds: string[] }, 
+        { success: boolean }
+      >(functions, functionName)
+      
+      await confirmSelection({ 
+        temporaryToken: oauthData.temporaryToken,
+        selectedAccountIds 
+      })
+      
+      // Fechar modal e mostrar sucesso
+      setShowAccountSelection(false)
+      setOauthData(null)
+      
+      showToast({
+        message: `${selectedAccountIds.length} conta${selectedAccountIds.length > 1 ? 's' : ''} ${oauthPlatform === 'google_ads' ? 'Google Ads' : 'Meta Ads'} conectada${selectedAccountIds.length > 1 ? 's' : ''} com sucesso!`,
+        type: 'success'
+      })
+      
+    } catch (error: any) {
+      console.error('Erro ao confirmar seleção:', error)
+      showToast({
+        message: error.message || 'Erro ao salvar contas selecionadas',
+        type: 'error'
+      })
     }
   }
 
@@ -348,6 +448,29 @@ export function AccountsPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Seleção de Contas */}
+      {oauthData && (
+        <AccountSelectionModal
+          open={showAccountSelection}
+          onOpenChange={setShowAccountSelection}
+          platform={oauthPlatform}
+          accounts={oauthData.accountsAvailable}
+          businessManagers={oauthData.businessManagers}
+          mainAccountName={oauthData.mainAccount.name}
+          mainAccountEmail={oauthData.mainAccount.email}
+          onConfirm={handleAccountSelection}
+        />
+      )}
+      
+      {/* Toasts */}
+      {toasts.map(({ id, props }) => (
+        <Toast
+          key={id}
+          {...props}
+          onClose={() => removeToast(id)}
+        />
+      ))}
     </MainLayout>
   )
 }

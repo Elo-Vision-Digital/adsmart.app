@@ -9,22 +9,23 @@
 
 @layer base {
   :root {
-    --background: #FCFCFC;
+    --background: #FFFFFF;
     --surface: #FAFAFA;
     --text: #000000;
-    --border: #EDEDED;
-    --muted: #D0D1D4;
-    --muted-foreground: #A7A8AE;
-    --primary: #0181F2;
+    --border: #E5E5E5;
+    --muted: #666666;
+    --muted-foreground: #999999;
+    --primary: #000000;
   }
 
   [data-theme="dark"] {
     --background: #000000;
-    --surface: #1A1A1A;
+    --surface: #0A0A0A;
     --text: #FFFFFF;
-    --border: #2A2A2A;
-    --muted: #3A3A3A;
-    --muted-foreground: #6A6A6A;
+    --border: #1A1A1A;
+    --muted: #999999;
+    --muted-foreground: #666666;
+    --primary: #FFFFFF;
   }
 
   * {
@@ -53,4 +54,36 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-muted-foreground;
+}
+
+/* Remove blue from all elements */
+* {
+  --primary-blue: transparent !important;
+}
+
+/* Ensure no blue colors */
+.text-primary,
+.bg-primary,
+.border-primary {
+  color: var(--primary) !important;
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles - black and white only */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Backdrop blur support */
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }

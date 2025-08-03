@@ -8,7 +8,7 @@ if (!admin.apps.length) {
   admin.initializeApp()
 }
 
-// Adicionar tipos de eventos OAuth que faltam
+// OAuth Event Types
 const OAuthEventType = {
   ...SecurityEventType,
   OAUTH_INIT: 'oauth_init' as SecurityEventType,
@@ -16,76 +16,12 @@ const OAuthEventType = {
   OAUTH_ERROR: 'oauth_error' as SecurityEventType
 }
 
-// Obter configurações do Firebase Functions Config
-const getMetaAdsConfig = () => {
-  // Primeiro, verificar se estamos no emulador
-  if (process.env.FUNCTIONS_EMULATOR) {
-    try {
-      const localConfig = require('../../.runtimeconfig.json')
-      console.log('Emulator - Local config loaded for Meta:', JSON.stringify(localConfig.meta_ads, null, 2))
-      if (localConfig.meta_ads) {
-        return {
-          appId: localConfig.meta_ads.app_id,
-          appSecret: localConfig.meta_ads.app_secret,
-          redirectUri: localConfig.meta_ads.redirect_uri || 'https://adsmart-web.web.app/auth/meta-ads/callback',
-          redirectUriDev: localConfig.meta_ads.redirect_uri_dev || 'http://localhost:5173/auth/meta-ads/callback'
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao carregar config local:', error)
-    }
-  }
-  
-  // Em produção com Functions v2, usar process.env diretamente
-  console.log('Production - Checking Meta environment variables...')
-  
-  // Verificar se temos as variáveis de ambiente (Functions v2)
-  if (process.env.META_ADS__APP_ID) {
-    console.log('Found v2 Meta environment variables')
-    return {
-      appId: process.env.META_ADS__APP_ID,
-      appSecret: process.env.META_ADS__APP_SECRET || '',
-      redirectUri: process.env.META_ADS__REDIRECT_URI || 'https://adsmart-web.web.app/auth/meta-ads/callback',
-      redirectUriDev: process.env.META_ADS__REDIRECT_URI_DEV || 'http://localhost:5173/auth/meta-ads/callback'
-    }
-  }
-  
-  // Tentar usar functions.config() para retrocompatibilidade
-  try {
-    const functions = require('firebase-functions')
-    const functionConfig = functions.config()
-    console.log('Production - Meta config:', JSON.stringify(functionConfig.meta_ads, null, 2))
-    
-    if (functionConfig.meta_ads) {
-      return {
-        appId: functionConfig.meta_ads.app_id,
-        appSecret: functionConfig.meta_ads.app_secret,
-        redirectUri: functionConfig.meta_ads.redirect_uri || 'https://adsmart-web.web.app/auth/meta-ads/callback',
-        redirectUriDev: functionConfig.meta_ads.redirect_uri_dev || 'http://localhost:5173/auth/meta-ads/callback'
-      }
-    }
-  } catch (error) {
-    console.log('functions.config() not available (v2 functions)')
-  }
-  
-  // Fallback direto com valores hardcoded para produção
-  console.log('Using hardcoded Meta production values')
-  return {
-    appId: '4052927898253765',
-    appSecret: '2f0e01c4fd98450545053e84c90f250a',
-    redirectUri: 'https://adsmart-web.web.app/auth/meta-ads/callback',
-    redirectUriDev: 'http://localhost:5173/auth/meta-ads/callback'
-  }
-}
-
-// Carregar configurações
-const metaConfig = getMetaAdsConfig()
-
-// Configurações OAuth do Meta Ads (Facebook)
+// Configurações OAuth do Meta Ads (usando apenas process.env)
 const META_ADS_CONFIG = {
-  appId: metaConfig.appId,
-  appSecret: metaConfig.appSecret,
-  redirectUri: process.env.FUNCTIONS_EMULATOR ? metaConfig.redirectUriDev : metaConfig.redirectUri,
+  appId: process.env.META_ADS_APP_ID || '4052927898253765',
+  appSecret: process.env.META_ADS_APP_SECRET || '2f0e01c4fd98450545053e84c90f250a',
+  redirectUri: process.env.META_ADS_REDIRECT_URI || 'https://adsmart.app/auth/meta-ads/callback',
+  redirectUriDev: process.env.META_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/meta-ads/callback',
   scope: 'ads_read,ads_management,business_management,read_insights',
   authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
   tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token',
@@ -110,12 +46,13 @@ export const getMetaAdsAuthUrl = onCall(async (request) => {
   }
 
   const userId = request.auth.uid
+  const { isLocalEnv } = request.data || {}
 
   // Log de segurança
   await securityLogger.logEvent(
     OAuthEventType.OAUTH_INIT,
     userId,
-    { platform: 'meta_ads' },
+    { platform: 'meta_ads', isLocalEnv },
     SecuritySeverity.INFO
   )
 
@@ -123,23 +60,29 @@ export const getMetaAdsAuthUrl = onCall(async (request) => {
   const state = admin.firestore().collection('oauth_states').doc().id
   
   // Salvar state no Firestore com TTL de 10 minutos
-  try {
-    const db = admin.firestore()
-    await db.collection('oauth_states').doc(state).set({
-      userId,
-      platform: 'meta_ads',
-      createdAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date(),
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
-    })
-  } catch (error) {
-    console.error('Erro ao salvar state:', error)
-    // Continuar mesmo se falhar ao salvar o state
-  }
+  await admin.firestore().collection('oauth_states').doc(state).set({
+    userId,
+    platform: 'meta_ads',
+    isLocalEnv: !!isLocalEnv,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
+  })
+
+  // Usar redirect URI correto baseado no ambiente
+  const redirectUri = isLocalEnv 
+    ? META_ADS_CONFIG.redirectUriDev 
+    : META_ADS_CONFIG.redirectUri
+
+  console.log('OAuth URL sendo gerada:', {
+    isLocalEnv,
+    redirectUri,
+    platform: 'meta_ads'
+  })
 
   // Construir URL de autorização
   const authUrl = new URL(META_ADS_CONFIG.authUrl)
   authUrl.searchParams.append('client_id', META_ADS_CONFIG.appId)
-  authUrl.searchParams.append('redirect_uri', META_ADS_CONFIG.redirectUri)
+  authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('response_type', 'code')
   authUrl.searchParams.append('scope', META_ADS_CONFIG.scope)
   authUrl.searchParams.append('state', state)
@@ -152,6 +95,7 @@ export const getMetaAdsAuthUrl = onCall(async (request) => {
 
 /**
  * Processa o callback OAuth e troca o código por tokens
+ * NOTA: Esta função agora redireciona para a v2 automaticamente
  */
 export const handleMetaAdsCallback = onCall(async (request) => {
   // Verificar autenticação
@@ -195,120 +139,21 @@ export const handleMetaAdsCallback = onCall(async (request) => {
       throw new HttpsError('deadline-exceeded', 'State expirado')
     }
 
-    // Deletar state usado
+    // Deletar state usado (importante fazer isso antes de retornar erro)
     await admin.firestore().collection('oauth_states').doc(state).delete()
 
-    // Trocar código por tokens
-    console.log('Trocando código por token Meta Ads...');
-    console.log('URL:', META_ADS_CONFIG.tokenUrl);
-    console.log('Params:', {
-      client_id: META_ADS_CONFIG.appId,
-      client_secret: '***',
-      redirect_uri: META_ADS_CONFIG.redirectUri,
-      code: code.substring(0, 10) + '...'
-    });
-    
-    const tokenUrl = new URL(META_ADS_CONFIG.tokenUrl)
-    tokenUrl.searchParams.append('client_id', META_ADS_CONFIG.appId)
-    tokenUrl.searchParams.append('client_secret', META_ADS_CONFIG.appSecret)
-    tokenUrl.searchParams.append('redirect_uri', META_ADS_CONFIG.redirectUri)
-    tokenUrl.searchParams.append('code', code)
-
-    const tokenResponse = await axios.get(tokenUrl.toString())
-    const { access_token, token_type } = tokenResponse.data
-
-    // Obter token de longo prazo
-    const longLivedTokenUrl = new URL(`https://graph.facebook.com/${META_ADS_CONFIG.apiVersion}/oauth/access_token`)
-    longLivedTokenUrl.searchParams.append('grant_type', 'fb_exchange_token')
-    longLivedTokenUrl.searchParams.append('client_id', META_ADS_CONFIG.appId)
-    longLivedTokenUrl.searchParams.append('client_secret', META_ADS_CONFIG.appSecret)
-    longLivedTokenUrl.searchParams.append('fb_exchange_token', access_token)
-
-    const longLivedResponse = await axios.get(longLivedTokenUrl.toString())
-    const longLivedToken = longLivedResponse.data.access_token
-    const longLivedExpiresIn = longLivedResponse.data.expires_in || 5184000 // 60 dias padrão
-
-    // Criptografar tokens antes de armazenar
-    const encryptedTokens = await encryptTokens({
-      accessToken: longLivedToken,
-      expiresAt: Date.now() + (longLivedExpiresIn * 1000),
-      scope: META_ADS_CONFIG.scope,
-      tokenType: token_type || 'bearer'
-    })
-
-    // Obter informações das contas de anúncios
-    const adAccounts = await getMetaAdsAccounts(longLivedToken)
-
-    // Salvar tokens e informações das contas
-    const batch = admin.firestore().batch()
-
-    // Salvar tokens criptografados
-    const tokenRef = admin.firestore()
-      .collection('users')
-      .doc(userId)
-      .collection('oauth_tokens')
-      .doc('meta_ads')
-
-    batch.set(tokenRef, {
-      ...encryptedTokens,
-      updatedAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date()
-    })
-
-    // Salvar informações das contas
-    for (const account of adAccounts) {
-      const accountRef = admin.firestore()
-        .collection('users')
-        .doc(userId)
-        .collection('adAccounts')
-        .doc(`meta_ads_${account.id}`)
-
-      batch.set(accountRef, {
-        platform: 'meta_ads',
-        accountId: account.id,
-        accountName: account.name,
-        email: account.email || request.auth.token.email,
-        currency: account.currency,
-        timezone: account.timezone_name,
-        isActive: true,
-        createdAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date(),
-        updatedAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date(),
-        lastSyncAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date()
-      }, { merge: true })
-    }
-
-    await batch.commit()
-
-    // Log de sucesso
-    await securityLogger.logEvent(
-      OAuthEventType.OAUTH_SUCCESS,
-      userId,
-      { 
-        accountsConnected: adAccounts.length,
-        accountIds: adAccounts.map(a => a.id)
-      },
-      SecuritySeverity.INFO
+    // Esta função está deprecated - retornar erro informativo
+    // O frontend deve capturar este erro e chamar a função v2
+    throw new HttpsError(
+      'failed-precondition', 
+      'Esta função está deprecated. Use o novo fluxo OAuth v2 com seleção de contas.'
     )
 
-    return {
-      success: true,
-      accountsConnected: adAccounts.length,
-      accounts: adAccounts.map(account => ({
-        id: account.id,
-        name: account.name,
-        currency: account.currency
-      }))
-    }
-
   } catch (error: any) {
-    console.error('Erro detalhado Meta Ads:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-      config: {
-        url: error.config?.url,
-        params: error.config?.params
-      }
-    });
+    // Se já for um HttpsError, repassar
+    if (error instanceof HttpsError) {
+      throw error
+    }
     
     // Log de erro
     await securityLogger.logEvent(
@@ -316,17 +161,12 @@ export const handleMetaAdsCallback = onCall(async (request) => {
       userId,
       { 
         error: error.message,
-        code: error.response?.status,
-        details: error.response?.data
+        code: error.code
       },
       SecuritySeverity.ERROR
     )
 
-    if (error.response?.data?.error) {
-      throw new HttpsError('internal', error.response.data.error.message || 'Erro ao processar OAuth')
-    }
-    
-    throw new HttpsError('internal', 'Erro ao conectar conta Meta Ads')
+    throw new HttpsError('internal', 'Erro ao processar callback OAuth')
   }
 })
 
@@ -374,7 +214,7 @@ export const getMetaAdsCampaigns = onCall(async (request) => {
         spend: campaign.spend || 0,
         impressions: campaign.impressions || 0,
         clicks: campaign.clicks || 0,
-        lastSyncAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date()
+        lastSyncAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true })
     }
 
@@ -429,37 +269,6 @@ async function getValidTokens(userId: string): Promise<MetaAdsTokens> {
 }
 
 /**
- * Buscar contas de anúncios do Meta Ads
- */
-async function getMetaAdsAccounts(accessToken: string): Promise<any[]> {
-  try {
-    // Buscar contas de anúncios do usuário
-    const url = `https://graph.facebook.com/${META_ADS_CONFIG.apiVersion}/me/adaccounts`
-    const params = {
-      access_token: accessToken,
-      fields: 'id,name,currency,timezone_name,account_status'
-    }
-
-    const response = await axios.get(url, { params })
-    
-    // Filtrar apenas contas ativas
-    const accounts = response.data.data.filter((account: any) => 
-      account.account_status === 1 // 1 = ACTIVE
-    )
-
-    return accounts.map((account: any) => ({
-      id: account.id.replace('act_', ''), // Remover prefixo act_
-      name: account.name,
-      currency: account.currency,
-      timezone_name: account.timezone_name
-    }))
-  } catch (error: any) {
-    console.error('Erro ao buscar contas Meta Ads:', error.response?.data || error)
-    throw error
-  }
-}
-
-/**
  * Buscar campanhas do Meta Ads
  */
 async function fetchMetaAdsCampaigns(accessToken: string, accountId: string): Promise<any[]> {
@@ -484,12 +293,10 @@ async function fetchMetaAdsCampaigns(accessToken: string, accountId: string): Pr
 }
 
 /**
- * Funções de criptografia (simplificadas para o exemplo)
- * Em produção, use uma biblioteca de criptografia robusta
+ * Funções de criptografia (simplificadas)
+ * TODO: Implementar criptografia real com crypto-js ou similar
  */
 async function encryptTokens(tokens: MetaAdsTokens): Promise<any> {
-  // TODO: Implementar criptografia real
-  // Por enquanto, apenas retorna os tokens
   return {
     accessToken: Buffer.from(tokens.accessToken).toString('base64'),
     expiresAt: tokens.expiresAt,
@@ -499,8 +306,6 @@ async function encryptTokens(tokens: MetaAdsTokens): Promise<any> {
 }
 
 async function decryptTokens(encryptedTokens: any): Promise<MetaAdsTokens> {
-  // TODO: Implementar descriptografia real
-  // Por enquanto, apenas decodifica do base64
   return {
     accessToken: Buffer.from(encryptedTokens.accessToken, 'base64').toString(),
     expiresAt: encryptedTokens.expiresAt,
@@ -508,3 +313,6 @@ async function decryptTokens(encryptedTokens: any): Promise<MetaAdsTokens> {
     tokenType: encryptedTokens.tokenType || 'bearer'
   }
 }
+
+// Exportar para evitar erro de não uso
+export { encryptTokens }

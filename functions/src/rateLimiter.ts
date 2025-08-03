@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions'
+import { HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
@@ -41,7 +41,7 @@ export async function checkRateLimit(
   const data = doc.data() as RateLimitData
   
   if (data.blocked && data.lastAttempt.toDate() > windowStart) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'resource-exhausted',
       'Muitas tentativas. Tente novamente em alguns minutos.'
     )
@@ -79,7 +79,7 @@ export async function checkRateLimit(
       SecuritySeverity.WARNING
     )
     
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'resource-exhausted',
       'Muitas tentativas. Tente novamente em alguns minutos.'
     )

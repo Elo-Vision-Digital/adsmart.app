@@ -8,10 +8,10 @@ if (!admin.apps.length) {
 export { verifyRecaptcha } from './recaptcha'
 export { checkRateLimit } from './rateLimiter'
 export { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
-export { getSecurityStats } from './securityStats'
+// export { getSecurityStats } from './securityStats'
 
 // ✅ Exportar funções de backup
-export { scheduledBackup, restoreBackup } from './backupScheduler'
+// export { scheduledBackup, restoreBackup } from './backupScheduler'
 
 // ✅ NOVO: Exportar funções de gerenciamento de preços
 export {
@@ -26,19 +26,33 @@ export { getPublicProductPrices } from './getPublicProductPrices'
 // ✅ NOVO: Exportar funções OAuth Google Ads
 export {
   getGoogleAdsAuthUrl,
-  handleGoogleAdsCallback,
+  // handleGoogleAdsCallback_DEPRECATED, // NÃO EXPORTAR - Usar v2
   getGoogleAdsCampaigns
 } from './googleAdsOAuth'
 
 // ✅ NOVO: Exportar funções OAuth Meta Ads
 export {
   getMetaAdsAuthUrl,
-  handleMetaAdsCallback,
+  // handleMetaAdsCallback_DEPRECATED, // NÃO EXPORTAR - Usar v2
   getMetaAdsCampaigns
 } from './metaAdsOAuth'
+
+// ✅ NOVO: Exportar funções OAuth v2 com seleção de contas
+export {
+  handleGoogleAdsCallbackWithSelection,
+  confirmGoogleAdsAccountSelection
+} from './googleAdsOAuthV2'
+
+export {
+  handleMetaAdsCallbackWithSelection,
+  confirmMetaAdsAccountSelection
+} from './metaAdsOAuthV2'
 
 // ✅ NOVO: Exportar funções SuitPay
 export { suitpayWebhook } from './suitpayWebhook'
 export { createPixPayment, checkPaymentStatus } from './suitpayPayment'
+
+// ✅ NOVO: Exportar função de exclusão de dados
+export { deleteUserData } from './deleteUserData'
 
 console.log('🚀 Funções exportadas do index.ts')

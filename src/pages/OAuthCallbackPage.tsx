@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
-import { oauthService } from '@/services/oauthServices'
+import { httpsCallable } from 'firebase/functions'
+import { functions } from '@/firebase/config'
 
 export function OAuthCallbackPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [error, setError] = useState<string | null>(null)
   
   const code = searchParams.get('code')
   const state = searchParams.get('state')
@@ -15,57 +15,58 @@ export function OAuthCallbackPage() {
   useEffect(() => {
     const handleCallback = async () => {
       if (!code || !state) {
-        setError('Parâmetros de autorização inválidos')
-        setTimeout(() => navigate('/accounts'), 3000)
+        navigate('/accounts', { 
+          state: { 
+            error: 'Parâmetros de autorização inválidos' 
+          } 
+        })
         return
       }
 
       try {
-        if (platform === 'google') {
-          await oauthService.handleGoogleAdsCallback(code, state)
-        } else {
-          await oauthService.handleMetaAdsCallback(code, state)
-        }
+        // Chamar função que processa o OAuth e retorna os dados
+        const functionName = platform === 'google' 
+          ? 'handleGoogleAdsCallbackWithSelection' 
+          : 'handleMetaAdsCallbackWithSelection'
         
-        // Sucesso - redirecionar para contas
+        const handleCallback = httpsCallable<{ code: string; state: string }, any>(
+          functions, 
+          functionName
+        )
+        
+        const result = await handleCallback({ code, state })
+        
+        // Redirecionar para accounts com os dados do OAuth
         navigate('/accounts', { 
           state: { 
-            success: true, 
-            message: `Conta ${platform === 'google' ? 'Google Ads' : 'Meta Ads'} conectada com sucesso!` 
+            oauthData: result.data,
+            platform: platform === 'google' ? 'google_ads' : 'meta_ads'
           } 
         })
+        
       } catch (error: any) {
         console.error('Erro no callback OAuth:', error)
-        setError(error.message || 'Erro ao conectar conta')
-        setTimeout(() => navigate('/accounts'), 3000)
+        navigate('/accounts', { 
+          state: { 
+            error: error.message || 'Erro ao conectar conta' 
+          } 
+        })
       }
     }
 
+    // Iniciar processamento imediatamente
     handleCallback()
   }, [code, state, platform, navigate])
 
+  // UI simplificada e mais rápida
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
-        {error ? (
-          <>
-            <div className="text-red-500 mb-4">
-              <svg className="w-16 h-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-lg font-semibold">{error}</p>
-            </div>
-            <p className="text-gray-500">Redirecionando...</p>
-          </>
-        ) : (
-          <>
-            <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-lg font-semibold">Processando autorização...</p>
-            <p className="text-gray-500 mt-2">
-              Conectando sua conta {platform === 'google' ? 'Google Ads' : 'Meta Ads'}
-            </p>
-          </>
-        )}
+        <Loader2 className="w-12 h-12 animate-spin mx-auto mb-3 text-primary" />
+        <p className="text-base font-medium">Processando autorização...</p>
+        <p className="text-sm text-gray-500 mt-1">
+          Conectando sua conta {platform === 'google' ? 'Google Ads' : 'Meta Ads'}
+        </p>
       </div>
     </div>
   )

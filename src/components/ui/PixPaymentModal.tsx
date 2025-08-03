@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +16,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { useAuth } from '@/contexts/AuthContext'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
+// import { useNavigate } from 'react-router-dom'
 
 interface PixPaymentModalProps {
   open: boolean
@@ -32,7 +32,6 @@ export function PixPaymentModal({
   onSuccess 
 }: PixPaymentModalProps) {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [paymentData, setPaymentData] = useState<any>(null)
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'completed' | 'expired' | 'error'>('pending')
@@ -97,10 +96,6 @@ export function PixPaymentModal({
           setTimeout(() => {
             onSuccess?.()
             handleClose()
-            // Redirecionar para página de sucesso com o valor do pagamento
-            navigate('/payment-success', { 
-              state: { amount: amount * 100 } // Converter para centavos
-            })
           }, 2000)
         } else if (status.status === 'expired') {
           setPaymentStatus('expired')
@@ -114,7 +109,7 @@ export function PixPaymentModal({
     }, 5000) // Verificar a cada 5 segundos
 
     return () => clearInterval(interval)
-  }, [paymentData, paymentStatus, onSuccess, amount, navigate])
+  }, [paymentData, paymentStatus, onSuccess])
 
   const formatCpf = (value: string) => {
     // Remove tudo que não é número

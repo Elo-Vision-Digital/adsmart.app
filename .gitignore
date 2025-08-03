@@ -36,3 +36,15 @@ functions/.runtimeconfig.json.
 # Firebase service account key
 serviceAccountKey.json
 **/serviceAccountKey.json
+
+# Backup files
+.backup/
+*.save
+
+# Debug logs
+*-debug.log
+firestore-debug.log
+
+# OS files
+.DS_Store
+Thumbs.db

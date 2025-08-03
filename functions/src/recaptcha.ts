@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions'
+import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
 import { checkRateLimit } from './rateLimiter'
@@ -9,15 +9,14 @@ if (!admin.apps.length) {
   admin.initializeApp()
 }
 
-// IMPORTANTE: Usar Firebase config em vez de hardcoded
+// IMPORTANTE: Usar process.env em vez de Firebase config (v2)
 const getRecaptchaSecret = () => {
-  // Em produção, usa Firebase config
-  const config = functions.config()
-  if (config.recaptcha?.secret_key) {
-    return config.recaptcha.secret_key
+  // Em produção, usa variáveis de ambiente
+  if (process.env.RECAPTCHA_SECRET_KEY) {
+    return process.env.RECAPTCHA_SECRET_KEY
   }
   
-  // Em desenvolvimento, usa .runtimeconfig.json
+  // Em desenvolvimento/emulador
   if (process.env.FUNCTIONS_EMULATOR) {
     return process.env.RECAPTCHA_SECRET_KEY || ''
   }
@@ -25,11 +24,11 @@ const getRecaptchaSecret = () => {
   throw new Error('reCAPTCHA secret key não configurada')
 }
 
-export const verifyRecaptcha = functions.https.onCall(async (request) => {
+export const verifyRecaptcha = onCall(async (request) => {
   const token = request?.data?.token
   
   if (!token) {
-    throw new functions.https.HttpsError('invalid-argument', 'Token do ReCAPTCHA é obrigatório')
+    throw new HttpsError('invalid-argument', 'Token do ReCAPTCHA é obrigatório')
   }
 
   // Obter identificador do usuário para rate limiting
@@ -53,7 +52,7 @@ export const verifyRecaptcha = functions.https.onCall(async (request) => {
     const { success } = response.data
 
     if (!success) {
-      throw new functions.https.HttpsError('failed-precondition', 'Falha na verificação do ReCAPTCHA')
+      throw new HttpsError('failed-precondition', 'Falha na verificação do ReCAPTCHA')
     }
 
     // Log de sucesso usando o novo sistema
@@ -91,6 +90,6 @@ export const verifyRecaptcha = functions.https.onCall(async (request) => {
     )
     
     console.error('Erro ao verificar ReCAPTCHA:', error)
-    throw new functions.https.HttpsError('internal', 'Erro ao verificar ReCAPTCHA')
+    throw new HttpsError('internal', 'Erro ao verificar ReCAPTCHA')
   }
 })

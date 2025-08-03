@@ -15,7 +15,7 @@ export const availableTemplates: TemplateData[] = [
     platform: 'google_ads',
     category: 'google',
     type: 'lancamento',
-    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&fm=jpg&fit=crop&ixlib=rb-4.0.3',
     features: [
       'Análise de conversões e ROI',
       'Métricas de engajamento detalhadas',
@@ -28,7 +28,7 @@ export const availableTemplates: TemplateData[] = [
     platform: 'meta_ads',
     category: 'meta',
     type: 'lancamento',
-    imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&fm=jpg&fit=crop&ixlib=rb-4.0.3',
     features: [
       'Análise de público-alvo',
       'Performance por formato de anúncio',
@@ -41,7 +41,7 @@ export const availableTemplates: TemplateData[] = [
     platform: 'google_ads',
     category: 'google',
     type: 'negocio_local',
-    imageUrl: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&fm=jpg&fit=crop&ixlib=rb-4.0.3',
     features: [
       'Análise geográfica de conversões',
       'Performance por localização',
@@ -54,7 +54,7 @@ export const availableTemplates: TemplateData[] = [
     platform: 'meta_ads',
     category: 'meta',
     type: 'negocio_local',
-    imageUrl: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&fm=jpg&fit=crop&ixlib=rb-4.0.3',
     features: [
       'Alcance por região',
       'Engajamento local',

@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useTheme } from '@/contexts/ThemeContext'
 import {
   HomeIcon,
   IntegrationsIcon,
@@ -16,6 +17,7 @@ interface NavItem {
 
 export function BottomNavigation() {
   const location = useLocation()
+  const { theme } = useTheme()
   
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <HomeIcon />, path: '/dashboard' },
@@ -28,7 +30,11 @@ export function BottomNavigation() {
   const isActive = (path: string) => location.pathname === path
   
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-border md:hidden z-50">
+    <nav className={`fixed bottom-0 left-0 right-0 border-t md:hidden z-50 ${
+      theme === 'dark' 
+        ? 'bg-black border-white/10' 
+        : 'bg-white border-black/10'
+    }`}>
       <div className="grid grid-cols-5 h-16 px-4">
         {navItems.map((item) => (
           <Link
@@ -36,8 +42,12 @@ export function BottomNavigation() {
             to={item.path}
             className={`flex flex-col items-center justify-center gap-1 py-2 transition-colors ${
               isActive(item.path)
-                ? 'text-primary'
-                : 'text-muted-foreground dark:text-gray-400'
+                ? theme === 'dark'
+                  ? 'text-white'
+                  : 'text-black'
+                : theme === 'dark'
+                  ? 'text-gray-400'
+                  : 'text-gray-600'
             }`}
           >
             <span className="w-6 h-6">

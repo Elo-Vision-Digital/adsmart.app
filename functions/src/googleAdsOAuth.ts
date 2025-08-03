@@ -1,6 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
-import * as functions from 'firebase-functions'
 import axios from 'axios'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
@@ -9,7 +8,7 @@ if (!admin.apps.length) {
   admin.initializeApp()
 }
 
-// Adicionar tipos de eventos OAuth que faltam
+// OAuth Event Types
 const OAuthEventType = {
   ...SecurityEventType,
   OAUTH_INIT: 'oauth_init' as SecurityEventType,
@@ -17,87 +16,17 @@ const OAuthEventType = {
   OAUTH_ERROR: 'oauth_error' as SecurityEventType
 }
 
-// Obter configurações do Firebase Functions Config
-const getGoogleAdsConfig = () => {
-  // Primeiro, verificar se estamos no emulador
-  if (process.env.FUNCTIONS_EMULATOR) {
-    try {
-      const localConfig = require('../../.runtimeconfig.json')
-      console.log('Emulator - Local config loaded:', JSON.stringify(localConfig, null, 2))
-      if (localConfig.google_ads) {
-        return {
-          clientId: localConfig.google_ads.client_id,
-          clientSecret: localConfig.google_ads.client_secret,
-          developerToken: localConfig.google_ads.developer_token,
-          redirectUri: localConfig.google_ads.redirect_uri || 'https://adsmart-web.web.app/auth/google-ads/callback',
-          redirectUriDev: localConfig.google_ads.redirect_uri_dev || 'http://localhost:5173/auth/google-ads/callback'
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao carregar config local:', error)
-    }
-  }
-  
-  // Em produção com Functions v2, usar process.env diretamente
-  // As configurações setadas com firebase functions:config:set são mapeadas para process.env
-  console.log('Production - Checking environment variables...')
-  
-  // Verificar se temos as variáveis de ambiente (Functions v2)
-  if (process.env.GOOGLE_ADS__CLIENT_ID) {
-    console.log('Found v2 environment variables')
-    return {
-      clientId: process.env.GOOGLE_ADS__CLIENT_ID,
-      clientSecret: process.env.GOOGLE_ADS__CLIENT_SECRET || '',
-      developerToken: process.env.GOOGLE_ADS__DEVELOPER_TOKEN || '',
-      redirectUri: process.env.GOOGLE_ADS__REDIRECT_URI || 'https://adsmart-web.web.app/auth/google-ads/callback',
-      redirectUriDev: process.env.GOOGLE_ADS__REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback'
-    }
-  }
-  
-  // Tentar usar functions.config() para retrocompatibilidade
-  try {
-    const functionConfig = functions.config()
-    console.log('Production - Functions config:', JSON.stringify(functionConfig, null, 2))
-    
-    if (functionConfig.google_ads) {
-      return {
-        clientId: functionConfig.google_ads.client_id,
-        clientSecret: functionConfig.google_ads.client_secret,
-        developerToken: functionConfig.google_ads.developer_token,
-        redirectUri: functionConfig.google_ads.redirect_uri || 'https://adsmart-web.web.app/auth/google-ads/callback',
-        redirectUriDev: functionConfig.google_ads.redirect_uri_dev || 'http://localhost:5173/auth/google-ads/callback'
-      }
-    }
-  } catch (error) {
-    console.log('functions.config() not available (v2 functions)')
-  }
-  
-  // Fallback direto com valores hardcoded para produção
-  console.log('Using hardcoded production values')
-  return {
-    clientId: '422483165860-dll4jj0j020et27n1fu1aenqqu08j3lr.apps.googleusercontent.com',
-    clientSecret: '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',
-    developerToken: 'wRhu9OHLIWdbht2HY3B9yw',
-    redirectUri: 'https://adsmart-web.web.app/auth/google-ads/callback',
-    redirectUriDev: 'http://localhost:5173/auth/google-ads/callback'
-  }
-}
-
-// Forçar carregamento direto das configurações para debug
-let GOOGLE_ADS_CONFIG: any = {
+// Configurações OAuth do Google Ads (usando apenas process.env)
+const GOOGLE_ADS_CONFIG = {
+  clientId: process.env.GOOGLE_ADS_CLIENT_ID || '422483165860-npdsq44121mh4chg2gers6qade02bo5l.apps.googleusercontent.com',
+  clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET || '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',
+  developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN || 'wRhu9OHLIWdbht2HY3B9yw',
+  redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
+  redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
   scope: 'https://www.googleapis.com/auth/adwords',
   authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenUrl: 'https://oauth2.googleapis.com/token',
-  apiVersion: 'v17' // Versão atual da API do Google Ads
-}
-
-// Carregar configurações imediatamente
-try {
-  const config = getGoogleAdsConfig()
-  GOOGLE_ADS_CONFIG = { ...GOOGLE_ADS_CONFIG, ...config }
-  console.log('Configuração Google Ads carregada:', GOOGLE_ADS_CONFIG)
-} catch (error) {
-  console.error('Erro ao carregar configuração Google Ads:', error)
+  apiVersion: 'v17'
 }
 
 // Interface para os tokens armazenados
@@ -112,28 +41,19 @@ interface GoogleAdsTokens {
  * Gera a URL de autorização OAuth para Google Ads
  */
 export const getGoogleAdsAuthUrl = onCall(async (request) => {
-  console.log('=== getGoogleAdsAuthUrl chamada ===')
-  console.log('Emulator?', process.env.FUNCTIONS_EMULATOR ? 'SIM' : 'NÃO')
-  console.log('Config carregada:', GOOGLE_ADS_CONFIG)
-  
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
   }
 
   const userId = request.auth.uid
-
-  // Verificar se o client_id está configurado
-  if (!GOOGLE_ADS_CONFIG.clientId) {
-    console.error('Client ID não configurado!', GOOGLE_ADS_CONFIG)
-    throw new HttpsError('failed-precondition', 'Google Ads OAuth não está configurado corretamente')
-  }
+  const { isLocalEnv } = request.data || {}
 
   // Log de segurança
   await securityLogger.logEvent(
     OAuthEventType.OAUTH_INIT,
     userId,
-    { platform: 'google_ads' },
+    { platform: 'google_ads', isLocalEnv },
     SecuritySeverity.INFO
   )
 
@@ -141,23 +61,24 @@ export const getGoogleAdsAuthUrl = onCall(async (request) => {
   const state = admin.firestore().collection('oauth_states').doc().id
   
   // Salvar state no Firestore com TTL de 10 minutos
-  try {
-    const db = admin.firestore()
-    await db.collection('oauth_states').doc(state).set({
-      userId,
-      platform: 'google_ads',
-      createdAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date(),
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
-    })
-  } catch (error) {
-    console.error('Erro ao salvar state:', error)
-    // Continuar mesmo se falhar ao salvar o state
-  }
+  await admin.firestore().collection('oauth_states').doc(state).set({
+    userId,
+    platform: 'google_ads',
+    isLocalEnv: !!isLocalEnv,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutos
+  })
 
   // Usar redirect URI correto baseado no ambiente
-  const redirectUri = process.env.FUNCTIONS_EMULATOR 
+  const redirectUri = isLocalEnv 
     ? GOOGLE_ADS_CONFIG.redirectUriDev 
     : GOOGLE_ADS_CONFIG.redirectUri
+
+  console.log('OAuth URL sendo gerada:', {
+    isLocalEnv,
+    redirectUri,
+    platform: 'google_ads'
+  })
 
   // Construir URL de autorização
   const authUrl = new URL(GOOGLE_ADS_CONFIG.authUrl)
@@ -169,8 +90,6 @@ export const getGoogleAdsAuthUrl = onCall(async (request) => {
   authUrl.searchParams.append('access_type', 'offline') // Para obter refresh token
   authUrl.searchParams.append('prompt', 'consent') // Forçar consentimento para obter refresh token
 
-  console.log('OAuth URL gerada:', authUrl.toString())
-
   return {
     authUrl: authUrl.toString(),
     state
@@ -179,6 +98,7 @@ export const getGoogleAdsAuthUrl = onCall(async (request) => {
 
 /**
  * Processa o callback OAuth e troca o código por tokens
+ * NOTA: Esta função agora redireciona para a v2 automaticamente
  */
 export const handleGoogleAdsCallback = onCall(async (request) => {
   // Verificar autenticação
@@ -222,110 +142,34 @@ export const handleGoogleAdsCallback = onCall(async (request) => {
       throw new HttpsError('deadline-exceeded', 'State expirado')
     }
 
-    // Deletar state usado
+    // Deletar state usado (importante fazer isso antes de retornar erro)
     await admin.firestore().collection('oauth_states').doc(state).delete()
 
-    // Usar redirect URI correto baseado no ambiente
-    const redirectUri = process.env.FUNCTIONS_EMULATOR 
-      ? GOOGLE_ADS_CONFIG.redirectUriDev 
-      : GOOGLE_ADS_CONFIG.redirectUri
-
-    // Trocar código por tokens
-    const tokenResponse = await axios.post(GOOGLE_ADS_CONFIG.tokenUrl, {
-      code,
-      client_id: GOOGLE_ADS_CONFIG.clientId,
-      client_secret: GOOGLE_ADS_CONFIG.clientSecret,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code'
-    })
-
-    const { access_token, refresh_token, expires_in, scope } = tokenResponse.data
-
-    // Criptografar tokens antes de armazenar
-    const encryptedTokens = await encryptTokens({
-      accessToken: access_token,
-      refreshToken: refresh_token,
-      expiresAt: Date.now() + (expires_in * 1000),
-      scope
-    })
-
-    // Obter informações da conta Google Ads
-    const accountInfo = await getGoogleAdsAccountInfo(access_token)
-
-    // Salvar tokens e informações da conta
-    const batch = admin.firestore().batch()
-
-    // Salvar tokens criptografados
-    const tokenRef = admin.firestore()
-      .collection('users')
-      .doc(userId)
-      .collection('oauth_tokens')
-      .doc('google_ads')
-
-    batch.set(tokenRef, {
-      ...encryptedTokens,
-      updatedAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date()
-    })
-
-    // Salvar informações das contas
-    for (const account of accountInfo) {
-      const accountRef = admin.firestore()
-        .collection('users')
-        .doc(userId)
-        .collection('adAccounts')
-        .doc(`google_ads_${account.customerId}`)
-
-      batch.set(accountRef, {
-        platform: 'google_ads',
-        accountId: account.customerId,
-        accountName: account.name,
-        email: account.email || request.auth.token.email,
-        isActive: true,
-        createdAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date(),
-        updatedAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date(),
-        lastSyncAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date()
-      }, { merge: true })
-    }
-
-    await batch.commit()
-
-    // Log de sucesso
-    await securityLogger.logEvent(
-      OAuthEventType.OAUTH_SUCCESS,
-      userId,
-      { 
-        accountsConnected: accountInfo.length,
-        accountIds: accountInfo.map(a => a.customerId)
-      },
-      SecuritySeverity.INFO
+    // Esta função está deprecated - retornar erro informativo
+    // O frontend deve capturar este erro e chamar a função v2
+    throw new HttpsError(
+      'failed-precondition', 
+      'Esta função está deprecated. Use o novo fluxo OAuth v2 com seleção de contas.'
     )
 
-    return {
-      success: true,
-      accountsConnected: accountInfo.length,
-      accounts: accountInfo.map(account => ({
-        id: account.customerId,
-        name: account.name
-      }))
-    }
-
   } catch (error: any) {
+    // Se já for um HttpsError, repassar
+    if (error instanceof HttpsError) {
+      throw error
+    }
+    
     // Log de erro
     await securityLogger.logEvent(
       OAuthEventType.OAUTH_ERROR,
       userId,
       { 
         error: error.message,
-        code: error.response?.status
+        code: error.code
       },
       SecuritySeverity.ERROR
     )
 
-    if (error.response?.data?.error) {
-      throw new HttpsError('internal', error.response.data.error_description || 'Erro ao processar OAuth')
-    }
-    
-    throw new HttpsError('internal', 'Erro ao conectar conta Google Ads')
+    throw new HttpsError('internal', 'Erro ao processar callback OAuth')
   }
 })
 
@@ -372,7 +216,7 @@ export const getGoogleAdsCampaigns = onCall(async (request) => {
         spend: campaign.spend || 0,
         impressions: campaign.impressions || 0,
         clicks: campaign.clicks || 0,
-        lastSyncAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date()
+        lastSyncAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true })
     }
 
@@ -427,7 +271,7 @@ async function getValidTokens(userId: string): Promise<GoogleAdsTokens> {
       .doc('google_ads')
       .update({
         ...encryptedNewTokens,
-        updatedAt: admin.firestore.FieldValue?.serverTimestamp?.() || new Date()
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       })
 
     return newTokens
@@ -458,73 +302,25 @@ async function refreshGoogleAdsToken(refreshToken: string): Promise<GoogleAdsTok
 }
 
 /**
- * Buscar informações das contas Google Ads
- */
-async function getGoogleAdsAccountInfo(accessToken: string): Promise<any[]> {
-  // Esta é uma implementação simplificada
-  // Na prática, você usaria a biblioteca oficial do Google Ads
-  // Por enquanto, vamos simular a resposta
-  
-  // TODO: Implementar chamada real à API do Google Ads
-  // Exemplo com google-ads-api:
-  // const client = new GoogleAdsApi({ ... })
-  // const customers = await client.listAccessibleCustomers()
-  
-  // Simulação para desenvolvimento
-  return [{
-    customerId: '123-456-7890',
-    name: 'Conta de Demonstração',
-    email: 'demo@example.com'
-  }]
-}
-
-/**
  * Buscar campanhas do Google Ads
  */
 async function fetchGoogleAdsCampaigns(accessToken: string, accountId: string): Promise<any[]> {
-  // Esta é uma implementação simplificada
-  // Na prática, você usaria a biblioteca oficial do Google Ads
-  
-  // TODO: Implementar chamada real à API do Google Ads
-  // Exemplo com google-ads-api:
-  // const query = `
-  //   SELECT campaign.id, campaign.name, campaign.status, 
-  //          campaign_budget.amount_micros, metrics.cost_micros,
-  //          metrics.impressions, metrics.clicks
-  //   FROM campaign
-  //   WHERE campaign.status != 'REMOVED'
-  // `
-  
-  // Simulação para desenvolvimento
-  return [
-    {
-      id: 1001,
-      name: 'Campanha de Lançamento - Search',
-      status: 'ENABLED',
-      budget: 50000, // R$ 500,00
-      spend: 35000, // R$ 350,00
-      impressions: 45000,
-      clicks: 2300
-    },
-    {
-      id: 1002,
-      name: 'Campanha de Remarketing',
-      status: 'PAUSED',
-      budget: 30000, // R$ 300,00
-      spend: 15000, // R$ 150,00
-      impressions: 25000,
-      clicks: 1200
-    }
-  ]
+  try {
+    // TODO: Implementar integração real com Google Ads API v17
+    // Por enquanto retornar array vazio
+    console.log('fetchGoogleAdsCampaigns - Implementação pendente para conta:', accountId)
+    return []
+  } catch (error) {
+    console.error('Erro ao buscar campanhas Google Ads:', error)
+    return []
+  }
 }
 
 /**
- * Funções de criptografia (simplificadas para o exemplo)
- * Em produção, use uma biblioteca de criptografia robusta
+ * Funções de criptografia (simplificadas)
+ * TODO: Implementar criptografia real com crypto-js ou similar
  */
 async function encryptTokens(tokens: GoogleAdsTokens): Promise<any> {
-  // TODO: Implementar criptografia real
-  // Por enquanto, apenas retorna os tokens
   return {
     accessToken: Buffer.from(tokens.accessToken).toString('base64'),
     refreshToken: Buffer.from(tokens.refreshToken).toString('base64'),
@@ -534,8 +330,6 @@ async function encryptTokens(tokens: GoogleAdsTokens): Promise<any> {
 }
 
 async function decryptTokens(encryptedTokens: any): Promise<GoogleAdsTokens> {
-  // TODO: Implementar descriptografia real
-  // Por enquanto, apenas decodifica do base64
   return {
     accessToken: Buffer.from(encryptedTokens.accessToken, 'base64').toString(),
     refreshToken: Buffer.from(encryptedTokens.refreshToken, 'base64').toString(),

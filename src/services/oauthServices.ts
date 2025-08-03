@@ -28,12 +28,39 @@ interface CampaignsResponse {
 }
 
 class OAuthService {
+  // Helper para detectar ambiente de desenvolvimento
+  private isLocalEnvironment(): boolean {
+    return window.location.hostname === 'localhost' || 
+           window.location.hostname === '127.0.0.1' ||
+           window.location.hostname.includes('192.168.') ||
+           window.location.hostname === '10.0.0.2'
+  }
+
+  // Helper para obter o callback URL baseado no ambiente
+  private getCallbackUrl(platform: 'google-ads' | 'meta-ads'): string {
+    const baseUrl = this.isLocalEnvironment() 
+      ? `http://localhost:5173` 
+      : `https://adsmart.app`
+    
+    return `${baseUrl}/auth/${platform}/callback`
+  }
+
   // Google Ads OAuth
   async getGoogleAdsAuthUrl(): Promise<string> {
     try {
       console.log('Chamando Cloud Function getGoogleAdsAuthUrl...')
-      const getAuthUrl = httpsCallable<void, OAuthUrlResponse>(functions, 'getGoogleAdsAuthUrl')
-      const result = await getAuthUrl()
+      console.log('Ambiente local?', this.isLocalEnvironment())
+      console.log('Callback URL esperado:', this.getCallbackUrl('google-ads'))
+      
+      const getAuthUrl = httpsCallable<{ isLocalEnv: boolean }, OAuthUrlResponse>(
+        functions, 
+        'getGoogleAdsAuthUrl'
+      )
+      
+      const result = await getAuthUrl({ 
+        isLocalEnv: this.isLocalEnvironment() 
+      })
+      
       console.log('URL OAuth recebida:', result.data.authUrl)
       return result.data.authUrl
     } catch (error: any) {
@@ -86,8 +113,18 @@ class OAuthService {
   async getMetaAdsAuthUrl(): Promise<string> {
     try {
       console.log('Chamando Cloud Function getMetaAdsAuthUrl...')
-      const getAuthUrl = httpsCallable<void, OAuthUrlResponse>(functions, 'getMetaAdsAuthUrl')
-      const result = await getAuthUrl()
+      console.log('Ambiente local?', this.isLocalEnvironment())
+      console.log('Callback URL esperado:', this.getCallbackUrl('meta-ads'))
+      
+      const getAuthUrl = httpsCallable<{ isLocalEnv: boolean }, OAuthUrlResponse>(
+        functions, 
+        'getMetaAdsAuthUrl'
+      )
+      
+      const result = await getAuthUrl({ 
+        isLocalEnv: this.isLocalEnvironment() 
+      })
+      
       console.log('URL OAuth Meta recebida:', result.data.authUrl)
       return result.data.authUrl
     } catch (error: any) {
