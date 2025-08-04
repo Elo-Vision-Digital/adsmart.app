@@ -50,45 +50,71 @@ export function HomePage() {
 
   const testimonials = [
     {
-      name: t('testimonials.1.author'),
-      role: t('testimonials.1.role'),
-      content: t('testimonials.1.content'),
+      name: "João Silva",
+      role: "CEO, Agência Digital Pro",
+      content: language === 'pt' ? "Economizamos 10 horas por semana com relatórios automatizados. Vale cada centavo!" : 
+                language === 'en' ? "We save 10 hours per week with automated reports. Worth every penny!" :
+                "¡Ahorramos 10 horas por semana con informes automatizados. Vale cada centavo!",
       rating: 5
     },
     {
-      name: t('testimonials.2.author'),
-      role: t('testimonials.2.role'),
-      content: t('testimonials.2.content'),
+      name: "Maria Santos",
+      role: language === 'pt' ? "Gestora de Tráfego" : language === 'en' ? "Traffic Manager" : "Gestora de Tráfico",
+      content: language === 'pt' ? "Finalmente posso focar em otimizar campanhas ao invés de criar relatórios manualmente." :
+               language === 'en' ? "Finally I can focus on optimizing campaigns instead of creating reports manually." :
+               "Finalmente puedo concentrarme en optimizar campañas en lugar de crear informes manualmente.",
       rating: 5
     },
     {
-      name: t('testimonials.3.author'),
-      role: t('testimonials.3.role'),
-      content: t('testimonials.3.content'),
+      name: "Pedro Costa",
+      role: "Freelancer",
+      content: language === 'pt' ? "Perfeito para quem não quer mais uma assinatura mensal. Pago apenas quando preciso!" :
+               language === 'en' ? "Perfect for those who don't want another monthly subscription. I pay only when I need!" :
+               "¡Perfecto para quienes no quieren otra suscripción mensual. Pago solo cuando lo necesito!",
       rating: 5
     }
   ]
 
   const faqs = [
     {
-      question: t('faq.1.question'),
-      answer: t('faq.1.answer')
+      question: language === 'pt' ? "Como funciona o sistema de créditos?" : 
+                language === 'en' ? "How does the credit system work?" :
+                "¿Cómo funciona el sistema de créditos?",
+      answer: language === 'pt' ? "Você compra créditos via PIX e usa quando precisar. Cada relatório consome 1 crédito (R$ 10,00). Os créditos nunca expiram!" :
+              language === 'en' ? "You buy credits via PIX and use them when needed. Each report consumes 1 credit (R$ 10.00). Credits never expire!" :
+              "Compras créditos vía PIX y los usas cuando lo necesites. Cada informe consume 1 crédito (R$ 10,00). ¡Los créditos nunca expiran!"
     },
     {
-      question: t('faq.2.question'),
-      answer: t('faq.2.answer')
+      question: language === 'pt' ? "Preciso pagar mensalidade?" :
+                language === 'en' ? "Do I need to pay a monthly fee?" :
+                "¿Necesito pagar una mensualidad?",
+      answer: language === 'pt' ? "Não! Esse é nosso diferencial. Você paga apenas pelos relatórios que gerar, sem assinaturas ou taxas mensais." :
+              language === 'en' ? "No! That's our differentiator. You only pay for the reports you generate, no subscriptions or monthly fees." :
+              "¡No! Ese es nuestro diferencial. Solo pagas por los informes que generes, sin suscripciones ni tarifas mensuales."
     },
     {
-      question: t('faq.3.question'),
-      answer: t('faq.3.answer')
+      question: language === 'pt' ? "Quais plataformas são suportadas?" :
+                language === 'en' ? "Which platforms are supported?" :
+                "¿Qué plataformas son compatibles?",
+      answer: language === 'pt' ? "Atualmente suportamos Google Ads e Meta Ads (Facebook e Instagram). Novos canais em breve!" :
+              language === 'en' ? "We currently support Google Ads and Meta Ads (Facebook and Instagram). New channels coming soon!" :
+              "Actualmente soportamos Google Ads y Meta Ads (Facebook e Instagram). ¡Nuevos canales próximamente!"
     },
     {
-      question: t('faq.4.question'),
-      answer: t('faq.4.answer')
+      question: language === 'pt' ? "Os relatórios são personalizáveis?" :
+                language === 'en' ? "Are the reports customizable?" :
+                "¿Los informes son personalizables?",
+      answer: language === 'pt' ? "Sim! Oferecemos templates profissionais do Looker Studio que podem ser customizados com sua marca." :
+              language === 'en' ? "Yes! We offer professional Looker Studio templates that can be customized with your brand." :
+              "¡Sí! Ofrecemos plantillas profesionales de Looker Studio que pueden personalizarse con tu marca."
     },
     {
-      question: t('faq.5.question'),
-      answer: t('faq.5.answer')
+      question: language === 'pt' ? "É seguro conectar minhas contas?" :
+                language === 'en' ? "Is it safe to connect my accounts?" :
+                "¿Es seguro conectar mis cuentas?",
+      answer: language === 'pt' ? "Totalmente! Usamos OAuth oficial do Google e Meta. Nunca temos acesso às suas senhas." :
+              language === 'en' ? "Absolutely! We use official OAuth from Google and Meta. We never have access to your passwords." :
+              "¡Totalmente! Usamos OAuth oficial de Google y Meta. Nunca tenemos acceso a tus contraseñas."
     }
   ]
 
@@ -203,7 +229,7 @@ export function HomePage() {
                       : 'bg-black text-white hover:bg-gray-800'
                   }`}
                 >
-                  {t('nav.login')}
+                  {t('common.button.login')}
                 </Button>
               )}
             </nav>
@@ -223,12 +249,8 @@ export function HomePage() {
             variants={fadeInUp}
             className="text-4xl md:text-6xl font-bold mb-6"
           >
-            {t('hero.title').split('\n').map((line, index) => (
-              <span key={index}>
-                {line}
-                {index === 0 && <br />}
-              </span>
-            ))}
+            {language === 'pt' ? 'Mais uma ferramenta,' : language === 'en' ? 'One more tool,' : 'Una herramienta más,'}<br />
+            {language === 'pt' ? 'menos uma assinatura!' : language === 'en' ? 'one less subscription!' : '¡una suscripción menos!'}
           </motion.h1>
           
           <motion.p 
@@ -237,7 +259,7 @@ export function HomePage() {
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}
           >
-            {t('hero.subtitle')}
+            {t('homePage.hero.subtitle')}
           </motion.p>
           
           <motion.div 
@@ -253,7 +275,7 @@ export function HomePage() {
                   : 'bg-black text-white hover:bg-gray-800'
               }`}
             >
-              {t('hero.cta.start')}
+              {t('common.button.start')}
               <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button 
@@ -266,7 +288,7 @@ export function HomePage() {
                   : 'border-black text-black hover:bg-black hover:text-white'
               }`}
             >
-              {t('hero.cta.demo')}
+              {t('common.button.viewDemo')}
             </Button>
           </motion.div>
 
@@ -276,9 +298,9 @@ export function HomePage() {
             className="grid grid-cols-3 gap-8 mt-20 max-w-3xl mx-auto"
           >
             {[
-              { number: "R$ 10", label: t('hero.stats.price') },
-              { number: "0", label: t('hero.stats.subscription') },
-              { number: "∞", label: t('hero.stats.validity') }
+              { number: "R$ 10", label: t('common.perReport') },
+              { number: "0", label: language === 'pt' ? "mensalidades" : language === 'en' ? "subscriptions" : "suscripciones" },
+              { number: "∞", label: language === 'pt' ? "validade dos créditos" : language === 'en' ? "credit validity" : "validez de créditos" }
             ].map((stat, index) => (
               <motion.div 
                 key={index}
@@ -310,24 +332,30 @@ export function HomePage() {
             variants={fadeInUp}
             className="text-3xl md:text-4xl font-bold text-center mb-16"
           >
-            {t('features.title')}
+            {t('homePage.features.title')}
           </motion.h2>
           
           <div className="grid md:grid-cols-3 gap-12 max-w-6xl mx-auto">
             {[
               {
-                title: t('features.payperuse.title'),
-                description: t('features.payperuse.desc'),
+                title: language === 'pt' ? "Pague por uso" : language === 'en' ? "Pay per use" : "Paga por uso",
+                description: language === 'pt' ? "Sem assinaturas mensais. Compre créditos e use quando precisar." :
+                            language === 'en' ? "No monthly subscriptions. Buy credits and use when needed." :
+                            "Sin suscripciones mensuales. Compra créditos y úsalos cuando lo necesites.",
                 icon: CreditCard
               },
               {
-                title: t('features.fast.title'),
-                description: t('features.fast.desc'),
+                title: language === 'pt' ? "Relatórios em minutos" : language === 'en' ? "Reports in minutes" : "Informes en minutos",
+                description: language === 'pt' ? "Conecte suas contas e gere relatórios profissionais instantaneamente." :
+                            language === 'en' ? "Connect your accounts and generate professional reports instantly." :
+                            "Conecta tus cuentas y genera informes profesionales al instante.",
                 icon: Zap
               },
               {
-                title: t('features.templates.title'),
-                description: t('features.templates.desc'),
+                title: language === 'pt' ? "Templates prontos" : language === 'en' ? "Ready templates" : "Plantillas listas",
+                description: language === 'pt' ? "Modelos do Looker Studio otimizados para suas campanhas." :
+                            language === 'en' ? "Looker Studio templates optimized for your campaigns." :
+                            "Plantillas de Looker Studio optimizadas para tus campañas.",
                 icon: BarChart3
               }
             ].map((feature, index) => (
@@ -367,7 +395,9 @@ export function HomePage() {
             variants={fadeInUp}
             className="text-3xl font-bold text-center mb-12"
           >
-            {t('testimonials.title')}
+            {language === 'pt' ? 'O que nossos clientes dizem' : 
+             language === 'en' ? 'What our clients say' :
+             'Lo que dicen nuestros clientes'}
           </motion.h2>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -419,14 +449,34 @@ export function HomePage() {
             variants={fadeInUp}
             className="text-3xl font-bold text-center mb-12"
           >
-            {t('how.title')}
+            {language === 'pt' ? 'Como funciona?' : 
+             language === 'en' ? 'How it works?' :
+             '¿Cómo funciona?'}
           </motion.h2>
           
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { num: "1", title: t('how.step1.title'), desc: t('how.step1.desc') },
-              { num: "2", title: t('how.step2.title'), desc: t('how.step2.desc') },
-              { num: "3", title: t('how.step3.title'), desc: t('how.step3.desc') }
+              { 
+                num: "1", 
+                title: language === 'pt' ? "Conecte suas contas" : language === 'en' ? "Connect your accounts" : "Conecta tus cuentas",
+                desc: language === 'pt' ? "Google Ads e Meta Ads via OAuth seguro" : 
+                      language === 'en' ? "Google Ads and Meta Ads via secure OAuth" :
+                      "Google Ads y Meta Ads vía OAuth seguro"
+              },
+              { 
+                num: "2", 
+                title: language === 'pt' ? "Escolha um template" : language === 'en' ? "Choose a template" : "Elige una plantilla",
+                desc: language === 'pt' ? "Modelos profissionais do Looker Studio" :
+                      language === 'en' ? "Professional Looker Studio templates" :
+                      "Plantillas profesionales de Looker Studio"
+              },
+              { 
+                num: "3", 
+                title: language === 'pt' ? "Gere o relatório" : language === 'en' ? "Generate the report" : "Genera el informe",
+                desc: language === 'pt' ? "Pronto! Compartilhe com seus clientes" :
+                      language === 'en' ? "Done! Share with your clients" :
+                      "¡Listo! Comparte con tus clientes"
+              }
             ].map((step, index) => (
               <motion.div 
                 key={index}
@@ -467,7 +517,7 @@ export function HomePage() {
             variants={fadeInUp}
             className="text-3xl md:text-4xl font-bold mb-4"
           >
-            {t('pricing.title')}
+            {t('homePage.pricing.title')}
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
@@ -475,7 +525,7 @@ export function HomePage() {
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}
           >
-            {t('pricing.subtitle')}
+            {t('homePage.pricing.subtitle')}
           </motion.p>
           
           <motion.div 
@@ -488,21 +538,21 @@ export function HomePage() {
                 ? 'border-white bg-black' 
                 : 'border-black bg-white'
             }`}>
-              <h3 className="text-2xl font-bold mb-8">{t('pricing.payperuse')}</h3>
+              <h3 className="text-2xl font-bold mb-8">Pay Per Use</h3>
               
               <div className="mb-8">
                 <span className="text-5xl font-bold">R$ 10,00</span>
                 <span className={`ml-2 text-lg ${
                   theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                }`}>{t('pricing.per_report')}</span>
+                }`}>{t('common.perReport')}</span>
               </div>
               
               <ul className="space-y-4 mb-10 max-w-xs mx-auto">
                 {[
-                  t('pricing.benefit1'),
-                  t('pricing.benefit2'),
-                  t('pricing.benefit3'),
-                  t('pricing.benefit4')
+                  language === 'pt' ? 'Créditos nunca expiram' : language === 'en' ? 'Credits never expire' : 'Los créditos nunca expiran',
+                  language === 'pt' ? 'Sem mensalidade' : language === 'en' ? 'No monthly fee' : 'Sin mensualidad',
+                  language === 'pt' ? 'Compre quando precisar' : language === 'en' ? 'Buy when needed' : 'Compra cuando lo necesites',
+                  language === 'pt' ? 'Pagamento via PIX' : language === 'en' ? 'Payment via PIX' : 'Pago vía PIX'
                 ].map((benefit, index) => (
                   <li key={index} className="flex items-center gap-3 justify-center">
                     <CheckCircle className={`w-5 h-5 flex-shrink-0 ${
@@ -522,7 +572,7 @@ export function HomePage() {
                 }`}
                 onClick={() => navigate(user ? '/dashboard' : '/login')}
               >
-                {t('pricing.cta')}
+                {t('common.button.start')}
               </Button>
             </div>
           </motion.div>
@@ -544,7 +594,9 @@ export function HomePage() {
             variants={fadeInUp}
             className="text-3xl font-bold text-center mb-12"
           >
-            {t('faq.title')}
+            {language === 'pt' ? 'Perguntas frequentes' : 
+             language === 'en' ? 'Frequently asked questions' :
+             'Preguntas frecuentes'}
           </motion.h2>
           
           <div className="space-y-4">
@@ -606,7 +658,7 @@ export function HomePage() {
             variants={fadeInUp}
             className="text-3xl font-bold mb-4"
           >
-            {t('cta.title')}
+            {t('homePage.cta.title')}
           </motion.h2>
           <motion.p 
             variants={fadeInUp}
@@ -614,7 +666,7 @@ export function HomePage() {
               theme === 'dark' ? 'text-gray-800' : 'text-gray-300'
             }`}
           >
-            {t('cta.subtitle')}
+            {t('homePage.cta.subtitle')}
           </motion.p>
           <motion.div
             variants={fadeInUp}
@@ -630,7 +682,7 @@ export function HomePage() {
                   : 'bg-white text-black hover:bg-gray-200 border border-white'
               }`}
             >
-              {t('cta.button')}
+              {t('common.button.createAccount')}
               <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </motion.div>
@@ -652,17 +704,15 @@ export function HomePage() {
               <p className={`text-sm ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                {t('footer.tagline').split('\n').map((line, index) => (
-                  <span key={index}>
-                    {line}
-                    {index === 0 && <br />}
-                  </span>
-                ))}
+                {language === 'pt' ? 'Mais uma ferramenta,' : language === 'en' ? 'One more tool,' : 'Una herramienta más,'}<br />
+                {language === 'pt' ? 'menos uma assinatura.' : language === 'en' ? 'one less subscription.' : 'una suscripción menos.'}
               </p>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">{t('footer.product')}</h4>
+              <h4 className="font-semibold mb-4">
+                {language === 'pt' ? 'Produto' : language === 'en' ? 'Product' : 'Producto'}
+              </h4>
               <ul className="space-y-2">
                 <li>
                   <Link to="/login" className={`text-sm transition-colors ${
@@ -670,7 +720,7 @@ export function HomePage() {
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-black'
                   }`}>
-                    {t('footer.features')}
+                    {language === 'pt' ? 'Recursos' : language === 'en' ? 'Features' : 'Características'}
                   </Link>
                 </li>
                 <li>
@@ -679,7 +729,7 @@ export function HomePage() {
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-black'
                   }`}>
-                    {t('footer.pricing')}
+                    {language === 'pt' ? 'Preços' : language === 'en' ? 'Pricing' : 'Precios'}
                   </Link>
                 </li>
                 <li>
@@ -688,14 +738,14 @@ export function HomePage() {
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-black'
                   }`}>
-                    {t('footer.templates')}
+                    Templates
                   </Link>
                 </li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">{t('footer.legal')}</h4>
+              <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2">
                 <li>
                   <Link to="/terms" className={`text-sm transition-colors ${
@@ -703,7 +753,7 @@ export function HomePage() {
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-black'
                   }`}>
-                    {t('footer.terms')}
+                    {t('common.footer.termsOfUse')}
                   </Link>
                 </li>
                 <li>
@@ -712,7 +762,7 @@ export function HomePage() {
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-black'
                   }`}>
-                    {t('footer.privacy')}
+                    {t('common.footer.privacyPolicy')}
                   </Link>
                 </li>
                 <li>
@@ -721,14 +771,16 @@ export function HomePage() {
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-black'
                   }`}>
-                    {t('footer.delete_data')}
+                    {language === 'pt' ? 'Excluir Dados' : language === 'en' ? 'Delete Data' : 'Eliminar Datos'}
                   </Link>
                 </li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">{t('footer.contact')}</h4>
+              <h4 className="font-semibold mb-4">
+                {language === 'pt' ? 'Contato' : language === 'en' ? 'Contact' : 'Contacto'}
+              </h4>
               <ul className="space-y-2">
                 <li>
                   <a href="mailto:support@adsmart.app" className={`text-sm transition-colors ${
@@ -749,7 +801,7 @@ export function HomePage() {
             <p className={`text-sm ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}>
-              &copy; 2025 Adsmart - Zen Technology - {t('footer.copyright')}
+              &copy; 2025 Adsmart - Zen Technology - {t('common.footer.rights')}
             </p>
           </div>
         </div>

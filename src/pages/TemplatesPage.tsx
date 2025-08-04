@@ -4,11 +4,13 @@ import { ArrowLeft, AlertCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '@/hooks/useWallet'
 import { useProductPrices } from '@/hooks/useProductPrices'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { TemplateGrid, availableTemplates } from '@/components/templates/TemplateGrid'
 
 export function TemplatesPage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const { balance, formatCurrency } = useWallet()
   const { loading: loadingPrices, error: pricesError, getPriceByCategory } = useProductPrices()
 
@@ -41,20 +43,20 @@ export function TemplatesPage() {
               className="mb-4"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar ao Dashboard
+              {t('templatesPage.backToDashboard')}
             </Button>
             
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Templates de Relatórios</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{t('templatesPage.title')}</h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Escolha o modelo ideal para suas análises de marketing
+                  {t('templatesPage.subtitle')}
                 </p>
               </div>
               
               <Card className="p-4">
                 <div className="text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Seu saldo atual</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('templatesPage.currentBalance')}</p>
                   <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(balance)}</p>
                 </div>
               </Card>
@@ -67,7 +69,7 @@ export function TemplatesPage() {
               <CardHeader>
                 <CardTitle className="text-orange-800 dark:text-orange-200 flex items-center gap-2">
                   <AlertCircle className="w-5 h-5" />
-                  Aviso
+                  {t('templatesPage.warning')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -84,19 +86,18 @@ export function TemplatesPage() {
               <CardHeader>
                 <CardTitle className="text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
                   <AlertCircle className="w-5 h-5" />
-                  Saldo Insuficiente
+                  {t('templatesPage.insufficientBalance.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-yellow-700 dark:text-yellow-300">
-                  Você precisa adicionar créditos para gerar relatórios. 
-                  Seu saldo atual é {formatCurrency(balance)}.
+                  {t('templatesPage.insufficientBalance.message', { balance: formatCurrency(balance) })}
                 </p>
                 <Button 
                   className="mt-4"
                   onClick={() => navigate('/dashboard')}
                 >
-                  Adicionar Créditos
+                  {t('templatesPage.insufficientBalance.button')}
                 </Button>
               </CardContent>
             </Card>
@@ -108,29 +109,29 @@ export function TemplatesPage() {
           {/* Como funciona */}
           <Card className="mt-6 dark:bg-[#1f2936]">
             <CardHeader>
-              <CardTitle>Como funciona?</CardTitle>
+              <CardTitle>{t('templatesPage.howItWorks.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ol className="space-y-2 text-gray-600 dark:text-gray-400">
                 <li className="flex gap-2">
                   <span className="font-semibold">1.</span>
-                  Escolha o template adequado para sua plataforma de anúncios
+                  {t('templatesPage.howItWorks.step1')}
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold">2.</span>
-                  Conecte sua conta do Google Ads ou Meta Ads
+                  {t('templatesPage.howItWorks.step2')}
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold">3.</span>
-                  Selecione as campanhas e o período de análise
+                  {t('templatesPage.howItWorks.step3')}
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold">4.</span>
-                  Confirme o pagamento (valores atualizados em tempo real)
+                  {t('templatesPage.howItWorks.step4')}
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold">5.</span>
-                  Receba o link do seu dashboard personalizado em minutos!
+                  {t('templatesPage.howItWorks.step5')}
                 </li>
               </ol>
             </CardContent>

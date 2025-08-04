@@ -9,6 +9,7 @@ export interface TemplateData {
 }
 
 // Dados centralizados de todos os templates
+// As features agora são traduzidas dinamicamente no TemplateCard
 export const availableTemplates: TemplateData[] = [
   {
     id: 'google_lancamento',
@@ -16,12 +17,7 @@ export const availableTemplates: TemplateData[] = [
     category: 'google',
     type: 'lancamento',
     imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&fm=jpg&fit=crop&ixlib=rb-4.0.3',
-    features: [
-      'Análise de conversões e ROI',
-      'Métricas de engajamento detalhadas',
-      'Comparativo de períodos',
-      'Insights automáticos de performance'
-    ]
+    features: [] // Features são traduzidas dinamicamente
   },
   {
     id: 'meta_lancamento',
@@ -29,12 +25,7 @@ export const availableTemplates: TemplateData[] = [
     category: 'meta',
     type: 'lancamento',
     imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&fm=jpg&fit=crop&ixlib=rb-4.0.3',
-    features: [
-      'Análise de público-alvo',
-      'Performance por formato de anúncio',
-      'Funil de conversão detalhado',
-      'Otimizações sugeridas'
-    ]
+    features: [] // Features são traduzidas dinamicamente
   },
   {
     id: 'google_negocio_local',
@@ -42,12 +33,7 @@ export const availableTemplates: TemplateData[] = [
     category: 'google',
     type: 'negocio_local',
     imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&fm=jpg&fit=crop&ixlib=rb-4.0.3',
-    features: [
-      'Análise geográfica de conversões',
-      'Performance por localização',
-      'Horários de pico de conversão',
-      'ROI por região'
-    ]
+    features: [] // Features são traduzidas dinamicamente
   },
   {
     id: 'meta_negocio_local',
@@ -55,12 +41,7 @@ export const availableTemplates: TemplateData[] = [
     category: 'meta',
     type: 'negocio_local',
     imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&fm=jpg&fit=crop&ixlib=rb-4.0.3',
-    features: [
-      'Alcance por região',
-      'Engajamento local',
-      'Análise demográfica detalhada',
-      'Custo por lead local'
-    ]
+    features: [] // Features são traduzidas dinamicamente
   }
 ]
 

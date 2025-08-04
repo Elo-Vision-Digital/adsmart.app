@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, Plus, Trash2, RefreshCw, AlertCircle, Database, Loader2 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { addMockAccounts } from '@/utils/mockAccounts'
@@ -54,6 +55,7 @@ export function AccountsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
+  const { t } = useLanguage()
   const [accounts, setAccounts] = useState<AdAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [connectingGoogle, setConnectingGoogle] = useState(false)
@@ -131,7 +133,7 @@ export function AccountsPage() {
     } catch (error: any) {
       console.error('Erro ao conectar Google Ads:', error)
       showToast({
-        message: error.message || 'Erro ao conectar com Google Ads. Tente novamente.',
+        message: error.message || t('accountsPage.error.connectGoogle'),
         type: 'error'
       })
     } finally {
@@ -154,7 +156,7 @@ export function AccountsPage() {
     } catch (error: any) {
       console.error('Erro ao conectar Meta Ads:', error)
       showToast({
-        message: error.message || 'Erro ao conectar com Meta Ads. Tente novamente.',
+        message: error.message || t('accountsPage.error.connectMeta'),
         type: 'error'
       })
     } finally {
@@ -165,7 +167,7 @@ export function AccountsPage() {
   const handleRemoveAccount = async (accountId: string) => {
     if (!user) return
     
-    if (confirm('Tem certeza que deseja remover esta conta?')) {
+    if (confirm(t('accountsPage.confirmRemove'))) {
       try {
         await deleteDoc(doc(db, 'users', user.uid, 'adAccounts', accountId))
       } catch (error) {
@@ -179,7 +181,7 @@ export function AccountsPage() {
     try {
       await addMockAccounts(user.uid)
       showToast({
-        message: 'Contas de demonstração adicionadas!',
+        message: t('accountsPage.mockAccountsAdded'),
         type: 'success'
       })
     } catch (error) {
@@ -210,15 +212,20 @@ export function AccountsPage() {
       setShowAccountSelection(false)
       setOauthData(null)
       
+      const platformName = oauthPlatform === 'google_ads' ? 'Google Ads' : 'Meta Ads'
+      
       showToast({
-        message: `${selectedAccountIds.length} conta${selectedAccountIds.length > 1 ? 's' : ''} ${oauthPlatform === 'google_ads' ? 'Google Ads' : 'Meta Ads'} conectada${selectedAccountIds.length > 1 ? 's' : ''} com sucesso!`,
+        message: t('accountsPage.accountsConnectedSuccess', { 
+          count: selectedAccountIds.length,
+          platform: platformName
+        }),
         type: 'success'
       })
       
     } catch (error: any) {
       console.error('Erro ao confirmar seleção:', error)
       showToast({
-        message: error.message || 'Erro ao salvar contas selecionadas',
+        message: error.message || t('accountsPage.error.saveAccounts'),
         type: 'error'
       })
     }
@@ -242,7 +249,7 @@ export function AccountsPage() {
                     className="mb-4 -ml-2 md:ml-0"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    <span className="text-sm md:text-base">Voltar ao Dashboard</span>
+                    <span className="text-sm md:text-base">{t('accountsPage.backToDashboard')}</span>
                   </Button>
                   
                   {process.env.NODE_ENV === 'development' && accounts.length === 0 && (
@@ -253,15 +260,15 @@ export function AccountsPage() {
                       size="sm"
                     >
                       <Database className="mr-2 h-4 w-4" />
-                      <span className="hidden md:inline">Adicionar Contas Demo</span>
-                      <span className="md:hidden">Demo</span>
+                      <span className="hidden md:inline">{t('accountsPage.addDemoAccounts')}</span>
+                      <span className="md:hidden">{t('accountsPage.demo')}</span>
                     </Button>
                   )}
                 </div>
                 
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Contas de Anúncios</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{t('accountsPage.title')}</h1>
                 <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mt-2">
-                  Conecte suas contas do Google Ads e Meta Ads para gerar relatórios
+                  {t('accountsPage.subtitle')}
                 </p>
               </div>
 
@@ -276,7 +283,7 @@ export function AccountsPage() {
                           <span className="truncate">Google Ads</span>
                         </CardTitle>
                         <CardDescription className="text-sm">
-                          {googleAccounts.length} conta{googleAccounts.length !== 1 ? 's' : ''} conectada{googleAccounts.length !== 1 ? 's' : ''}
+                          {googleAccounts.length} {googleAccounts.length === 1 ? t('accountsPage.accountConnected') : t('accountsPage.accountsConnectedPlural')}
                         </CardDescription>
                       </div>
                       <Button 
@@ -290,17 +297,17 @@ export function AccountsPage() {
                         ) : (
                           <Plus className="w-4 h-4 mr-1 md:mr-2" />
                         )}
-                        Conectar
+                        {t('accountsPage.connect')}
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="px-4 md:px-6">
                     {loading ? (
-                      <p className="text-gray-500 dark:text-gray-400">Carregando...</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
                     ) : googleAccounts.length === 0 ? (
                       <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                        <p className="text-sm md:text-base">Nenhuma conta conectada</p>
-                        <p className="text-xs md:text-sm mt-2">Conecte sua conta do Google Ads para começar</p>
+                        <p className="text-sm md:text-base">{t('accountsPage.noAccountsConnected')}</p>
+                        <p className="text-xs md:text-sm mt-2">{t('accountsPage.connectGoogleToStart')}</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -314,13 +321,13 @@ export function AccountsPage() {
                                 <span className="truncate">{account.email || account.accountId}</span>
                                 {account.lastSyncAt && (
                                   <span className="truncate">
-                                    <span className="hidden md:inline">Sincronizado: </span>
+                                    <span className="hidden md:inline">{t('accountsPage.synced')}: </span>
                                     {(() => {
                                       try {
                                         const date = (account.lastSyncAt as any).toDate ? (account.lastSyncAt as any).toDate() : new Date(account.lastSyncAt as any);
-                                        return date.toLocaleDateString('pt-BR');
+                                        return date.toLocaleDateString(t('common.locale'));
                                       } catch {
-                                        return 'Recentemente';
+                                        return t('common.general.recently');
                                       }
                                     })()}
                                   </span>
@@ -357,7 +364,7 @@ export function AccountsPage() {
                           <span className="truncate">Meta Ads</span>
                         </CardTitle>
                         <CardDescription className="text-sm">
-                          {metaAccounts.length} conta{metaAccounts.length !== 1 ? 's' : ''} conectada{metaAccounts.length !== 1 ? 's' : ''}
+                          {metaAccounts.length} {metaAccounts.length === 1 ? t('accountsPage.accountConnected') : t('accountsPage.accountsConnectedPlural')}
                         </CardDescription>
                       </div>
                       <Button 
@@ -371,17 +378,17 @@ export function AccountsPage() {
                         ) : (
                           <Plus className="w-4 h-4 mr-1 md:mr-2" />
                         )}
-                        Conectar
+                        {t('accountsPage.connect')}
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="px-4 md:px-6">
                     {loading ? (
-                      <p className="text-gray-500 dark:text-gray-400">Carregando...</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
                     ) : metaAccounts.length === 0 ? (
                       <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                        <p className="text-sm md:text-base">Nenhuma conta conectada</p>
-                        <p className="text-xs md:text-sm mt-2">Conecte sua conta do Meta Ads para começar</p>
+                        <p className="text-sm md:text-base">{t('accountsPage.noAccountsConnected')}</p>
+                        <p className="text-xs md:text-sm mt-2">{t('accountsPage.connectMetaToStart')}</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -395,13 +402,13 @@ export function AccountsPage() {
                                 <span className="truncate">{account.email || account.accountId}</span>
                                 {account.lastSyncAt && (
                                   <span className="truncate">
-                                    <span className="hidden md:inline">Sincronizado: </span>
+                                    <span className="hidden md:inline">{t('accountsPage.synced')}: </span>
                                     {(() => {
                                       try {
                                         const date = (account.lastSyncAt as any).toDate ? (account.lastSyncAt as any).toDate() : new Date(account.lastSyncAt as any);
-                                        return date.toLocaleDateString('pt-BR');
+                                        return date.toLocaleDateString(t('common.locale'));
                                       } catch {
-                                        return 'Recentemente';
+                                        return t('common.general.recently');
                                       }
                                     })()}
                                   </span>
@@ -433,14 +440,12 @@ export function AccountsPage() {
                 <CardHeader className="px-4 md:px-6">
                   <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                     <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-                    <span>Informação Importante</span>
+                    <span>{t('accountsPage.importantInfo.title')}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 md:px-6">
                   <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-                    Para conectar suas contas de anúncios, você precisará autorizar o adsmart a acessar seus dados. 
-                    Utilizamos conexões seguras OAuth2 e não armazenamos suas senhas. 
-                    Você pode revogar o acesso a qualquer momento.
+                    {t('accountsPage.importantInfo.description')}
                   </p>
                 </CardContent>
               </Card>

@@ -4,16 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { MainLayout } from '@/components/layout/MainLayout'
 import { ArrowLeft, TrendingDown, TrendingUp, Wallet, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export function TransactionsPage() {
   const { transactions, loading, formatCurrency, balance } = useWallet()
   const navigate = useNavigate()
+  const { t } = useLanguage()
 
   if (loading) {
     return (
       <MainLayout>
         <div className="min-h-screen bg-background dark:bg-[#0A0A0A] flex items-center justify-center">
-          <p className="text-gray-600 dark:text-gray-400">Carregando transações...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('transactionsPage.loading')}</p>
         </div>
       </MainLayout>
     )
@@ -33,14 +35,14 @@ export function TransactionsPage() {
                   className="mb-4"
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Voltar ao Dashboard
+                  {t('transactionsPage.backToDashboard')}
                 </Button>
                 
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                  Histórico de Transações
+                  {t('transactionsPage.title')}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Acompanhe todas as movimentações da sua carteira
+                  {t('transactionsPage.subtitle')}
                 </p>
               </div>
 
@@ -49,7 +51,7 @@ export function TransactionsPage() {
                 <CardHeader className="px-4 md:px-6">
                   <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                     <Wallet className="w-5 h-5" />
-                    Saldo Atual
+                    {t('transactionsPage.currentBalance')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 md:px-6">
@@ -62,9 +64,9 @@ export function TransactionsPage() {
               {/* Card de Transações */}
               <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700">
                 <CardHeader className="px-4 md:px-6">
-                  <CardTitle className="text-lg md:text-xl">Transações Recentes</CardTitle>
+                  <CardTitle className="text-lg md:text-xl">{t('transactionsPage.recentTransactions')}</CardTitle>
                   <CardDescription className="text-gray-600 dark:text-gray-400">
-                    Últimas 10 transações realizadas
+                    {t('transactionsPage.lastTransactions')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-4 md:px-6">
@@ -72,7 +74,7 @@ export function TransactionsPage() {
                     <div className="text-center py-8">
                       <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-50 text-gray-400" />
                       <p className="text-gray-500 dark:text-gray-400">
-                        Nenhuma transação realizada ainda.
+                        {t('transactionsPage.noTransactions')}
                       </p>
                     </div>
                   ) : (
@@ -107,12 +109,12 @@ export function TransactionsPage() {
                                     const createdAt: any = transaction.createdAt;
                                     
                                     if (!createdAt) {
-                                      return 'Data indisponível';
+                                      return t('transactionsPage.dateUnavailable');
                                     }
                                     
                                     // Se já é uma Date
                                     if (createdAt instanceof Date) {
-                                      return createdAt.toLocaleString('pt-BR', {
+                                      return createdAt.toLocaleString(t('common.locale'), {
                                         day: '2-digit',
                                         month: '2-digit',
                                         year: 'numeric',
@@ -123,7 +125,7 @@ export function TransactionsPage() {
                                     
                                     // Se tem método toDate (Timestamp do Firebase)
                                     if (typeof createdAt.toDate === 'function') {
-                                      return createdAt.toDate().toLocaleString('pt-BR', {
+                                      return createdAt.toDate().toLocaleString(t('common.locale'), {
                                         day: '2-digit',
                                         month: '2-digit',
                                         year: 'numeric',
@@ -134,7 +136,7 @@ export function TransactionsPage() {
                                     
                                     // Se tem propriedade seconds
                                     if (createdAt.seconds) {
-                                      return new Date(createdAt.seconds * 1000).toLocaleString('pt-BR', {
+                                      return new Date(createdAt.seconds * 1000).toLocaleString(t('common.locale'), {
                                         day: '2-digit',
                                         month: '2-digit',
                                         year: 'numeric',
@@ -143,9 +145,9 @@ export function TransactionsPage() {
                                       });
                                     }
                                     
-                                    return 'Data indisponível';
+                                    return t('transactionsPage.dateUnavailable');
                                   } catch (error) {
-                                    return 'Data indisponível';
+                                    return t('transactionsPage.dateUnavailable');
                                   }
                                 })()}
                               </p>
@@ -168,8 +170,9 @@ export function TransactionsPage() {
                                 ? 'text-amber-600 dark:text-amber-400 font-medium'
                                 : 'text-gray-500 dark:text-gray-400'
                             }`}>
-                              {transaction.status === 'completed' ? 'Concluída' : 
-                               transaction.status === 'pending' ? 'Pendente' : 'Falhou'}
+                              {transaction.status === 'completed' ? t('transactionsPage.transactionStatus.completed') : 
+                               transaction.status === 'pending' ? t('transactionsPage.transactionStatus.pending') : 
+                               t('transactionsPage.transactionStatus.failed')}
                             </p>
                           </div>
                         </div>
@@ -185,7 +188,7 @@ export function TransactionsPage() {
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Total de Créditos</p>
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('transactionsPage.stats.totalCredits')}</p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(
                             transactions
@@ -205,7 +208,7 @@ export function TransactionsPage() {
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Total de Débitos</p>
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('transactionsPage.stats.totalDebits')}</p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(
                             transactions
@@ -225,7 +228,7 @@ export function TransactionsPage() {
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Transações</p>
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('transactionsPage.stats.transactions')}</p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                           {transactions.length}
                         </p>

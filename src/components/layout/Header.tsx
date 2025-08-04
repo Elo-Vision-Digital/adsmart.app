@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { WalletDisplay } from '@/components/WalletDisplay'
 import { Button } from '@/components/ui/button'
 import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
+import { LanguageSelector } from '@/components/common/LanguageSelector'
 import { ChevronDown } from 'lucide-react'
 
 export function Header() {
@@ -33,7 +34,7 @@ export function Header() {
           </div>
 
           {/* Saldo e Ações */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <WalletDisplay />
             
             <Button
@@ -47,6 +48,9 @@ export function Header() {
             >
               Depositar
             </Button>
+
+            {/* Language Selector */}
+            <LanguageSelector />
 
             {/* Avatar com Dropdown */}
             <div className="relative">

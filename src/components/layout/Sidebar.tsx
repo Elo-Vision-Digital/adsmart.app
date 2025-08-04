@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import {
   HomeIcon,
   IntegrationsIcon,
@@ -29,17 +30,18 @@ export function Sidebar() {
   const navigate = useNavigate()
   const { user, signOut, isAdmin } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const { t } = useLanguage()
 
   const menuItems: MenuItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: <HomeIcon />, path: '/dashboard' },
-    { id: 'integrations', label: 'Integrações', icon: <IntegrationsIcon />, path: '/accounts' },
-    { id: 'reports', label: 'Relatórios', icon: <ReportsIcon />, path: '/reports' },
-    { id: 'templates', label: 'Templates', icon: <TemplatesIcon />, path: '/templates' },
-    { id: 'finance', label: 'Financeiro', icon: <FinanceIcon />, path: '/transactions' },
-    { id: 'settings', label: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
+    { id: 'dashboard', label: t('sidebar.dashboard'), icon: <HomeIcon />, path: '/dashboard' },
+    { id: 'integrations', label: t('sidebar.integrations'), icon: <IntegrationsIcon />, path: '/accounts' },
+    { id: 'reports', label: t('sidebar.reports'), icon: <ReportsIcon />, path: '/reports' },
+    { id: 'templates', label: t('sidebar.templates'), icon: <TemplatesIcon />, path: '/templates' },
+    { id: 'finance', label: t('sidebar.finance'), icon: <FinanceIcon />, path: '/transactions' },
+    { id: 'settings', label: t('sidebar.settings'), icon: <SettingsIcon />, path: '/settings' },
     { 
       id: 'admin', 
-      label: 'Administração', 
+      label: t('sidebar.administration'), 
       icon: <Shield />, 
       path: '/admin', 
       adminOnly: true 
@@ -96,7 +98,7 @@ export function Sidebar() {
                 <h3 className={`font-semibold text-sm truncate ${
                   theme === 'dark' ? 'text-white' : 'text-black'
                 }`}>
-                  {user?.displayName || 'Usuário'}
+                  {user?.displayName || t('common.general.user')}
                 </h3>
                 <p className={`text-xs truncate ${
                   theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
@@ -110,7 +112,7 @@ export function Sidebar() {
                       ? 'bg-yellow-500/20 text-yellow-400' 
                       : 'bg-yellow-500/10 text-yellow-600'
                   }`}>
-                    Admin
+                    {t('common.general.admin')}
                   </span>
                 )}
               </div>
@@ -170,7 +172,7 @@ export function Sidebar() {
               <LogoutIcon className="w-5 h-5" />
             </span>
             {isExpanded && (
-              <span className="text-sm font-medium">Sair</span>
+              <span className="text-sm font-medium">{t('common.general.logout')}</span>
             )}
           </button>
 
@@ -196,7 +198,7 @@ export function Sidebar() {
                   }`}
                 >
                   <SunIcon className="w-4 h-4" />
-                  <span className="text-xs font-medium">Claro</span>
+                  <span className="text-xs font-medium">{t('common.theme.light')}</span>
                 </button>
                 
                 <button
@@ -208,7 +210,7 @@ export function Sidebar() {
                   }`}
                 >
                   <MoonIcon className="w-4 h-4" />
-                  <span className="text-xs font-medium">Escuro</span>
+                  <span className="text-xs font-medium">{t('common.theme.dark')}</span>
                 </button>
               </div>
             </div>

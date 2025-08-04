@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWallet } from '@/hooks/useWallet'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { SettingsIcon, LogoutIcon, SunIcon, MoonIcon } from '@/components/icons'
-import { Plus } from 'lucide-react'
+import { Plus, Globe, ChevronRight } from 'lucide-react'
 import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
 
 export function MobileHeader() {
@@ -13,6 +14,7 @@ export function MobileHeader() {
   const { user, signOut } = useAuth()
   const { formattedBalance } = useWallet()
   const { theme, toggleTheme } = useTheme()
+  const { t } = useLanguage()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -48,7 +50,7 @@ export function MobileHeader() {
               <div className="text-right">
                 <p className={`text-[10px] leading-none ${
                   theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                }`}>Saldo</p>
+                }`}>{t('common.general.balance')}</p>
                 <p className={`font-semibold text-sm ${
                   theme === 'dark' ? 'text-white' : 'text-black'
                 }`}>{formattedBalance}</p>
@@ -110,7 +112,7 @@ export function MobileHeader() {
             }`}>
               <p className={`font-medium text-sm ${
                 theme === 'dark' ? 'text-white' : 'text-black'
-              }`}>{user?.displayName || 'Usuário'}</p>
+              }`}>{user?.displayName || t('common.general.user')}</p>
               <p className={`text-xs ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
               }`}>{user?.email}</p>
@@ -128,7 +130,7 @@ export function MobileHeader() {
               }`}
             >
               <SettingsIcon size={18} />
-              <span className="text-sm">Configurações</span>
+              <span className="text-sm">{t('common.general.settings')}</span>
             </button>
             
             <button
@@ -141,9 +143,12 @@ export function MobileHeader() {
             >
               {theme === 'light' ? <MoonIcon size={18} /> : <SunIcon size={18} />}
               <span className="text-sm">
-                {theme === 'light' ? 'Modo escuro' : 'Modo claro'}
+                {theme === 'light' ? t('common.theme.dark') : t('common.theme.light')}
               </span>
             </button>
+            
+            {/* Language Selector */}
+            <MobileLanguageSelector onClose={() => setShowMenu(false)} />
             
             <div className={`border-t mt-2 pt-2 ${
               theme === 'dark' ? 'border-white/20' : 'border-black/10'
@@ -157,7 +162,7 @@ export function MobileHeader() {
                 }`}
               >
                 <LogoutIcon size={18} />
-                <span className="text-sm">Sair</span>
+                <span className="text-sm">{t('common.general.logout')}</span>
               </button>
             </div>
           </div>
@@ -170,5 +175,71 @@ export function MobileHeader() {
         onOpenChange={setShowAddCreditsModal} 
       />
     </>
+  )
+}
+
+// Language Selector adaptado para o mobile
+function MobileLanguageSelector({ onClose }: { onClose: () => void }) {
+  const { language, setLanguage, t } = useLanguage()
+  const { theme } = useTheme()
+  const [showOptions, setShowOptions] = useState(false)
+
+  const languageOptions = [
+    { code: 'pt', label: 'Português', flag: '🇧🇷' },
+    { code: 'en', label: 'English', flag: '🇺🇸' },
+    { code: 'es', label: 'Español', flag: '🇪🇸' }
+  ]
+
+  const currentLang = languageOptions.find(l => l.code === language) || languageOptions[0]
+
+  if (showOptions) {
+    return (
+      <>
+        {languageOptions.map(lang => (
+          <button
+            key={lang.code}
+            onClick={() => {
+              setLanguage(lang.code as 'pt' | 'en' | 'es')
+              setShowOptions(false)
+              onClose()
+            }}
+            className={`flex items-center gap-3 px-4 py-2 transition-colors w-full ${
+              language === lang.code
+                ? theme === 'dark' ? 'bg-white/10' : 'bg-black/10'
+                : theme === 'dark' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
+            }`}
+          >
+            <span className="text-lg">{lang.flag}</span>
+            <span className="text-sm">{lang.label}</span>
+          </button>
+        ))}
+        <button
+          onClick={() => setShowOptions(false)}
+          className={`flex items-center gap-3 px-4 py-2 transition-colors w-full ${
+            theme === 'dark' 
+              ? 'hover:bg-white/10 text-gray-400' 
+              : 'hover:bg-black/5 text-gray-600'
+          }`}
+        >
+          <ChevronRight className="w-4 h-4 rotate-180" />
+          <span className="text-sm">{t('common.button.back') || 'Voltar'}</span>
+        </button>
+      </>
+    )
+  }
+
+  return (
+    <button
+      onClick={() => setShowOptions(true)}
+      className={`flex items-center gap-3 px-4 py-2 transition-colors w-full ${
+        theme === 'dark' 
+          ? 'hover:bg-white/10 text-white' 
+          : 'hover:bg-black/5 text-black'
+      }`}
+    >
+      <Globe size={18} />
+      <span className="text-sm">{currentLang.flag} {currentLang.label}</span>
+      <ChevronRight className="w-3 h-3 ml-auto" />
+    </button>
   )
 }

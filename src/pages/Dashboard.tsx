@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, RefreshCw, Link2, Trash2, FileText, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { TemplateGrid } from '@/components/templates/TemplateGrid'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import type { AdAccount } from '@/types'
@@ -35,8 +36,6 @@ const mockReports = [
   }
 ]
 
-
-
 // Componente para ícone do Google Ads
 const GoogleAdsIcon = () => (
   <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -64,6 +63,7 @@ const MetaAdsIcon = () => (
 export function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useLanguage()
   const [searchReport, setSearchReport] = useState('')
   const [reports] = useState(mockReports)
   const [connections, setConnections] = useState<AdAccount[]>([])
@@ -102,19 +102,18 @@ export function Dashboard() {
   const currentConnections = connections.slice(indexOfFirstConnection, indexOfLastConnection)
   const totalPages = Math.ceil(connections.length / connectionsPerPage)
 
-  const handleRefreshConnection = (id: string) => {
-    console.log('Refresh connection:', id)
+  const handleRefreshConnection = (_id: string) => {
     // TODO: Implementar lógica de refresh quando a API estiver pronta
   }
 
   const handleDeleteConnection = async (accountId: string) => {
     if (!user) return
     
-    if (confirm('Tem certeza que deseja remover esta conta?')) {
+    if (confirm(t('dashboard.deleteConfirm'))) {
       try {
         await deleteDoc(doc(db, 'users', user.uid, 'adAccounts', accountId))
       } catch (error) {
-        console.error('Erro ao remover conta:', error)
+        console.error(t('common.error.deleteAccount'), error)
       }
     }
   }
@@ -138,13 +137,13 @@ export function Dashboard() {
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <FileText className="w-5 h-5 flex-shrink-0" />
-                        <CardTitle className="text-lg md:text-xl">Meus relatórios</CardTitle>
+                        <CardTitle className="text-lg md:text-xl">{t('dashboard.myReports')}</CardTitle>
                       </div>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                           type="text"
-                          placeholder="Pesquisar..."
+                          placeholder={t('dashboard.searchPlaceholder')}
                           value={searchReport}
                           onChange={(e) => setSearchReport(e.target.value)}
                           className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
@@ -155,7 +154,7 @@ export function Dashboard() {
                         className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Criar novo relatório
+                        {t('dashboard.createNewReport')}
                       </Button>
                     </div>
                   </CardHeader>
@@ -163,7 +162,7 @@ export function Dashboard() {
                     {filteredReports.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>Nenhum relatório encontrado</p>
+                        <p>{t('dashboard.noReportsFound')}</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -205,7 +204,7 @@ export function Dashboard() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <Link2 className="w-5 h-5 flex-shrink-0" />
-                        <CardTitle className="text-lg md:text-xl truncate">Integrações</CardTitle>
+                        <CardTitle className="text-lg md:text-xl truncate">{t('dashboard.integrations')}</CardTitle>
                       </div>
                       <Button 
                         onClick={() => navigate('/accounts')}
@@ -213,20 +212,20 @@ export function Dashboard() {
                         size="sm"
                       >
                         <Plus className="w-4 h-4 md:mr-2" />
-                        <span className="hidden md:inline">Adicionar contas</span>
+                        <span className="hidden md:inline">{t('dashboard.addAccounts')}</span>
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="px-4 md:px-6">
                     {connectionsLoading ? (
                       <div className="text-center py-8 text-gray-500">
-                        <p>Carregando conexões...</p>
+                        <p>{t('dashboard.loadingConnections')}</p>
                       </div>
                     ) : connections.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <Link2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>Nenhuma conta conectada</p>
-                        <p className="text-sm mt-2">Clique em "Adicionar contas" para começar</p>
+                        <p>{t('dashboard.noAccountsConnected')}</p>
+                        <p className="text-sm mt-2">{t('dashboard.clickToStart')}</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -252,12 +251,12 @@ export function Dashboard() {
                                 </p>
                                 {account.lastSyncAt && (
                                   <p className="text-xs text-gray-400 dark:text-gray-500">
-                                    Sincronizado: {(() => {
+                                    {t('common.general.synced')}: {(() => {
                                       try {
                                         const date = (account.lastSyncAt as any).toDate ? (account.lastSyncAt as any).toDate() : new Date(account.lastSyncAt as any);
                                         return date.toLocaleDateString('pt-BR');
                                       } catch {
-                                        return 'Recentemente';
+                                        return t('common.general.recently');
                                       }
                                     })()}
                                   </p>
@@ -268,7 +267,7 @@ export function Dashboard() {
                               <button 
                                 onClick={() => handleRefreshConnection(account.id)}
                                 className="p-1.5 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                                title="Atualizar conexão"
+                                title={t('common.button.refresh')}
                                 disabled
                               >
                                 <RefreshCw className="w-4 h-4" />
@@ -276,14 +275,14 @@ export function Dashboard() {
                               <button 
                                 onClick={() => navigate('/accounts')}
                                 className="p-1.5 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                                title="Gerenciar contas"
+                                title={t('common.button.manage')}
                               >
                                 <Link2 className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={() => handleDeleteConnection(account.id)}
                                 className="p-1.5 md:p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 rounded-lg transition-colors"
-                                title="Excluir conexão"
+                                title={t('common.button.delete')}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -334,7 +333,7 @@ export function Dashboard() {
               {/* Templates - Usando o novo componente TemplateGrid */}
               <div>
                 <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-4">
-                  Ver templates de Relatório
+                  {t('dashboard.viewTemplates')}
                 </h2>
                 <TemplateGrid onSelectTemplate={handleSelectTemplate} />
               </div>

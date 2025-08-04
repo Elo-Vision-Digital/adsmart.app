@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { useNavigate } from 'react-router-dom'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { Search, FileText, Plus, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
 
 // Mock data para demonstração - será substituído por dados do Firestore
@@ -107,6 +108,7 @@ const MetaAdsIcon = () => (
 
 export function ReportsPage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [searchReport, setSearchReport] = useState('')
   const [reports] = useState(mockReports)
   const [currentPage, setCurrentPage] = useState(1)
@@ -157,10 +159,10 @@ export function ReportsPage() {
               {/* Header */}
               <div className="mb-6">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Meus Relatórios
+                  {t('reportsPage.title')}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Gerencie e acesse todos os seus relatórios gerados
+                  {t('reportsPage.subtitle')}
                 </p>
               </div>
 
@@ -173,7 +175,7 @@ export function ReportsPage() {
                       <div className="flex items-center gap-2">
                         <FileText className="w-5 h-5 flex-shrink-0" />
                         <CardTitle className="text-lg md:text-xl">
-                          Total de relatórios: {filteredReports.length}
+                          {t('reportsPage.totalReports', { count: filteredReports.length })}
                         </CardTitle>
                       </div>
                       <Button 
@@ -181,7 +183,7 @@ export function ReportsPage() {
                         className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Criar novo relatório
+                        {t('reportsPage.createNewReport')}
                       </Button>
                     </div>
 
@@ -191,7 +193,7 @@ export function ReportsPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                           type="text"
-                          placeholder="Pesquisar por nome ou conta..."
+                          placeholder={t('reportsPage.searchPlaceholder')}
                           value={searchReport}
                           onChange={(e) => {
                             setSearchReport(e.target.value)
@@ -208,7 +210,7 @@ export function ReportsPage() {
                           onChange={(e) => handleFilterChange(e.target.value as any)}
                           className="flex-1 min-w-[140px] px-3 py-1.5 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary text-sm"
                         >
-                          <option value="all">Todas plataformas</option>
+                          <option value="all">{t('reportsPage.filters.allPlatforms')}</option>
                           <option value="google_ads">Google Ads</option>
                           <option value="meta_ads">Meta Ads</option>
                         </select>
@@ -218,8 +220,8 @@ export function ReportsPage() {
                           onChange={(e) => handleSortChange(e.target.value as any)}
                           className="flex-1 min-w-[140px] px-3 py-1.5 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary text-sm"
                         >
-                          <option value="recent">Mais recentes</option>
-                          <option value="oldest">Mais antigos</option>
+                          <option value="recent">{t('reportsPage.filters.mostRecent')}</option>
+                          <option value="oldest">{t('reportsPage.filters.oldest')}</option>
                         </select>
                       </div>
                     </div>
@@ -230,8 +232,8 @@ export function ReportsPage() {
                   {currentReports.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                       <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg mb-2">Nenhum relatório encontrado</p>
-                      <p className="text-sm">Tente ajustar os filtros ou criar um novo relatório</p>
+                      <p className="text-lg mb-2">{t('reportsPage.noReportsFound')}</p>
+                      <p className="text-sm">{t('reportsPage.noReportsHint')}</p>
                     </div>
                   ) : (
                     <>
@@ -256,7 +258,7 @@ export function ReportsPage() {
                                   {report.name}
                                 </h3>
                                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                  <span className="truncate">{report.createdAt.toLocaleDateString('pt-BR')}</span>
+                                  <span className="truncate">{report.createdAt.toLocaleDateString(t('common.locale'))}</span>
                                   <span>•</span>
                                   <span className="truncate">{report.accountName}</span>
                                 </div>
@@ -345,7 +347,7 @@ export function ReportsPage() {
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Este mês</p>
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('reportsPage.stats.thisMonth')}</p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                           {reports.filter(r => {
                             const now = new Date()

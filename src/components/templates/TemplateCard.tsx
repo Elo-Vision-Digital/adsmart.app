@@ -4,6 +4,7 @@ import { Check, AlertCircle, RefreshCw } from 'lucide-react'
 import { useWallet } from '@/hooks/useWallet'
 import { useProductPrices } from '@/hooks/useProductPrices'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface TemplateCardProps {
   id: string
@@ -11,7 +12,6 @@ interface TemplateCardProps {
   category: 'google' | 'meta'
   type: 'lancamento' | 'negocio_local'
   imageUrl: string
-  features: string[]
   onSelect: (templateId: string) => void
 }
 
@@ -21,17 +21,66 @@ export function TemplateCard({
   category,
   type,
   imageUrl,
-  features,
   onSelect
 }: TemplateCardProps) {
   const { balance, formatCurrency } = useWallet()
   const { loading: loadingPrices, getPriceByCategory } = useProductPrices()
   const { theme } = useTheme()
+  const { t } = useLanguage()
   
   // Obter informações de preço
   const priceInfo = getPriceByCategory(category, type)
   const templatePrice = priceInfo ? priceInfo.price * 100 : 500 // Converter para centavos
   const hasBalance = balance >= templatePrice
+
+  // Traduzir nome do template
+  const getTranslatedTemplateName = () => {
+    if (!priceInfo?.name) return null
+    
+    const platformName = category === 'google' ? 'Google Ads' : 'Meta Ads'
+    const typeName = type === 'lancamento' 
+      ? t('templateCard.templateTypes.launch')
+      : t('templateCard.templateTypes.localBusiness')
+    
+    return `Dashboard ${platformName} - ${typeName}`
+  }
+
+  // Traduzir descrição do template
+  const getTranslatedTemplateDescription = () => {
+    if (!priceInfo?.description) return null
+    
+    // Mapear IDs para chaves de tradução
+    const descriptionKeyMap: Record<string, string> = {
+      'google_lancamento': 'googleLaunch',
+      'meta_lancamento': 'metaLaunch',
+      'google_negocio_local': 'googleLocal',
+      'meta_negocio_local': 'metaLocal'
+    }
+    
+    const descriptionKey = descriptionKeyMap[id]
+    return descriptionKey ? t(`templateCard.templateDescriptions.${descriptionKey}`) : null
+  }
+
+  // Traduzir features baseado no ID do template
+  const getTranslatedFeatures = () => {
+    // Mapear IDs para chaves de tradução
+    const featureKeyMap: Record<string, string> = {
+      'google_lancamento': 'googleLaunch',
+      'meta_lancamento': 'metaLaunch',
+      'google_negocio_local': 'googleLocal',
+      'meta_negocio_local': 'metaLocal'
+    }
+    
+    const featureKey = featureKeyMap[id] || id
+    const featureBase = `templateFeatures.${featureKey}`
+    
+    return [
+      t(`${featureBase}.feature1`),
+      t(`${featureBase}.feature2`),
+      t(`${featureBase}.feature3`),
+      t(`${featureBase}.feature4`)
+    ]
+  }
 
   // Componente do ícone do Google Ads
   const GoogleAdsIcon = () => (
@@ -56,6 +105,8 @@ export function TemplateCard({
       <path d="m149.4 89.4c-81.6 0-144.1 106.2-144.1 218.5 0 70.3 34 114.7 91 114.7 41 0 70.5-19.3 123-111 0 0 21.9-38.6 36.9-65.2l31.2-52.8c26.5-40.9 48.4-61.3 74.4-61.3 54 0 97.2 79.5 97.2 177.2 0 37.2-12.2 58.8-37.5 58.8-24.2 0-35.8-16-81.8-90l-42.3 36.9c47.9 80.2 74.6 107.4 123 107.4 55.5 0 86.4-45.1 86.4-116.9 0-117.7-63.9-216.5-141.6-216.5-41.1 0-73.3 31-102.4 70.3l-32.3 47.4c-31.9 49-51.3 79.7-51.3 79.7-42.5 66.7-57.2 81.6-80.9 81.6-24.4 0-38.8-21.4-38.8-59.5 0-81.6 40.7-165 89.2-165z" fill={`url(#meta-gradient-${id})`}/>
     </svg>
   )
+
+  const translatedFeatures = getTranslatedFeatures()
 
   return (
     <Card className={`overflow-hidden transition-all duration-200 cursor-pointer w-full ${
@@ -85,12 +136,12 @@ export function TemplateCard({
         <CardTitle className={`text-base md:text-lg ${
           theme === 'dark' ? 'text-white' : 'text-black'
         }`}>
-          {priceInfo?.name || `Dashboard ${category === 'google' ? 'Google Ads' : 'Meta Ads'}`}
+          {getTranslatedTemplateName() || t('templateCard.defaultTitle', { platform: category === 'google' ? 'Google Ads' : 'Meta Ads' })}
         </CardTitle>
         <CardDescription className={`text-xs md:text-sm ${
           theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
         }`}>
-          {priceInfo?.description || 'Dashboard profissional para suas campanhas'}
+          {getTranslatedTemplateDescription() || t('templateCard.defaultDescription')}
         </CardDescription>
       </CardHeader>
       
@@ -99,10 +150,10 @@ export function TemplateCard({
           <p className={`text-xs md:text-sm font-medium ${
             theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
           }`}>
-            Recursos incluídos:
+            {t('templateCard.featuresIncluded')}
           </p>
           <ul className="space-y-2">
-            {features.map((feature, index) => (
+            {translatedFeatures.map((feature, index) => (
               <li key={index} className={`text-xs md:text-sm flex items-start gap-2 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
               }`}>
@@ -138,16 +189,16 @@ export function TemplateCard({
           {loadingPrices ? (
             <>
               <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              Carregando...
+              {t('templateCard.loading')}
             </>
           ) : !hasBalance ? (
             <>
               <AlertCircle className="w-4 h-4 mr-2" />
-              Saldo Insuficiente
+              {t('templateCard.insufficientBalance')}
             </>
           ) : (
             <>
-              Usar este Template
+              {t('templateCard.useTemplate')}
             </>
           )}
         </Button>

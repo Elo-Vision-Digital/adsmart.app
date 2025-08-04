@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
 import { Instagram, Linkedin, Mail, MapPin } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
   const { theme } = useTheme()
+  const { t } = useLanguage()
 
   const socialLinks = [
     {
@@ -20,15 +22,15 @@ export function Footer() {
   ]
 
   const quickLinks = [
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Templates', path: '/templates' },
-    { name: 'Integrações', path: '/accounts' },
-    { name: 'Relatórios', path: '/reports' },
+    { name: t('sidebar.dashboard'), path: '/dashboard' },
+    { name: t('sidebar.templates'), path: '/templates' },
+    { name: t('sidebar.integrations'), path: '/accounts' },
+    { name: t('sidebar.reports'), path: '/reports' },
   ]
 
   const legalLinks = [
-    { name: 'Termos de Uso', path: '/terms' },
-    { name: 'Política de Privacidade', path: '/privacy' },
+    { name: t('common.footer.termsOfUse'), path: '/terms' },
+    { name: t('common.footer.privacyPolicy'), path: '/privacy' },
   ]
 
   return (
@@ -52,7 +54,7 @@ export function Footer() {
             <p className={`text-sm ${
               theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
             }`}>
-              Mais uma ferramenta, menos uma assinatura! Gere seus relatórios pagando apenas pelo uso.
+              {t('footer.tagline')}
             </p>
             {/* Social Links */}
             <div className="flex gap-2">
@@ -80,7 +82,7 @@ export function Footer() {
             <h4 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
               theme === 'dark' ? 'text-black' : 'text-white'
             }`}>
-              Links Rápidos
+              {t('footer.quickLinks')}
             </h4>
             <ul className="space-y-2">
               {quickLinks.map((link) => (
@@ -105,7 +107,7 @@ export function Footer() {
             <h4 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
               theme === 'dark' ? 'text-black' : 'text-white'
             }`}>
-              Legal
+              {t('footer.legal')}
             </h4>
             <ul className="space-y-2">
               {legalLinks.map((link) => (
@@ -130,7 +132,7 @@ export function Footer() {
             <h4 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
               theme === 'dark' ? 'text-black' : 'text-white'
             }`}>
-              Contato
+              {t('footer.contact')}
             </h4>
             <ul className="space-y-3">
               <li className="flex items-start gap-2">
@@ -155,7 +157,7 @@ export function Footer() {
                 <span className={`text-sm ${
                   theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
                 }`}>
-                  São Paulo, SP - Brasil
+                  {t('footer.location')}
                 </span>
               </li>
             </ul>
@@ -168,12 +170,12 @@ export function Footer() {
             <p className={`text-sm text-center sm:text-left ${
               theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
             }`}>
-              © {currentYear} Adsmart - Todos os direitos reservados.
+              © {currentYear} Adsmart - {t('footer.allRightsReserved')}.
             </p>
             <div className={`flex flex-wrap items-center gap-4 text-sm ${
               theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
             }`}>
-              <span>Desenvolvido com ❤️ por Zen Technology</span>
+              <span>{t('footer.developedBy')}</span>
             </div>
           </div>
         </div>

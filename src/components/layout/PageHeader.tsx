@@ -1,5 +1,4 @@
 import { useTheme } from '@/contexts/ThemeContext'
-import { useLanguage } from '@/contexts/LanguageContext'
 import { LanguageSelector } from '@/components/common/LanguageSelector'
 import { Moon, Sun } from 'lucide-react'
 
@@ -10,7 +9,6 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle }: PageHeaderProps) {
   const { theme, toggleTheme } = useTheme()
-  const { t } = useLanguage()
 
   return (
     <div className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">

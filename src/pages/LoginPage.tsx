@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { LanguageSelector } from '@/components/common/LanguageSelector'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '@/firebase/config'
 import ReCAPTCHA from 'react-google-recaptcha'
@@ -23,6 +25,7 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   
   const { signInWithGoogle, signInWithFacebook, signInWithEmail } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const devConfig = getDevConfig()
 
@@ -30,7 +33,7 @@ export function LoginPage() {
   const loginRateLimit = useRateLimit({
     maxAttempts: 5,
     windowMs: 15 * 60 * 1000, // 15 minutos
-    message: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
+    message: t('common.error.tooManyAttempts')
   })
 
   // TEMPORÁRIO: Verificar se é o usuário de teste
@@ -57,7 +60,7 @@ export function LoginPage() {
       if (isLogin) {
         // Verificar ReCAPTCHA no login - apenas se não for desenvolvimento ou usuário de teste
         if (!skipRecaptcha && !recaptchaValue) {
-          throw new Error('Por favor, complete o ReCAPTCHA')
+          throw new Error(t('common.validation.completeRecaptcha'))
         }
         
         // Passa o token do ReCAPTCHA para validação (ou 'test-user' se for usuário de teste)
@@ -69,7 +72,7 @@ export function LoginPage() {
       } else {
         // Verificar ReCAPTCHA no registro também
         if (!skipRecaptcha && !recaptchaValue) {
-          throw new Error('Por favor, complete o ReCAPTCHA')
+          throw new Error(t('common.validation.completeRecaptcha'))
         }
 
         // Validar senha no registro
@@ -81,30 +84,30 @@ export function LoginPage() {
         }
 
         if (password !== confirmPassword) {
-          throw new Error('As senhas não coincidem')
+          throw new Error(t('common.validation.passwordMismatch'))
         }
 
         if (!sanitizedName.trim()) {
-          throw new Error('Nome é obrigatório')
+          throw new Error(t('common.validation.requiredField'))
         }
 
         await createUserWithEmailAndPassword(auth, sanitizedEmail, password)
       }
       navigate('/dashboard')
     } catch (error: any) {
-      let errorMessage = 'Erro ao processar solicitação'
+      let errorMessage = t('common.error.generic')
       
       // Mensagens de erro mais amigáveis
       if (error.code === 'auth/user-not-found') {
-        errorMessage = 'Usuário não encontrado'
+        errorMessage = t('loginPage.error.invalidCredentials')
       } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Senha incorreta'
+        errorMessage = t('loginPage.error.invalidCredentials')
       } else if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'Este email já está em uso'
+        errorMessage = t('loginPage.error.emailInUse')
       } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Senha muito fraca'
+        errorMessage = t('common.validation.weakPassword')
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Email inválido'
+        errorMessage = t('common.validation.invalidEmail')
       } else if (error.message) {
         errorMessage = error.message
       }
@@ -128,7 +131,7 @@ export function LoginPage() {
       await signInWithGoogle()
       navigate('/dashboard')
     } catch (error: any) {
-      setError(error.message || 'Erro ao fazer login com Google')
+      setError(error.message || t('loginPage.error.socialLoginFailed'))
     }
   }
 
@@ -145,12 +148,17 @@ export function LoginPage() {
       await signInWithFacebook()
       navigate('/dashboard')
     } catch (error: any) {
-      setError(error.message || 'Erro ao fazer login com Facebook')
+      setError(error.message || t('loginPage.error.socialLoginFailed'))
     }
   }
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4 py-[30px]">
+      {/* Language Selector - positioned at top right */}
+      <div className="absolute top-4 right-4">
+        <LanguageSelector />
+      </div>
+      
       <div className="w-full max-w-[480px]">
         {/* Header com logo */}
         <div className="text-center mb-0">
@@ -160,10 +168,17 @@ export function LoginPage() {
             className="h-16 mx-auto mb-6 object-contain"
           />
           <h1 className="text-[40px] font-normal mb-[10px] text-black">
-            Entre na <span className="font-bold">ads</span>mart
+            {isLogin ? (
+              <>Entre na <span className="font-bold">ads</span>mart</>
+            ) : (
+              <>Crie sua conta <span className="font-bold">ads</span>mart</>
+            )}
           </h1>
           <p className="text-base text-gray-600 mb-[15px]">
-            Por favor preencha os detalhes abaixo
+            {isLogin ? 
+              t('loginPage.subtitle.login') : 
+              t('loginPage.subtitle.signUp')
+            }
           </p>
         </div>
 
@@ -179,7 +194,7 @@ export function LoginPage() {
           {/* Aviso para usuário de teste */}
           {isTestUser && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-600 text-sm">
-              Conta de teste identificada - ReCAPTCHA desabilitado
+              {t('common.warning.testAccount')}
             </div>
           )}
 
@@ -192,7 +207,14 @@ export function LoginPage() {
 
           {loginRateLimit.remainingAttempts < 3 && !loginRateLimit.isBlocked && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-sm">
-              Atenção: Você tem apenas {loginRateLimit.remainingAttempts} tentativas restantes.
+              {t('common.warning.rateLimitRemaining').replace('{attempts}', loginRateLimit.remainingAttempts.toString())}
+            </div>
+          )}
+
+          {/* Error message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+              {error}
             </div>
           )}
 
@@ -206,7 +228,7 @@ export function LoginPage() {
               <svg width="20" height="20" viewBox="0 0 27 28" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M0 14C0 6.5561 6.0561 0.5 13.5 0.5C16.5064 0.5 19.3519 1.46724 21.7291 3.2972L18.5919 7.3724C17.1221 6.24097 15.3613 5.64286 13.5 5.64286C8.89187 5.64286 5.14286 9.39187 5.14286 14C5.14286 18.6081 8.89187 22.3571 13.5 22.3571C17.2115 22.3571 20.3655 19.9255 21.4524 16.5714H13.5V11.4286H27V14C27 21.4439 20.9439 27.5 13.5 27.5C6.0561 27.5 0 21.4439 0 14Z" fill="black"/>
               </svg>
-              Entrar com Google
+              {t('common.button.loginWithGoogle')}
             </button>
             
             <button 
@@ -217,7 +239,7 @@ export function LoginPage() {
               <svg width="12" height="20" viewBox="0 0 15 28" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9.64738 27.8633V15.2167H13.8906L14.5272 10.2867H9.64738V7.13954C9.64738 5.71262 10.042 4.74019 12.0905 4.74019L14.699 4.73912V0.329495C14.2479 0.270874 12.6994 0.136475 10.8972 0.136475C7.13383 0.136475 4.55737 2.43359 4.55737 6.65127V10.2867H0.30127V15.2167H4.55737V27.8633H9.64738Z" fill="black"/>
               </svg>
-              Entrar com Facebook
+              {t('common.button.loginWithFacebook')}
             </button>
           </div>
 
@@ -227,158 +249,133 @@ export function LoginPage() {
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">ou</span>
+              <span className="px-4 bg-white text-gray-500">Ou</span>
             </div>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <>
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('common.form.name')}
+                </label>
                 <input
+                  id="name"
                   type="text"
-                  placeholder="Digite seu nome *"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full h-11 px-4 border border-gray-200 rounded text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0181F2] focus:ring-1 focus:ring-[#0181F2]"
-                  required={!isLogin}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
                   disabled={loading || loginRateLimit.isBlocked}
-                  maxLength={100}
-                />
-                
-                {/* Indicador de força da senha durante registro */}
-                {!isLogin && password && (
-                  <div className="text-xs text-gray-600">
-                    <p>A senha deve conter:</p>
-                    <ul className="mt-1 space-y-1">
-                      <li className={password.length >= 8 ? 'text-green-600' : 'text-gray-400'}>
-                        ✓ Mínimo 8 caracteres
-                      </li>
-                      <li className={/[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-400'}>
-                        ✓ Uma letra maiúscula
-                      </li>
-                      <li className={/[a-z]/.test(password) ? 'text-green-600' : 'text-gray-400'}>
-                        ✓ Uma letra minúscula
-                      </li>
-                      <li className={/\d/.test(password) ? 'text-green-600' : 'text-gray-400'}>
-                        ✓ Um número
-                      </li>
-                      <li className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? 'text-green-600' : 'text-gray-400'}>
-                        ✓ Um caractere especial
-                      </li>
-                    </ul>
-                  </div>
-                )}
-              </>
-            )}
-
-            <input
-              type="email"
-              placeholder="Digite seu email *"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-11 px-4 border border-gray-200 rounded text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0181F2] focus:ring-1 focus:ring-[#0181F2]"
-              required
-              disabled={loading || loginRateLimit.isBlocked}
-              maxLength={255}
-            />
-
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Digite a sua senha *"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-11 px-4 pr-12 border border-gray-200 rounded text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0181F2] focus:ring-1 focus:ring-[#0181F2]"
-                required
-                disabled={loading || loginRateLimit.isBlocked}
-                maxLength={128}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                disabled={loading || loginRateLimit.isBlocked}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  {showPassword ? (
-                    <>
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </>
-                  ) : (
-                    <>
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                      <line x1="1" y1="1" x2="23" y2="23" />
-                    </>
-                  )}
-                </svg>
-              </button>
-            </div>
-
-            {!isLogin && (
-              <input
-                type="password"
-                placeholder="Digite a sua senha novamente *"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full h-11 px-4 border border-gray-200 rounded text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0181F2] focus:ring-1 focus:ring-[#0181F2]"
-                required={!isLogin}
-                disabled={loading || loginRateLimit.isBlocked}
-                maxLength={128}
-              />
-            )}
-
-            <div className="flex items-center justify-between pt-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#0181F2] focus:ring-[#0181F2]"
-                  disabled={loading || loginRateLimit.isBlocked}
-                />
-                <span className="text-sm text-gray-700">Lembrar-me</span>
-              </label>
-              
-              {isLogin && (
-                <Link to="/forgot-password" className="text-sm text-[#0181F2] hover:underline">
-                  Esqueci minha senha
-                </Link>
-              )}
-            </div>
-
-            {/* ReCAPTCHA - Para login e registro (desabilitado para usuário de teste) */}
-            {!skipRecaptcha && (
-              <div className="flex justify-center py-4">
-                <ReCAPTCHA
-                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LdqBIArAAAAAKUy6KnIxkzAXKsZrAgEjtfgcWjk"}
-                  onChange={(value) => setRecaptchaValue(value)}
-                  onExpired={() => setRecaptchaValue(null)}
-                  size="normal"
                 />
               </div>
             )}
 
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-                {error}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                {t('common.form.email')}
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                disabled={loading || loginRateLimit.isBlocked}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                {t('common.form.password')}
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent pr-10"
+                  disabled={loading || loginRateLimit.isBlocked}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  disabled={loading || loginRateLimit.isBlocked}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
+            </div>
+
+            {!isLogin && (
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('common.form.confirmPassword')}
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                  disabled={loading || loginRateLimit.isBlocked}
+                />
+              </div>
+            )}
+
+            {isLogin && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
+                    disabled={loading || loginRateLimit.isBlocked}
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                    {t('common.form.rememberMe')}
+                  </label>
+                </div>
+                <Link 
+                  to="/forgot-password"
+                  className="text-sm text-black hover:underline"
+                >
+                  {t('common.button.forgotPassword')}
+                </Link>
+              </div>
+            )}
+
+            {/* ReCAPTCHA */}
+            {!skipRecaptcha && (
+              <div className="flex justify-center my-4">
+                <ReCAPTCHA
+                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LdPKVQqAAAAAB8i0jKKdChElAE1yrQgi0g_3B5s'}
+                  onChange={(value) => setRecaptchaValue(value)}
+                />
               </div>
             )}
 
             <button
               type="submit"
-              disabled={loading || (!skipRecaptcha && !recaptchaValue) || loginRateLimit.isBlocked}
-              className="w-full h-11 bg-black text-white rounded text-base font-medium hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || loginRateLimit.isBlocked}
+              className="w-full h-11 bg-black text-white rounded font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Processando...' : (isLogin ? 'Entrar' : 'Registrar')}
+              {loading ? t('common.loading') : (isLogin ? t('common.button.login') : t('common.button.signUp'))}
             </button>
           </form>
 
-          <p className="text-center mt-6 text-sm text-gray-600">
+          {/* Toggle Login/Signup */}
+          <p className="text-center text-sm text-gray-600 mt-6">
             {isLogin ? (
               <>
-                Não tem uma conta?{' '}
+                {t('loginPage.message.noAccount')}{' '}
                 <button
                   onClick={() => {
                     setIsLogin(false)
@@ -388,12 +385,12 @@ export function LoginPage() {
                   className="text-black font-semibold hover:underline"
                   disabled={loading || loginRateLimit.isBlocked}
                 >
-                  Inscreva-se
+                  {t('common.button.signUp')}
                 </button>
               </>
             ) : (
               <>
-                Já possui uma conta?{' '}
+                {t('loginPage.message.haveAccount')}{' '}
                 <button
                   onClick={() => {
                     setIsLogin(true)
@@ -403,7 +400,7 @@ export function LoginPage() {
                   className="text-black font-semibold hover:underline"
                   disabled={loading || loginRateLimit.isBlocked}
                 >
-                  Fazer login
+                  {t('common.button.login')}
                 </button>
               </>
             )}
@@ -413,11 +410,11 @@ export function LoginPage() {
         {/* Footer Links */}
         <div className="flex items-center justify-center gap-6 mt-8 mb-[30px] text-sm">
           <Link to="/terms" className="text-gray-600 hover:text-gray-900 hover:underline">
-            Termos de Uso
+            {t('common.footer.termsOfUse')}
           </Link>
           <span className="text-gray-400">•</span>
           <Link to="/privacy" className="text-gray-600 hover:text-gray-900 hover:underline">
-            Políticas de Privacidade
+            {t('common.footer.privacyPolicy')}
           </Link>
         </div>
       </div>
