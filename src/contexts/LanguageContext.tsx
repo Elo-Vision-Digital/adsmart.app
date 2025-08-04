@@ -22,6 +22,8 @@ interface Translations {
       manage: string
       createNew: string
       back: string
+      saveChanges: string
+      sending: string
     }
     form: {
       email: string
@@ -29,6 +31,12 @@ interface Translations {
       name: string
       confirmPassword: string
       rememberMe: string
+      fullName: string
+      phone: string
+      documentType: string
+      currentPassword: string
+      newPassword: string
+      confirmNewPassword: string
     }
     validation: {
       requiredField: string
@@ -36,6 +44,9 @@ interface Translations {
       passwordMismatch: string
       weakPassword: string
       completeRecaptcha: string
+      emailCannotBeChanged: string
+      minimumCharacters: string
+      invalidDocument: string
     }
     general: {
       user: string
@@ -47,6 +58,8 @@ interface Translations {
       recently: string
       admin: string
       balance: string
+      saving: string
+      changing: string
     }
     theme: {
       light: string
@@ -64,6 +77,10 @@ interface Translations {
       generic: string
       tooManyAttempts: string
       deleteAccount: string
+      saveProfile: string
+      changePassword: string
+      sendVerificationEmail: string
+      wrongPassword: string
     }
     warning: {
       testAccount: string
@@ -331,6 +348,34 @@ interface Translations {
       transactions: string
     }
   }
+
+  // SettingsPage translations
+  settingsPage: {
+    title: string
+    subtitle: string
+    personalInfo: {
+      title: string
+      subtitle: string
+    }
+    changePassword: {
+      title: string
+      subtitle: string
+    }
+    emailVerification: {
+      notVerified: string
+      verifyToAccess: string
+      resendVerification: string
+      verificationSent: string
+      errorSending: string
+    }
+    messages: {
+      profileUpdated: string
+      passwordChanged: string
+      passwordsDoNotMatch: string
+      passwordTooShort: string
+      currentPasswordIncorrect: string
+    }
+  }
 }
 
 const translations: Record<Language, Translations> = {
@@ -352,21 +397,32 @@ const translations: Record<Language, Translations> = {
         delete: 'Excluir',
         manage: 'Gerenciar',
         createNew: 'Criar novo',
-        back: 'Voltar'
+        back: 'Voltar',
+        saveChanges: 'Salvar alterações',
+        sending: 'Enviando...'
       },
       form: {
         email: 'Email',
         password: 'Senha',
         name: 'Nome',
         confirmPassword: 'Confirmar senha',
-        rememberMe: 'Lembrar de mim'
+        rememberMe: 'Lembrar de mim',
+        fullName: 'Nome completo',
+        phone: 'Telefone',
+        documentType: 'Tipo de documento',
+        currentPassword: 'Senha atual',
+        newPassword: 'Nova senha',
+        confirmNewPassword: 'Confirmar nova senha'
       },
       validation: {
         requiredField: 'Campo obrigatório',
         invalidEmail: 'Email inválido',
         passwordMismatch: 'As senhas não coincidem',
         weakPassword: 'A senha deve ter pelo menos 8 caracteres',
-        completeRecaptcha: 'Por favor, complete o ReCAPTCHA'
+        completeRecaptcha: 'Por favor, complete o ReCAPTCHA',
+        emailCannotBeChanged: 'O email não pode ser alterado',
+        minimumCharacters: 'Mínimo 6 caracteres',
+        invalidDocument: '{type} inválido'
       },
       general: {
         user: 'Usuário',
@@ -377,7 +433,9 @@ const translations: Record<Language, Translations> = {
         synced: 'Sincronizado',
         recently: 'Recentemente',
         admin: 'Admin',
-        balance: 'Saldo'
+        balance: 'Saldo',
+        saving: 'Salvando...',
+        changing: 'Alterando...'
       },
       theme: {
         light: 'Claro',
@@ -394,7 +452,11 @@ const translations: Record<Language, Translations> = {
       error: {
         generic: 'Erro ao processar solicitação',
         tooManyAttempts: 'Muitas tentativas. Tente novamente em 15 minutos.',
-        deleteAccount: 'Erro ao remover conta'
+        deleteAccount: 'Erro ao remover conta',
+        saveProfile: 'Erro ao salvar perfil',
+        changePassword: 'Erro ao alterar senha',
+        sendVerificationEmail: 'Erro ao enviar email. Tente novamente mais tarde.',
+        wrongPassword: 'Senha atual incorreta'
       },
       warning: {
         testAccount: 'Conta de teste identificada - ReCAPTCHA desabilitado',
@@ -639,6 +701,32 @@ const translations: Record<Language, Translations> = {
         totalDebits: 'Total de Débitos',
         transactions: 'Transações'
       }
+    },
+    settingsPage: {
+      title: 'Configurações',
+      subtitle: 'Gerencie suas informações pessoais e segurança',
+      personalInfo: {
+        title: 'Informações Pessoais',
+        subtitle: 'Seus dados são necessários para realizar depósitos na plataforma'
+      },
+      changePassword: {
+        title: 'Alterar Senha',
+        subtitle: 'Mantenha sua conta segura com uma senha forte'
+      },
+      emailVerification: {
+        notVerified: 'Email não verificado',
+        verifyToAccess: 'Verifique seu email para acessar todos os recursos da plataforma.',
+        resendVerification: 'Reenviar email de verificação',
+        verificationSent: 'Email de verificação enviado! Verifique sua caixa de entrada.',
+        errorSending: 'Erro ao enviar email. Tente novamente mais tarde.'
+      },
+      messages: {
+        profileUpdated: 'Perfil atualizado com sucesso!',
+        passwordChanged: 'Senha alterada com sucesso!',
+        passwordsDoNotMatch: 'As senhas não coincidem',
+        passwordTooShort: 'A senha deve ter pelo menos 6 caracteres',
+        currentPasswordIncorrect: 'Senha atual incorreta'
+      }
     }
   },
   en: {
@@ -659,21 +747,32 @@ const translations: Record<Language, Translations> = {
         delete: 'Delete',
         manage: 'Manage',
         createNew: 'Create new',
-        back: 'Back'
+        back: 'Back',
+        saveChanges: 'Save changes',
+        sending: 'Sending...'
       },
       form: {
         email: 'Email',
         password: 'Password',
         name: 'Name',
         confirmPassword: 'Confirm password',
-        rememberMe: 'Remember me'
+        rememberMe: 'Remember me',
+        fullName: 'Full name',
+        phone: 'Phone',
+        documentType: 'Document type',
+        currentPassword: 'Current password',
+        newPassword: 'New password',
+        confirmNewPassword: 'Confirm new password'
       },
       validation: {
         requiredField: 'Required field',
         invalidEmail: 'Invalid email',
         passwordMismatch: 'Passwords do not match',
         weakPassword: 'Password must be at least 8 characters',
-        completeRecaptcha: 'Please complete the ReCAPTCHA'
+        completeRecaptcha: 'Please complete the ReCAPTCHA',
+        emailCannotBeChanged: 'Email cannot be changed',
+        minimumCharacters: 'Minimum 6 characters',
+        invalidDocument: 'Invalid {type}'
       },
       general: {
         user: 'User',
@@ -684,7 +783,9 @@ const translations: Record<Language, Translations> = {
         synced: 'Synced',
         recently: 'Recently',
         admin: 'Admin',
-        balance: 'Balance'
+        balance: 'Balance',
+        saving: 'Saving...',
+        changing: 'Changing...'
       },
       theme: {
         light: 'Light',
@@ -701,7 +802,11 @@ const translations: Record<Language, Translations> = {
       error: {
         generic: 'Error processing request',
         tooManyAttempts: 'Too many attempts. Try again in 15 minutes.',
-        deleteAccount: 'Error removing account'
+        deleteAccount: 'Error removing account',
+        saveProfile: 'Error saving profile',
+        changePassword: 'Error changing password',
+        sendVerificationEmail: 'Error sending email. Please try again later.',
+        wrongPassword: 'Incorrect current password'
       },
       warning: {
         testAccount: 'Test account identified - ReCAPTCHA disabled',
@@ -946,6 +1051,32 @@ const translations: Record<Language, Translations> = {
         totalDebits: 'Total Debits',
         transactions: 'Transactions'
       }
+    },
+    settingsPage: {
+      title: 'Settings',
+      subtitle: 'Manage your personal information and security',
+      personalInfo: {
+        title: 'Personal Information',
+        subtitle: 'Your data is required to make deposits on the platform'
+      },
+      changePassword: {
+        title: 'Change Password',
+        subtitle: 'Keep your account secure with a strong password'
+      },
+      emailVerification: {
+        notVerified: 'Email not verified',
+        verifyToAccess: 'Verify your email to access all platform features.',
+        resendVerification: 'Resend verification email',
+        verificationSent: 'Verification email sent! Check your inbox.',
+        errorSending: 'Error sending email. Please try again later.'
+      },
+      messages: {
+        profileUpdated: 'Profile updated successfully!',
+        passwordChanged: 'Password changed successfully!',
+        passwordsDoNotMatch: 'Passwords do not match',
+        passwordTooShort: 'Password must be at least 6 characters',
+        currentPasswordIncorrect: 'Current password is incorrect'
+      }
     }
   },
   es: {
@@ -966,21 +1097,32 @@ const translations: Record<Language, Translations> = {
         delete: 'Eliminar',
         manage: 'Gestionar',
         createNew: 'Crear nuevo',
-        back: 'Volver'
+        back: 'Volver',
+        saveChanges: 'Guardar cambios',
+        sending: 'Enviando...'
       },
       form: {
         email: 'Correo electrónico',
         password: 'Contraseña',
         name: 'Nombre',
         confirmPassword: 'Confirmar contraseña',
-        rememberMe: 'Recordarme'
+        rememberMe: 'Recordarme',
+        fullName: 'Nombre completo',
+        phone: 'Teléfono',
+        documentType: 'Tipo de documento',
+        currentPassword: 'Contraseña actual',
+        newPassword: 'Nueva contraseña',
+        confirmNewPassword: 'Confirmar nueva contraseña'
       },
       validation: {
         requiredField: 'Campo obligatorio',
         invalidEmail: 'Correo electrónico inválido',
         passwordMismatch: 'Las contraseñas no coinciden',
         weakPassword: 'La contraseña debe tener al menos 8 caracteres',
-        completeRecaptcha: 'Por favor, complete el ReCAPTCHA'
+        completeRecaptcha: 'Por favor, complete el ReCAPTCHA',
+        emailCannotBeChanged: 'El correo electrónico no se puede cambiar',
+        minimumCharacters: 'Mínimo 6 caracteres',
+        invalidDocument: '{type} inválido'
       },
       general: {
         user: 'Usuario',
@@ -991,7 +1133,9 @@ const translations: Record<Language, Translations> = {
         synced: 'Sincronizado',
         recently: 'Recientemente',
         admin: 'Admin',
-        balance: 'Saldo'
+        balance: 'Saldo',
+        saving: 'Guardando...',
+        changing: 'Cambiando...'
       },
       theme: {
         light: 'Claro',
@@ -1008,7 +1152,11 @@ const translations: Record<Language, Translations> = {
       error: {
         generic: 'Error al procesar la solicitud',
         tooManyAttempts: 'Demasiados intentos. Intente nuevamente en 15 minutos.',
-        deleteAccount: 'Error al eliminar la cuenta'
+        deleteAccount: 'Error al eliminar la cuenta',
+        saveProfile: 'Error al guardar el perfil',
+        changePassword: 'Error al cambiar la contraseña',
+        sendVerificationEmail: 'Error al enviar el correo. Intente nuevamente más tarde.',
+        wrongPassword: 'Contraseña actual incorrecta'
       },
       warning: {
         testAccount: 'Cuenta de prueba identificada - ReCAPTCHA deshabilitado',
@@ -1252,6 +1400,32 @@ const translations: Record<Language, Translations> = {
         totalCredits: 'Total de Créditos',
         totalDebits: 'Total de Débitos',
         transactions: 'Transacciones'
+      }
+    },
+    settingsPage: {
+      title: 'Configuraciones',
+      subtitle: 'Administra tu información personal y seguridad',
+      personalInfo: {
+        title: 'Información Personal',
+        subtitle: 'Tus datos son necesarios para realizar depósitos en la plataforma'
+      },
+      changePassword: {
+        title: 'Cambiar Contraseña',
+        subtitle: 'Mantén tu cuenta segura con una contraseña fuerte'
+      },
+      emailVerification: {
+        notVerified: 'Correo electrónico no verificado',
+        verifyToAccess: 'Verifica tu correo electrónico para acceder a todas las funciones de la plataforma.',
+        resendVerification: 'Reenviar correo de verificación',
+        verificationSent: '¡Correo de verificación enviado! Revisa tu bandeja de entrada.',
+        errorSending: 'Error al enviar el correo. Intenta nuevamente más tarde.'
+      },
+      messages: {
+        profileUpdated: '¡Perfil actualizado con éxito!',
+        passwordChanged: '¡Contraseña cambiada con éxito!',
+        passwordsDoNotMatch: 'Las contraseñas no coinciden',
+        passwordTooShort: 'La contraseña debe tener al menos 6 caracteres',
+        currentPasswordIncorrect: 'La contraseña actual es incorrecta'
       }
     }
   }

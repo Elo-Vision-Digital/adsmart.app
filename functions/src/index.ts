@@ -8,7 +8,7 @@ if (!admin.apps.length) {
 export { verifyRecaptcha } from './recaptcha'
 export { checkRateLimit } from './rateLimiter'
 export { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
-// export { getSecurityStats } from './securityStats'
+export { getSecurityStats } from './securityStats'
 
 // ✅ Exportar funções de backup
 // export { scheduledBackup, restoreBackup } from './backupScheduler'
@@ -54,5 +54,8 @@ export { createPixPayment, checkPaymentStatus } from './suitpayPayment'
 
 // ✅ NOVO: Exportar função de exclusão de dados
 export { deleteUserData } from './deleteUserData'
+
+// ✅ NOVO: Exportar função de gestão de saldo para admins
+export { addUserCredits } from './adminWalletManager'
 
 console.log('🚀 Funções exportadas do index.ts')

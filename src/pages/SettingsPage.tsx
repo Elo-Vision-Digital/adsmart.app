@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { 
   User, 
   Mail, 
@@ -12,7 +13,8 @@ import {
   AlertCircle,
   Check,
   Loader2,
-  UserCircle
+  UserCircle,
+  Globe
 } from 'lucide-react'
 import { 
   updatePassword, 
@@ -33,6 +35,7 @@ interface UserProfile {
 
 export function SettingsPage() {
   const { user } = useAuth()
+  const { t, language, setLanguage } = useLanguage()
   
   // Estados do formulário de perfil
   const [profile, setProfile] = useState<UserProfile>({
@@ -108,7 +111,7 @@ export function SettingsPage() {
       
       // Validar documento
       if (!validateDocument(profile.documentNumber, profile.documentType)) {
-        throw new Error(`${profile.documentType.toUpperCase()} inválido`)
+        throw new Error(t('common.validation.invalidDocument', { type: profile.documentType.toUpperCase() }))
       }
       
       // Salvar no Firestore
@@ -118,10 +121,10 @@ export function SettingsPage() {
         updatedAt: new Date()
       }, { merge: true })
       
-      setSaveMessage('Perfil atualizado com sucesso!')
+      setSaveMessage(t('settingsPage.messages.profileUpdated'))
       setTimeout(() => setSaveMessage(''), 3000)
     } catch (error: any) {
-      setSaveMessage(error.message || 'Erro ao salvar perfil')
+      setSaveMessage(error.message || t('common.error.saveProfile'))
     } finally {
       setSaving(false)
     }
@@ -139,11 +142,11 @@ export function SettingsPage() {
       
       // Validar senhas
       if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-        throw new Error('As senhas não coincidem')
+        throw new Error(t('settingsPage.messages.passwordsDoNotMatch'))
       }
       
       if (passwordForm.newPassword.length < 6) {
-        throw new Error('A senha deve ter pelo menos 6 caracteres')
+        throw new Error(t('settingsPage.messages.passwordTooShort'))
       }
       
       // Reautenticar usuário
@@ -156,7 +159,7 @@ export function SettingsPage() {
       // Atualizar senha
       await updatePassword(user, passwordForm.newPassword)
       
-      setPasswordMessage('Senha alterada com sucesso!')
+      setPasswordMessage(t('settingsPage.messages.passwordChanged'))
       setPasswordForm({
         currentPassword: '',
         newPassword: '',
@@ -166,9 +169,9 @@ export function SettingsPage() {
       setTimeout(() => setPasswordMessage(''), 3000)
     } catch (error: any) {
       if (error.code === 'auth/wrong-password') {
-        setPasswordError('Senha atual incorreta')
+        setPasswordError(t('settingsPage.messages.currentPasswordIncorrect'))
       } else {
-        setPasswordError(error.message || 'Erro ao alterar senha')
+        setPasswordError(error.message || t('common.error.changePassword'))
       }
     } finally {
       setPasswordLoading(false)
@@ -184,10 +187,10 @@ export function SettingsPage() {
     
     try {
       await sendEmailVerification(user)
-      setVerificationMessage('Email de verificação enviado! Verifique sua caixa de entrada.')
+      setVerificationMessage(t('settingsPage.emailVerification.verificationSent'))
       setTimeout(() => setVerificationMessage(''), 5000)
     } catch (error: any) {
-      setVerificationMessage('Erro ao enviar email. Tente novamente mais tarde.')
+      setVerificationMessage(t('settingsPage.emailVerification.errorSending'))
     } finally {
       setSendingVerification(false)
     }
@@ -303,14 +306,28 @@ export function SettingsPage() {
         <div className="w-full overflow-x-hidden">
           <div className="px-4 py-4 md:p-6">
             <div className="max-w-4xl mx-auto">
-              {/* Header */}
-              <div className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                  Configurações
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Gerencie suas informações pessoais e segurança
-                </p>
+              {/* Header com seletor de idioma */}
+              <div className="mb-6 flex justify-between items-start">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                    {t('settingsPage.title')}
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">
+                    {t('settingsPage.subtitle')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-gray-500" />
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as 'pt' | 'en' | 'es')}
+                    className="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:border-primary"
+                  >
+                    <option value="pt">Português</option>
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                  </select>
+                </div>
               </div>
 
               {/* Alerta de email não verificado */}
@@ -321,10 +338,10 @@ export function SettingsPage() {
                       <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
                       <div className="flex-1">
                         <p className="text-yellow-800 dark:text-yellow-200 font-medium">
-                          Email não verificado
+                          {t('settingsPage.emailVerification.notVerified')}
                         </p>
                         <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
-                          Verifique seu email para acessar todos os recursos da plataforma.
+                          {t('settingsPage.emailVerification.verifyToAccess')}
                         </p>
                         <Button
                           size="sm"
@@ -336,12 +353,12 @@ export function SettingsPage() {
                           {sendingVerification ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Enviando...
+                              {t('common.button.sending')}
                             </>
                           ) : (
                             <>
                               <Mail className="w-4 h-4 mr-2" />
-                              Reenviar email de verificação
+                              {t('settingsPage.emailVerification.resendVerification')}
                             </>
                           )}
                         </Button>
@@ -361,17 +378,17 @@ export function SettingsPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <UserCircle className="w-5 h-5" />
-                    Informações Pessoais
+                    {t('settingsPage.personalInfo.title')}
                   </CardTitle>
                   <CardDescription className="text-gray-600 dark:text-gray-400">
-                    Seus dados são necessários para realizar depósitos na plataforma
+                    {t('settingsPage.personalInfo.subtitle')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSaveProfile} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nome completo
+                        {t('common.form.fullName')}
                       </label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -380,7 +397,7 @@ export function SettingsPage() {
                           value={profile.name}
                           onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                           className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
-                          placeholder="Seu nome completo"
+                          placeholder={t('common.form.fullName')}
                           required
                         />
                       </div>
@@ -388,7 +405,7 @@ export function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Email
+                        {t('common.form.email')}
                       </label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -400,13 +417,13 @@ export function SettingsPage() {
                         />
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        O email não pode ser alterado
+                        {t('common.validation.emailCannotBeChanged')}
                       </p>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Telefone
+                        {t('common.form.phone')}
                       </label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -424,7 +441,7 @@ export function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Tipo de documento
+                        {t('common.form.documentType')}
                       </label>
                       <div className="flex gap-4">
                         <label className="flex items-center">
@@ -475,11 +492,11 @@ export function SettingsPage() {
 
                     {saveMessage && (
                       <div className={`p-3 rounded-lg flex items-center gap-2 ${
-                        saveMessage.includes('sucesso') 
+                        saveMessage.includes(t('settingsPage.messages.profileUpdated'))
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                           : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                       }`}>
-                        {saveMessage.includes('sucesso') ? (
+                        {saveMessage.includes(t('settingsPage.messages.profileUpdated')) ? (
                           <Check className="w-4 h-4" />
                         ) : (
                           <AlertCircle className="w-4 h-4" />
@@ -496,10 +513,10 @@ export function SettingsPage() {
                       {saving ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Salvando...
+                          {t('common.general.saving')}
                         </>
                       ) : (
-                        'Salvar alterações'
+                        t('common.button.saveChanges')
                       )}
                     </Button>
                   </form>
@@ -511,17 +528,17 @@ export function SettingsPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Lock className="w-5 h-5" />
-                    Alterar Senha
+                    {t('settingsPage.changePassword.title')}
                   </CardTitle>
                   <CardDescription className="text-gray-600 dark:text-gray-400">
-                    Mantenha sua conta segura com uma senha forte
+                    {t('settingsPage.changePassword.subtitle')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Senha atual
+                        {t('common.form.currentPassword')}
                       </label>
                       <input
                         type="password"
@@ -534,21 +551,21 @@ export function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nova senha
+                        {t('common.form.newPassword')}
                       </label>
                       <input
                         type="password"
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                         className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder={t('common.validation.minimumCharacters')}
                         required
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Confirmar nova senha
+                        {t('common.form.confirmNewPassword')}
                       </label>
                       <input
                         type="password"
@@ -581,10 +598,10 @@ export function SettingsPage() {
                       {passwordLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Alterando...
+                          {t('common.general.changing')}
                         </>
                       ) : (
-                        'Alterar senha'
+                        t('settingsPage.changePassword.title')
                       )}
                     </Button>
                   </form>

@@ -10,7 +10,9 @@ import {
   Activity, 
   AlertTriangle, 
   Save,
-  RefreshCw
+  RefreshCw,
+  Wallet,
+  Plus
 } from 'lucide-react'
 
 interface SecurityStats {
@@ -32,7 +34,7 @@ interface ProductPrice {
   updatedBy: string
 }
 
-type TabType = 'security' | 'prices'
+type TabType = 'security' | 'prices' | 'wallet'
 
 export function AdminPanel() {
   const { user, isAdmin } = useAuth()
@@ -42,6 +44,12 @@ export function AdminPanel() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  
+  // Estados para gestão de saldo
+  const [targetEmail, setTargetEmail] = useState('')
+  const [creditAmount, setCreditAmount] = useState('')
+  const [creditReason, setCreditReason] = useState('')
+  const [addingCredits, setAddingCredits] = useState(false)
 
   // Verificar se é admin
   if (!isAdmin) {
@@ -155,6 +163,49 @@ export function AdminPanel() {
     }
   }
 
+  // Adicionar créditos para usuário
+  const handleAddCredits = async () => {
+    if (!targetEmail || !creditAmount || !creditReason) {
+      setMessage('Por favor, preencha todos os campos')
+      return
+    }
+
+    const amount = parseFloat(creditAmount)
+    if (isNaN(amount) || amount <= 0) {
+      setMessage('Por favor, insira um valor válido')
+      return
+    }
+
+    if (creditReason.length < 10) {
+      setMessage('O motivo deve ter pelo menos 10 caracteres')
+      return
+    }
+
+    try {
+      setAddingCredits(true)
+      const addUserCredits = httpsCallable(functions, 'addUserCredits')
+      const result = await addUserCredits({
+        targetEmail,
+        amount: Math.round(amount * 100), // Converter para centavos
+        reason: creditReason
+      })
+
+      if ((result.data as any).success) {
+        const data = result.data as any
+        setMessage(`Créditos adicionados com sucesso para ${targetEmail}! Limites diários: R$ ${data.adminLimits.dailyTotalAfter} / R$ ${data.adminLimits.maxDailyAmount}`)
+        setTargetEmail('')
+        setCreditAmount('')
+        setCreditReason('')
+        setTimeout(() => setMessage(''), 5000)
+      }
+    } catch (error: any) {
+      console.error('Erro ao adicionar créditos:', error)
+      setMessage(`Erro: ${error.message}`)
+    } finally {
+      setAddingCredits(false)
+    }
+  }
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
@@ -226,6 +277,17 @@ export function AdminPanel() {
               >
                 <DollarSign className="w-4 h-4 inline mr-2" />
                 Configuração de Preços
+              </button>
+              <button
+                onClick={() => setActiveTab('wallet')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'wallet'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Wallet className="w-4 h-4 inline mr-2" />
+                Gestão de Saldo
               </button>
             </nav>
           </div>
@@ -363,6 +425,107 @@ export function AdminPanel() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'wallet' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Wallet className="w-6 h-6" />
+                  Gestão de Saldo
+                </h2>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-2xl">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Adicionar Créditos a Usuário
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email do Usuário
+                    </label>
+                    <input
+                      type="email"
+                      value={targetEmail}
+                      onChange={(e) => setTargetEmail(e.target.value)}
+                      placeholder="usuario@exemplo.com"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Valor em Reais (R$)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={creditAmount}
+                      onChange={(e) => setCreditAmount(e.target.value)}
+                      placeholder="0,00"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Digite o valor em reais. Ex: 10.50 para R$ 10,50 (Máximo: R$ 1.000,00)
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Motivo <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={creditReason}
+                      onChange={(e) => setCreditReason(e.target.value)}
+                      placeholder="Descreva o motivo para adicionar créditos (mínimo 10 caracteres)"
+                      rows={3}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {creditReason.length}/10 caracteres mínimos
+                    </p>
+                  </div>
+
+                  <Button 
+                    onClick={handleAddCredits} 
+                    disabled={addingCredits || !targetEmail || !creditAmount || !creditReason || creditReason.length < 10}
+                    className="w-full"
+                  >
+                    {addingCredits ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Adicionando...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Adicionar Créditos
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+                    ⚠️ Atenção - Medidas de Segurança
+                  </h4>
+                  <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                    <li>• Esta ação adiciona saldo real ao usuário</li>
+                    <li>• O saldo adicionado afeta o ambiente de produção</li>
+                    <li>• Limite por transação: R$ 1.000,00</li>
+                    <li>• Limite diário por admin: R$ 5.000,00</li>
+                    <li>• Máximo 50 transações por dia</li>
+                    <li>• Motivo obrigatório (mínimo 10 caracteres)</li>
+                    <li>• Todas as ações são registradas com IP e timestamp</li>
+                    <li>• Use com responsabilidade</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
         </div>

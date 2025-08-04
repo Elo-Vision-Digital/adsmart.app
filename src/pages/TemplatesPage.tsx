@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, AlertCircle } from 'lucide-react'
@@ -7,12 +8,14 @@ import { useProductPrices } from '@/hooks/useProductPrices'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { TemplateGrid, availableTemplates } from '@/components/templates/TemplateGrid'
+import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
 
 export function TemplatesPage() {
   const navigate = useNavigate()
   const { t } = useLanguage()
   const { balance, formatCurrency } = useWallet()
   const { loading: loadingPrices, error: pricesError, getPriceByCategory } = useProductPrices()
+  const [showAddCredits, setShowAddCredits] = useState(false)
 
   const handleSelectTemplate = (templateId: string) => {
     navigate(`/generate-report?template=${templateId}`)
@@ -95,7 +98,7 @@ export function TemplatesPage() {
                 </p>
                 <Button 
                   className="mt-4"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => setShowAddCredits(true)}
                 >
                   {t('templatesPage.insufficientBalance.button')}
                 </Button>
@@ -138,6 +141,11 @@ export function TemplatesPage() {
           </Card>
         </div>
       </div>
+
+      <AddCreditsModal
+        open={showAddCredits}
+        onOpenChange={setShowAddCredits}
+      />
     </MainLayout>
   )
 }
