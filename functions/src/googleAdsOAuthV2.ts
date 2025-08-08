@@ -628,16 +628,23 @@ async function getDeveloperToken(): Promise<string> {
 
 /**
  * Obter configurações do Google Ads
+ * IMPORTANTE: Agora incluindo todos os escopos necessários
  */
 async function getGoogleAdsConfig() {
   const config = {
     clientId: process.env.GOOGLE_ADS_CLIENT_ID || '422483165860-npdsq44121mh4chg2gers6qade02bo5l.apps.googleusercontent.com',
     clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET || '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',
     redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
-    redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback'
+    redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
+    // ALTERAÇÃO IMPORTANTE: Adicionar todos os escopos necessários
+    scope: [
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/adwords'
+    ].join(' ')
   }
   
-  console.log('Configurações carregadas')
+  console.log('Configurações carregadas com escopos:', config.scope)
   return config
 }
 

@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions'
+import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
@@ -135,10 +135,10 @@ async function recordAdminActivity(
 /**
  * Função para administradores adicionarem créditos a qualquer usuário
  */
-export const addUserCredits = functions.https.onCall(async (request) => {
+export const addUserCredits = onCall(async (request) => {
   // Verificar autenticação
   if (!request.auth) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'unauthenticated',
       'Usuário não autenticado'
     )
@@ -162,7 +162,7 @@ export const addUserCredits = functions.https.onCall(async (request) => {
       request.rawRequest
     )
 
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'permission-denied',
       'Apenas administradores podem adicionar créditos'
     )
@@ -172,14 +172,14 @@ export const addUserCredits = functions.https.onCall(async (request) => {
   const { targetEmail, amount, reason } = request.data
 
   if (!targetEmail || typeof targetEmail !== 'string') {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Email do usuário é obrigatório'
     )
   }
 
   if (typeof amount !== 'number' || amount <= 0) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Valor deve ser um número positivo em centavos'
     )
@@ -187,7 +187,7 @@ export const addUserCredits = functions.https.onCall(async (request) => {
 
   // 🔒 Verificar limite por transação
   if (amount > SECURITY_CONFIG.MAX_AMOUNT_PER_TRANSACTION) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       `Valor máximo por transação: ${SECURITY_CONFIG.MAX_AMOUNT_PER_TRANSACTION / 100} reais`
     )
@@ -196,7 +196,7 @@ export const addUserCredits = functions.https.onCall(async (request) => {
   // 🔒 Verificar razão obrigatória
   if (SECURITY_CONFIG.REQUIRE_REASON) {
     if (!reason || typeof reason !== 'string' || reason.length < SECURITY_CONFIG.MIN_REASON_LENGTH) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         `Motivo é obrigatório (mínimo ${SECURITY_CONFIG.MIN_REASON_LENGTH} caracteres)`
       )
@@ -208,7 +208,7 @@ export const addUserCredits = functions.https.onCall(async (request) => {
     const limits = await checkAdminDailyLimits(adminEmail)
     
     if (!limits.canProceed) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'resource-exhausted',
         `Limite diário excedido. Total hoje: R$ ${limits.totalToday / 100}, Transações: ${limits.countToday}`
       )
@@ -216,7 +216,7 @@ export const addUserCredits = functions.https.onCall(async (request) => {
 
     // Verificar se nova transação excederia limite diário
     if (limits.totalToday + amount > SECURITY_CONFIG.MAX_DAILY_AMOUNT_PER_ADMIN) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'resource-exhausted',
         `Esta transação excederia o limite diário de R$ ${SECURITY_CONFIG.MAX_DAILY_AMOUNT_PER_ADMIN / 100}`
       )
@@ -226,7 +226,7 @@ export const addUserCredits = functions.https.onCall(async (request) => {
     const usersSnapshot = await admin.auth().getUserByEmail(targetEmail)
     
     if (!usersSnapshot) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'not-found',
         'Usuário não encontrado'
       )
@@ -341,12 +341,12 @@ export const addUserCredits = functions.https.onCall(async (request) => {
     )
     
     // Se for erro conhecido, repassar
-    if (error instanceof functions.https.HttpsError) {
+    if (error instanceof HttpsError) {
       throw error
     }
 
     // Erro genérico
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'internal',
       `Erro ao adicionar créditos: ${error.message}`
     )

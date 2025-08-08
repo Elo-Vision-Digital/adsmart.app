@@ -23,7 +23,12 @@ const GOOGLE_ADS_CONFIG = {
   developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN || 'wRhu9OHLIWdbht2HY3B9yw',
   redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
   redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
-  scope: 'https://www.googleapis.com/auth/adwords',
+  // ALTERAÇÃO IMPORTANTE: Adicionar todos os escopos necessários
+  scope: [
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email', 
+    'https://www.googleapis.com/auth/adwords'
+  ].join(' '),
   authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenUrl: 'https://oauth2.googleapis.com/token',
   apiVersion: 'v17'
@@ -77,7 +82,8 @@ export const getGoogleAdsAuthUrl = onCall(async (request) => {
   console.log('OAuth URL sendo gerada:', {
     isLocalEnv,
     redirectUri,
-    platform: 'google_ads'
+    platform: 'google_ads',
+    scopes: GOOGLE_ADS_CONFIG.scope // Log dos escopos para debug
   })
 
   // Construir URL de autorização
