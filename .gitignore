@@ -39,6 +39,7 @@ serviceAccountKey.json
 
 # Backup files
 .backup/
+.backups/
 *.save
 
 # Debug logs
