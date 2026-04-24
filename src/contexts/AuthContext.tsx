@@ -38,7 +38,10 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-// Lista de emails de administradores
+// Legacy email allowlist — kept to avoid locking out current admins.
+// New admins should be granted via Firebase custom claims:
+//   admin.auth().setCustomUserClaims(uid, { admin: true })
+// See docs/SECURITY.md.
 const ADMIN_EMAILS = ['agency.elovisiondigital@gmail.com', 'admin@adsmart.app']
 
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -49,8 +52,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
-      setIsAdmin(user ? ADMIN_EMAILS.includes(user.email || '') : false)
-      setLoading(false)
+
+      if (!user) {
+        setIsAdmin(false)
+        setLoading(false)
+        return
+      }
+
+      // Admin access is authoritative via Firebase custom claims
+      // (admin.auth().setCustomUserClaims(uid, { admin: true })).
+      // The ADMIN_EMAILS allowlist is retained as a legacy fallback
+      // so current admins are not locked out before claims are provisioned.
+      void (async () => {
+        const emailIsAllowlisted = !!user.email && ADMIN_EMAILS.includes(user.email)
+
+        try {
+          const tokenResult = await user.getIdTokenResult()
+          const hasClaim = tokenResult.claims.admin === true
+          setIsAdmin(hasClaim || emailIsAllowlisted)
+        } catch {
+          // If the token fetch fails, fall back to email allowlist only.
+          setIsAdmin(emailIsAllowlisted)
+        } finally {
+          setLoading(false)
+        }
+      })()
     })
 
     return unsubscribe

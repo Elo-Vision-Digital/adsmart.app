@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { AdminRoute } from '@/components/AdminRoute'
 import { PrivateRoute } from '@/components/PrivateRoute'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
@@ -123,9 +124,9 @@ function App() {
               <Route
                 path="/admin"
                 element={
-                  <PrivateRoute>
+                  <AdminRoute>
                     <AdminPanel />
-                  </PrivateRoute>
+                  </AdminRoute>
                 }
               />
               {/* Public Pages */}
