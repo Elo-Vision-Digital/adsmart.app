@@ -232,28 +232,37 @@ export const handleMetaAdsCallbackWithSelection = onCall(async (request) => {
     }
 
   } catch (error: any) {
+    // Rethrow semantic HttpsError (e.g. invalid-argument, permission-denied,
+    // deadline-exceeded) so callers can distinguish CSRF/validation failures
+    // from genuine server faults.
+    if (error instanceof HttpsError) {
+      throw error
+    }
+
     console.error('Erro detalhado Meta Ads:', {
       message: error.message,
       response: error.response?.data,
-      status: error.response?.status
+      status: error.response?.status,
     })
-    
-    // Log de erro
+
     await securityLogger.logEvent(
       OAuthEventType.OAUTH_ERROR,
       userId,
-      { 
+      {
         error: error.message,
         code: error.response?.status,
-        details: error.response?.data
+        details: error.response?.data,
       },
       SecuritySeverity.ERROR
     )
 
     if (error.response?.data?.error) {
-      throw new HttpsError('internal', error.response.data.error.message || 'Erro ao processar OAuth')
+      throw new HttpsError(
+        'internal',
+        error.response.data.error.message || 'Erro ao processar OAuth'
+      )
     }
-    
+
     throw new HttpsError('internal', 'Erro ao conectar conta Meta Ads')
   }
 })

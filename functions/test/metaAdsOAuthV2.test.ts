@@ -64,20 +64,13 @@ describe('handleMetaAdsCallbackWithSelection — state validation', () => {
     const { handleMetaAdsCallbackWithSelection } = await import('../src/metaAdsOAuthV2')
     const wrapped = testEnv.wrap(handleMetaAdsCallbackWithSelection)
 
-    // NOTE: Meta handler wraps inner HttpsError via a catch-all try/catch.
-    // Unlike Google Ads, Meta's catch block discards the original message
-    // (falls through to the generic fallback at line 257), so the outer
-    // error surfaces as `internal` with the generic Meta message.
     await expect(
       wrapped({
         data: { code: 'x', state: 'does-not-exist' },
         auth: { uid: 'u1', token: {} },
         rawRequest: { ip: '127.0.0.1', headers: {} },
       } as any)
-    ).rejects.toMatchObject({
-      code: 'internal',
-      message: 'Erro ao conectar conta Meta Ads',
-    })
+    ).rejects.toMatchObject({ code: 'invalid-argument' })
   })
 
   it('rejects state belonging to another user', async () => {
@@ -90,18 +83,13 @@ describe('handleMetaAdsCallbackWithSelection — state validation', () => {
     const { handleMetaAdsCallbackWithSelection } = await import('../src/metaAdsOAuthV2')
     const wrapped = testEnv.wrap(handleMetaAdsCallbackWithSelection)
 
-    // NOTE: inner `permission-denied` is rewrapped as `internal` with the
-    // generic Meta fallback message (original message is not preserved).
     await expect(
       wrapped({
         data: { code: 'x', state: 'state-x' },
         auth: { uid: 'u1', token: {} },
         rawRequest: { ip: '127.0.0.1', headers: {} },
       } as any)
-    ).rejects.toMatchObject({
-      code: 'internal',
-      message: 'Erro ao conectar conta Meta Ads',
-    })
+    ).rejects.toMatchObject({ code: 'permission-denied' })
   })
 
   it('rejects expired state', async () => {
@@ -114,17 +102,12 @@ describe('handleMetaAdsCallbackWithSelection — state validation', () => {
     const { handleMetaAdsCallbackWithSelection } = await import('../src/metaAdsOAuthV2')
     const wrapped = testEnv.wrap(handleMetaAdsCallbackWithSelection)
 
-    // NOTE: inner `deadline-exceeded` is rewrapped as `internal` with the
-    // generic Meta fallback message (original message is not preserved).
     await expect(
       wrapped({
         data: { code: 'x', state: 'state-x' },
         auth: { uid: 'u1', token: {} },
         rawRequest: { ip: '127.0.0.1', headers: {} },
       } as any)
-    ).rejects.toMatchObject({
-      code: 'internal',
-      message: 'Erro ao conectar conta Meta Ads',
-    })
+    ).rejects.toMatchObject({ code: 'deadline-exceeded' })
   })
 })
