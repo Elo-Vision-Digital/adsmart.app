@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
+import { metaAdsAppSecret } from './config'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -29,7 +30,7 @@ interface TemporaryTokenData {
 /**
  * Processa o callback OAuth e retorna contas disponíveis para seleção
  */
-export const handleMetaAdsCallbackWithSelection = onCall(async (request) => {
+export const handleMetaAdsCallbackWithSelection = onCall({ secrets: [metaAdsAppSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -270,7 +271,7 @@ export const handleMetaAdsCallbackWithSelection = onCall(async (request) => {
 /**
  * Confirma a seleção de contas e salva no Firestore
  */
-export const confirmMetaAdsAccountSelection = onCall(async (request) => {
+export const confirmMetaAdsAccountSelection = onCall({ secrets: [metaAdsAppSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -626,10 +627,10 @@ async function getAdAccountDetails(accessToken: string, accountIds: string[]): P
  * Obter configurações do Meta Ads
  */
 async function getMetaAdsConfig() {
-  // Em produção, usar Firebase Secret Manager
+  // App secret via defineSecret (Secret Manager); demais valores via process.env
   return {
     appId: process.env.META_ADS_APP_ID || '4052927898253765',
-    appSecret: process.env.META_ADS_APP_SECRET || '2f0e01c4fd98450545053e84c90f250a',
+    appSecret: metaAdsAppSecret.value(),
     redirectUri: 'https://adsmart.app/auth/meta-ads/callback',
     redirectUriDev: 'http://localhost:5173/auth/meta-ads/callback'
   }

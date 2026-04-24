@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
+import { googleAdsClientSecret } from './config'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -29,7 +30,7 @@ interface TemporaryTokenData {
 /**
  * Processa o callback OAuth e retorna contas disponíveis para seleção
  */
-export const handleGoogleAdsCallbackWithSelection = onCall(async (request) => {
+export const handleGoogleAdsCallbackWithSelection = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
   console.log('=== INICIANDO handleGoogleAdsCallbackWithSelection ===')
   
   // Verificar autenticação
@@ -295,7 +296,7 @@ export const handleGoogleAdsCallbackWithSelection = onCall(async (request) => {
 /**
  * Confirma a seleção de contas e salva no Firestore
  */
-export const confirmGoogleAdsAccountSelection = onCall(async (request) => {
+export const confirmGoogleAdsAccountSelection = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -643,7 +644,7 @@ async function getDeveloperToken(): Promise<string> {
 async function getGoogleAdsConfig() {
   const config = {
     clientId: process.env.GOOGLE_ADS_CLIENT_ID || '422483165860-npdsq44121mh4chg2gers6qade02bo5l.apps.googleusercontent.com',
-    clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET || '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',
+    clientSecret: googleAdsClientSecret.value(),
     redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
     redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
     // ALTERAÇÃO IMPORTANTE: Adicionar todos os escopos necessários
@@ -653,7 +654,7 @@ async function getGoogleAdsConfig() {
       'https://www.googleapis.com/auth/adwords'
     ].join(' ')
   }
-  
+
   console.log('Configurações carregadas com escopos:', config.scope)
   return config
 }

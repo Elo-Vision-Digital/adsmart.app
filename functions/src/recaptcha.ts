@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
-import { defineSecret } from 'firebase-functions/params'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
+import { recaptchaSecretKey } from './config'
 import { checkRateLimit } from './rateLimiter'
 import {
   securityLogger,
@@ -13,10 +13,8 @@ if (!admin.apps.length) {
   admin.initializeApp()
 }
 
-const recaptchaSecret = defineSecret('RECAPTCHA_SECRET_KEY')
-
 export const verifyRecaptcha = onCall(
-  { secrets: [recaptchaSecret] },
+  { secrets: [recaptchaSecretKey] },
   async (request) => {
     const token = request?.data?.token
 
@@ -35,7 +33,7 @@ export const verifyRecaptcha = onCall(
         null,
         {
           params: {
-            secret: recaptchaSecret.value(),
+            secret: recaptchaSecretKey.value(),
             response: token
           }
         }
