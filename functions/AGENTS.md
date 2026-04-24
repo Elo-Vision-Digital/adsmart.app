@@ -54,8 +54,8 @@ All secrets are declared in `functions/src/config/index.ts`:
 import { defineSecret } from 'firebase-functions/params'
 
 export const googleAdsClientSecret = defineSecret('GOOGLE_ADS_CLIENT_SECRET')
-export const metaAdsAppSecret = defineSecret('metaAdsAppSecret')
-export const recaptchaSecretKey = defineSecret('recaptchaSecretKey')
+export const metaAdsAppSecret = defineSecret('META_ADS_APP_SECRET')
+export const recaptchaSecretKey = defineSecret('RECAPTCHA_SECRET_KEY')
 ```
 
 Every function that uses a secret MUST:
