@@ -107,10 +107,11 @@ service cloud.firestore {
     }
     
     // Rate limiting (contador de requisições)
+    // Writes only via Cloud Functions (Admin SDK). Reads are owner-only
+    // so client UIs can surface their own current counter if needed.
     match /rateLimits/{userId} {
       allow read: if isOwner(userId);
-      allow write: if isOwner(userId) &&
-        request.resource.data.count <= 1000; // Max 1000 requisições
+      allow write: if false;
     }
     
     // ✅ Logs de segurança (apenas leitura via Cloud Functions)

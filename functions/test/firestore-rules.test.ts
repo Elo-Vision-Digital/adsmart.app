@@ -97,6 +97,7 @@ describe('client-write-blocked collections', () => {
     'systemConfig/c1',
     'securityLogs/l1',
     'backupMetadata/b1',
+    'rateLimits/u1',
   ]
 
   for (const path of blocked) {
@@ -105,6 +106,15 @@ describe('client-write-blocked collections', () => {
       await assertFails(setDoc(doc(db, path), { any: 'value' }))
     })
   }
+
+  it('rateLimits write is ALSO blocked — even by the owner', async () => {
+    const db = env.authenticatedContext('u1').firestore()
+    // Payload matches the EXACT shape that the old rule allowed
+    // (count <= 1000) — this guards against anyone reverting to that rule.
+    await assertFails(
+      setDoc(doc(db, 'rateLimits/u1'), { count: 0, attempts: 0, blocked: false })
+    )
+  })
 
   it('authenticated user CAN read productPrices', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
