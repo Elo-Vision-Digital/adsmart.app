@@ -255,29 +255,39 @@ export const handleGoogleAdsCallbackWithSelection = onCall(async (request) => {
     }
 
   } catch (error: any) {
-    console.error('=== ERRO DETALHADO ===')
+    // Rethrow semantic HttpsError (e.g. invalid-argument, permission-denied,
+    // deadline-exceeded) so callers can distinguish CSRF/validation failures
+    // from genuine server faults. Only wrap NON-HttpsError exceptions.
+    if (error instanceof HttpsError) {
+      throw error
+    }
+
+    console.error('=== ERRO DETALHADO (Google Ads OAuth) ===')
     console.error('Mensagem:', error.message)
     console.error('Status:', error.response?.status)
     console.error('Data:', JSON.stringify(error.response?.data, null, 2))
-    console.error('Config usada:', error.config)
     console.error('Stack:', error.stack)
-    
-    // Log de erro
+
     await securityLogger.logEvent(
       OAuthEventType.OAUTH_ERROR,
       userId,
-      { 
+      {
         error: error.message,
         code: error.response?.status,
-        details: error.response?.data
+        details: error.response?.data,
       },
       SecuritySeverity.ERROR
     )
 
     if (error.response?.data?.error) {
-      throw new HttpsError('internal', error.response.data.error_description || error.response.data.error || 'Erro ao processar OAuth')
+      throw new HttpsError(
+        'internal',
+        error.response.data.error_description ||
+          error.response.data.error ||
+          'Erro ao processar OAuth'
+      )
     }
-    
+
     throw new HttpsError('internal', error.message || 'Erro ao conectar conta Google Ads')
   }
 })

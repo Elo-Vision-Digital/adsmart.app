@@ -62,16 +62,13 @@ describe('handleGoogleAdsCallbackWithSelection — state validation', () => {
     const { handleGoogleAdsCallbackWithSelection } = await import('../src/googleAdsOAuthV2')
     const wrapped = testEnv.wrap(handleGoogleAdsCallbackWithSelection)
 
-    // NOTE: handler wraps inner HttpsError in an outer `internal` HttpsError
-    // via a catch-all try/catch block. We assert on the message which is
-    // preserved from the original `invalid-argument` error.
     await expect(
       wrapped({
         data: { code: 'x', state: 'does-not-exist' },
         auth: { uid: 'u1', token: {} },
         rawRequest: { ip: '127.0.0.1', headers: {} },
       } as any)
-    ).rejects.toMatchObject({ code: 'internal', message: 'State inválido' })
+    ).rejects.toMatchObject({ code: 'invalid-argument' })
   })
 
   it('rejects state belonging to another user', async () => {
@@ -84,15 +81,13 @@ describe('handleGoogleAdsCallbackWithSelection — state validation', () => {
     const { handleGoogleAdsCallbackWithSelection } = await import('../src/googleAdsOAuthV2')
     const wrapped = testEnv.wrap(handleGoogleAdsCallbackWithSelection)
 
-    // NOTE: outer try/catch rewraps inner `permission-denied` as `internal`,
-    // preserving the message `State não autorizado`.
     await expect(
       wrapped({
         data: { code: 'x', state: 'state-x' },
         auth: { uid: 'u1', token: {} },
         rawRequest: { ip: '127.0.0.1', headers: {} },
       } as any)
-    ).rejects.toMatchObject({ code: 'internal', message: 'State não autorizado' })
+    ).rejects.toMatchObject({ code: 'permission-denied' })
   })
 
   it('rejects expired state', async () => {
@@ -105,14 +100,12 @@ describe('handleGoogleAdsCallbackWithSelection — state validation', () => {
     const { handleGoogleAdsCallbackWithSelection } = await import('../src/googleAdsOAuthV2')
     const wrapped = testEnv.wrap(handleGoogleAdsCallbackWithSelection)
 
-    // NOTE: outer try/catch rewraps inner `deadline-exceeded` as `internal`,
-    // preserving the message `State expirado`.
     await expect(
       wrapped({
         data: { code: 'x', state: 'state-x' },
         auth: { uid: 'u1', token: {} },
         rawRequest: { ip: '127.0.0.1', headers: {} },
       } as any)
-    ).rejects.toMatchObject({ code: 'internal', message: 'State expirado' })
+    ).rejects.toMatchObject({ code: 'deadline-exceeded' })
   })
 })
