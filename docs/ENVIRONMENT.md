@@ -29,20 +29,23 @@ These are plain environment variables accessible as `process.env.XXX` in functio
 | `GOOGLE_ADS_DEVELOPER_TOKEN` | `.env` / Firebase Functions config | Google Ads API developer token |
 | `META_ADS_APP_ID` | `.env` / Firebase Functions config | Meta App ID (public part) |
 | `GOOGLE_ADS_TEST_MODE` | Local only | Set to `"true"` to return mock Google Ads accounts |
+| `GOOGLE_ADS_REDIRECT_URI` | No | OAuth prod callback URL (default: `https://adsmart.app/auth/google-ads/callback`) |
+| `GOOGLE_ADS_REDIRECT_URI_DEV` | No | OAuth dev callback URL (default: `http://localhost:5173/auth/google-ads/callback`) |
 
 ## Secrets (Secret Manager via defineSecret)
 
 Secrets are managed by Firebase Secret Manager. They are **not** in `.env`.
 
-| Secret name | `defineSecret` handle | Used in |
+| Secret Manager name | `defineSecret` handle | Used in |
 |---|---|---|
-| `googleAdsClientSecret` | `googleAdsClientSecret` | `googleAdsOAuth.ts`, `googleAdsOAuthV2.ts` |
-| `metaAdsAppSecret` | `metaAdsAppSecret` | `metaAdsOAuth.ts`, `metaAdsOAuthV2.ts` |
-| `recaptchaSecretKey` | `recaptchaSecretKey` | `recaptcha.ts` |
+| `GOOGLE_ADS_CLIENT_SECRET` | `googleAdsClientSecret` | `googleAdsOAuth.ts`, `googleAdsOAuthV2.ts` |
+| `META_ADS_APP_SECRET` | `metaAdsAppSecret` | `metaAdsOAuth.ts`, `metaAdsOAuthV2.ts` |
+| `RECAPTCHA_SECRET_KEY` | `recaptchaSecretKey` | `recaptcha.ts` |
+| `ENCRYPTION_KEY` | `encryptionKey` | `googleAdsOAuthV2.ts` (declared; stub — tokens stored base64 pending real crypto) |
 
 To set/rotate a secret:
 ```bash
-firebase functions:secrets:set googleAdsClientSecret
+firebase functions:secrets:set GOOGLE_ADS_CLIENT_SECRET
 # prompted for value
 ```
 
