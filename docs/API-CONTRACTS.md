@@ -23,8 +23,7 @@ Callable functions use Firebase `httpsCallable` on the client. The framework wra
 ```typescript
 {
   success: true,
-  score: number,    // 0.0 – 1.0
-  action: string
+  verified: true
 }
 ```
 

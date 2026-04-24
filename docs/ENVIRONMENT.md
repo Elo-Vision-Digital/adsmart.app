@@ -84,7 +84,7 @@ Functions tests (`functions/test/`) always connect to the emulators via `@fireba
 
 | Name | Firebase project | Frontend URL |
 |---|---|---|
-| Production | `adsmart-app` | `https://adsmart.app` |
+| Production | `adsmart-web` | `https://adsmart.app` |
 | Development | Local emulators | `http://localhost:5173` |
 
 There is no staging environment currently. All testing is done locally with emulators.
