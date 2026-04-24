@@ -31,6 +31,8 @@ cd functions && npm install && cd ..
 # Copy env template
 cp .env.example .env
 # Fill VITE_* values from Firebase console → Project settings → Your apps → Web app
+# For Cloud Functions (OAuth, reCAPTCHA), backend secrets are managed via
+# Firebase Secret Manager — see docs/ENVIRONMENT.md
 ```
 
 ## Environment variables
@@ -46,7 +48,10 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
 VITE_USE_FIREBASE_EMULATOR=true
 VITE_RECAPTCHA_SITE_KEY=...
+VITE_FIREBASE_MEASUREMENT_ID=  # optional (Analytics)
 ```
+
+For production, also set `VITE_FIREBASE_FUNCTIONS_URL` — see [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
 
 ## Scripts
 
@@ -57,8 +62,8 @@ VITE_RECAPTCHA_SITE_KEY=...
 | `npm run dev` | Start Vite dev server (port 5173) |
 | `npm run build` | TypeScript compile + Vite build |
 | `npm run lint` | Biome check (all files) |
-| `npm run lint:fix` | Biome check with auto-fix |
-| `npm run format` | Biome format (write) |
+| `npm run lint:fix` | Biome lint + format auto-fix (write mode) |
+| `npm run format` | Biome format only (write mode) |
 | `npm run type-check` | `tsc --noEmit` |
 | `npm test` | Vitest run (all suites) |
 | `npm run test:watch` | Vitest watch mode |
@@ -69,9 +74,10 @@ VITE_RECAPTCHA_SITE_KEY=...
 | Command | Action |
 |---|---|
 | `npm run build` | `tsc` compile to `lib/` |
-| `npm run build:watch` | Incremental watch |
+| `npm run build:watch` | TypeScript watch mode (incremental compile) |
 | `npm run lint` | ESLint (non-blocking until Phase 2) |
 | `npm test` | Vitest run |
+| `npm run test:coverage` | Coverage report |
 | `npm run serve` | Build + start functions emulator only |
 | `npm run deploy` | `firebase deploy --only functions` |
 
