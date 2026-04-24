@@ -1,0 +1,350 @@
+{
+  "common": {
+    "button": {
+      "start": "Começar Agora",
+      "login": "Entrar",
+      "createAccount": "Criar Conta Gratuita",
+      "viewDemo": "Ver Demonstração",
+      "signUp": "Cadastrar",
+      "loginWithGoogle": "Entrar com Google",
+      "loginWithFacebook": "Entrar com Facebook",
+      "forgotPassword": "Esqueceu sua senha?",
+      "deposit": "Depositar",
+      "add": "Adicionar",
+      "search": "Pesquisar",
+      "refresh": "Atualizar",
+      "delete": "Excluir",
+      "manage": "Gerenciar",
+      "createNew": "Criar novo",
+      "back": "Voltar",
+      "saveChanges": "Salvar alterações",
+      "sending": "Enviando..."
+    },
+    "form": {
+      "email": "Email",
+      "password": "Senha",
+      "name": "Nome",
+      "confirmPassword": "Confirmar senha",
+      "rememberMe": "Lembrar de mim",
+      "fullName": "Nome completo",
+      "phone": "Telefone",
+      "documentType": "Tipo de documento",
+      "currentPassword": "Senha atual",
+      "newPassword": "Nova senha",
+      "confirmNewPassword": "Confirmar nova senha"
+    },
+    "validation": {
+      "requiredField": "Campo obrigatório",
+      "invalidEmail": "Email inválido",
+      "passwordMismatch": "As senhas não coincidem",
+      "weakPassword": "A senha deve ter pelo menos 8 caracteres",
+      "completeRecaptcha": "Por favor, complete o ReCAPTCHA",
+      "emailCannotBeChanged": "O email não pode ser alterado",
+      "minimumCharacters": "Mínimo 6 caracteres",
+      "invalidDocument": "{type} inválido"
+    },
+    "general": {
+      "user": "Usuário",
+      "settings": "Configurações",
+      "logout": "Sair",
+      "noResults": "Nenhum resultado encontrado",
+      "loading": "Carregando...",
+      "synced": "Sincronizado",
+      "recently": "Recentemente",
+      "admin": "Admin",
+      "balance": "Saldo",
+      "saving": "Salvando...",
+      "changing": "Alterando..."
+    },
+    "theme": {
+      "light": "Claro",
+      "dark": "Escuro"
+    },
+    "perReport": "por relatório",
+    "footer": {
+      "rights": "Todos os direitos reservados",
+      "termsOfUse": "Termos de Uso",
+      "privacyPolicy": "Políticas de Privacidade"
+    },
+    "loading": "Carregando...",
+    "locale": "pt-BR",
+    "error": {
+      "generic": "Erro ao processar solicitação",
+      "tooManyAttempts": "Muitas tentativas. Tente novamente em 15 minutos.",
+      "deleteAccount": "Erro ao remover conta",
+      "saveProfile": "Erro ao salvar perfil",
+      "changePassword": "Erro ao alterar senha",
+      "sendVerificationEmail": "Erro ao enviar email. Tente novamente mais tarde.",
+      "wrongPassword": "Senha atual incorreta"
+    },
+    "warning": {
+      "testAccount": "Conta de teste identificada - ReCAPTCHA desabilitado",
+      "rateLimit": "Muitas tentativas. Tente novamente em 15 minutos.",
+      "rateLimitRemaining": "Atenção: Você tem apenas {attempts} tentativas restantes."
+    }
+  },
+  "dashboard": {
+    "myReports": "Meus relatórios",
+    "integrations": "Integrações",
+    "viewTemplates": "Ver templates de Relatório",
+    "searchPlaceholder": "Pesquisar...",
+    "noReportsFound": "Nenhum relatório encontrado",
+    "noAccountsConnected": "Nenhuma conta conectada",
+    "clickToStart": "Clique em \"Adicionar contas\" para começar",
+    "loadingConnections": "Carregando conexões...",
+    "deleteConfirm": "Tem certeza que deseja remover esta conta?",
+    "addAccounts": "Adicionar contas",
+    "createNewReport": "Criar novo relatório"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "integrations": "Integrações",
+    "reports": "Relatórios",
+    "templates": "Templates",
+    "finance": "Financeiro",
+    "settings": "Configurações",
+    "administration": "Administração"
+  },
+  "footer": {
+    "tagline": "Mais uma ferramenta, menos uma assinatura! Gere seus relatórios pagando apenas pelo uso.",
+    "quickLinks": "Links Rápidos",
+    "legal": "Legal",
+    "contact": "Contato",
+    "location": "São Paulo, SP - Brasil",
+    "developedBy": "Desenvolvido com ❤️ por Zen Technology",
+    "allRightsReserved": "Todos os direitos reservados"
+  },
+  "loginPage": {
+    "title": {
+      "login": "Fazer Login",
+      "signUp": "Criar Conta"
+    },
+    "subtitle": {
+      "login": "Por favor preencha os detalhes abaixo",
+      "signUp": "Preencha os dados para criar sua conta"
+    },
+    "message": {
+      "noAccount": "Não tem uma conta?",
+      "haveAccount": "Já possui uma conta?",
+      "loginSuccess": "Login realizado com sucesso!",
+      "signupSuccess": "Conta criada com sucesso!"
+    },
+    "error": {
+      "invalidCredentials": "Email ou senha inválidos",
+      "emailInUse": "Este email já está em uso",
+      "weakPasswordDetails": "A senha deve conter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais",
+      "socialLoginFailed": "Erro ao fazer login social. Tente novamente."
+    }
+  },
+  "homePage": {
+    "hero": {
+      "title": "Relatórios Profissionais de Anúncios em Minutos",
+      "subtitle": "Transforme dados do Google Ads e Meta Ads em insights visuais impressionantes com apenas alguns cliques."
+    },
+    "features": {
+      "title": "Tudo que você precisa para análises profissionais",
+      "subtitle": "Ferramentas poderosas para transformar seus dados em insights acionáveis",
+      "googleAds": {
+        "title": "Google Ads",
+        "description": "Integração completa com Google Ads para análises detalhadas de campanhas"
+      },
+      "metaAds": {
+        "title": "Meta Ads",
+        "description": "Conecte Facebook e Instagram Ads para relatórios unificados"
+      },
+      "automation": {
+        "title": "Automação Inteligente",
+        "description": "Geração automática de relatórios com dados em tempo real"
+      },
+      "insights": {
+        "title": "Insights Profundos",
+        "description": "Análises avançadas e recomendações baseadas em IA"
+      }
+    },
+    "templates": {
+      "title": "Templates Profissionais Prontos para Usar",
+      "subtitle": "Escolha entre nossos modelos otimizados para diferentes tipos de negócio"
+    },
+    "pricing": {
+      "title": "Preços Simples e Transparentes",
+      "subtitle": "Pague apenas pelos relatórios que gerar",
+      "simple": {
+        "title": "Modelo Simples",
+        "subtitle": "Sem mensalidades, pague apenas pelo que usar"
+      },
+      "templates": {
+        "google": {
+          "launch": "Google Ads - Lançamento",
+          "localBusiness": "Google Ads - Negócio Local"
+        },
+        "meta": {
+          "launch": "Meta Ads - Lançamento",
+          "localBusiness": "Meta Ads - Negócio Local"
+        }
+      }
+    },
+    "cta": {
+      "title": "Pronto para Impressionar seus Clientes?",
+      "subtitle": "Comece a criar relatórios profissionais em minutos"
+    },
+    "stats": {
+      "reports": "Relatórios Gerados",
+      "users": "Usuários Ativos",
+      "integrations": "Integrações"
+    }
+  },
+  "reportsPage": {
+    "title": "Meus Relatórios",
+    "subtitle": "Gerencie e acesse todos os seus relatórios gerados",
+    "totalReports": "Total de relatórios: {count}",
+    "createNewReport": "Criar novo relatório",
+    "searchPlaceholder": "Pesquisar por nome ou conta...",
+    "noReportsFound": "Nenhum relatório encontrado",
+    "noReportsHint": "Tente ajustar os filtros ou criar um novo relatório",
+    "filters": {
+      "allPlatforms": "Todas plataformas",
+      "mostRecent": "Mais recentes",
+      "oldest": "Mais antigos"
+    },
+    "stats": {
+      "thisMonth": "Este mês"
+    }
+  },
+  "templatesPage": {
+    "title": "Templates de Relatórios",
+    "subtitle": "Escolha o modelo ideal para suas análises de marketing",
+    "backToDashboard": "Voltar ao Dashboard",
+    "currentBalance": "Seu saldo atual",
+    "warning": "Aviso",
+    "insufficientBalance": {
+      "title": "Saldo Insuficiente",
+      "message": "Você precisa adicionar créditos para gerar relatórios. Seu saldo atual é {balance}.",
+      "button": "Adicionar Créditos"
+    },
+    "howItWorks": {
+      "title": "Como funciona?",
+      "step1": "Escolha o template adequado para sua plataforma de anúncios",
+      "step2": "Conecte sua conta do Google Ads ou Meta Ads",
+      "step3": "Selecione as campanhas e o período de análise",
+      "step4": "Confirme o pagamento (valores atualizados em tempo real)",
+      "step5": "Receba o link do seu dashboard personalizado em minutos!"
+    }
+  },
+  "templateCard": {
+    "featuresIncluded": "Recursos incluídos:",
+    "loading": "Carregando...",
+    "insufficientBalance": "Saldo Insuficiente",
+    "useTemplate": "Usar este Template",
+    "defaultTitle": "Dashboard {platform}",
+    "defaultDescription": "Dashboard profissional para suas campanhas",
+    "templateTypes": {
+      "launch": "Lançamento",
+      "localBusiness": "Negócios Locais"
+    },
+    "templateDescriptions": {
+      "googleLaunch": "Dashboard para campanhas de lançamento no Google Ads",
+      "metaLaunch": "Dashboard para campanhas de lançamento no Meta Ads",
+      "googleLocal": "Dashboard para negócios locais no Google Ads",
+      "metaLocal": "Dashboard para negócios locais no Meta Ads"
+    }
+  },
+  "templateFeatures": {
+    "googleLaunch": {
+      "feature1": "Análise de conversões e ROI",
+      "feature2": "Métricas de engajamento detalhadas",
+      "feature3": "Comparativo de períodos",
+      "feature4": "Insights automáticos de performance"
+    },
+    "metaLaunch": {
+      "feature1": "Análise de público-alvo",
+      "feature2": "Performance por formato de anúncio",
+      "feature3": "Funil de conversão detalhado",
+      "feature4": "Otimizações sugeridas"
+    },
+    "googleLocal": {
+      "feature1": "Análise geográfica de conversões",
+      "feature2": "Performance por localização",
+      "feature3": "Horários de pico de conversão",
+      "feature4": "ROI por região"
+    },
+    "metaLocal": {
+      "feature1": "Alcance por região",
+      "feature2": "Engajamento local",
+      "feature3": "Análise demográfica detalhada",
+      "feature4": "Custo por lead local"
+    }
+  },
+  "accountsPage": {
+    "title": "Contas de Anúncios",
+    "subtitle": "Conecte suas contas do Google Ads e Meta Ads para gerar relatórios",
+    "backToDashboard": "Voltar ao Dashboard",
+    "addDemoAccounts": "Adicionar Contas Demo",
+    "demo": "Demo",
+    "connect": "Conectar",
+    "accountConnected": "conta conectada",
+    "accountsConnectedPlural": "contas conectadas",
+    "noAccountsConnected": "Nenhuma conta conectada",
+    "connectGoogleToStart": "Conecte sua conta do Google Ads para começar",
+    "connectMetaToStart": "Conecte sua conta do Meta Ads para começar",
+    "synced": "Sincronizado",
+    "confirmRemove": "Tem certeza que deseja remover esta conta?",
+    "mockAccountsAdded": "Contas de demonstração adicionadas!",
+    "accountsConnectedSuccess": "{count} contas {platform} conectadas com sucesso!",
+    "importantInfo": {
+      "title": "Informação Importante",
+      "description": "Para conectar suas contas de anúncios, você precisará autorizar o adsmart a acessar seus dados. Utilizamos conexões seguras OAuth2 e não armazenamos suas senhas. Você pode revogar o acesso a qualquer momento."
+    },
+    "error": {
+      "connectGoogle": "Erro ao conectar com Google Ads. Tente novamente.",
+      "connectMeta": "Erro ao conectar com Meta Ads. Tente novamente.",
+      "saveAccounts": "Erro ao salvar contas selecionadas"
+    }
+  },
+  "transactionsPage": {
+    "loading": "Carregando transações...",
+    "backToDashboard": "Voltar ao Dashboard",
+    "title": "Histórico de Transações",
+    "subtitle": "Acompanhe todas as movimentações da sua carteira",
+    "currentBalance": "Saldo Atual",
+    "recentTransactions": "Transações Recentes",
+    "lastTransactions": "Últimas 10 transações realizadas",
+    "noTransactions": "Nenhuma transação realizada ainda.",
+    "dateUnavailable": "Data indisponível",
+    "transactionStatus": {
+      "completed": "Concluída",
+      "pending": "Pendente",
+      "failed": "Falhou"
+    },
+    "stats": {
+      "totalCredits": "Total de Créditos",
+      "totalDebits": "Total de Débitos",
+      "transactions": "Transações"
+    }
+  },
+  "settingsPage": {
+    "title": "Configurações",
+    "subtitle": "Gerencie suas informações pessoais e segurança",
+    "personalInfo": {
+      "title": "Informações Pessoais",
+      "subtitle": "Seus dados são necessários para realizar depósitos na plataforma"
+    },
+    "changePassword": {
+      "title": "Alterar Senha",
+      "subtitle": "Mantenha sua conta segura com uma senha forte"
+    },
+    "emailVerification": {
+      "notVerified": "Email não verificado",
+      "verifyToAccess": "Verifique seu email para acessar todos os recursos da plataforma.",
+      "resendVerification": "Reenviar email de verificação",
+      "verificationSent": "Email de verificação enviado! Verifique sua caixa de entrada.",
+      "errorSending": "Erro ao enviar email. Tente novamente mais tarde."
+    },
+    "messages": {
+      "profileUpdated": "Perfil atualizado com sucesso!",
+      "passwordChanged": "Senha alterada com sucesso!",
+      "passwordsDoNotMatch": "As senhas não coincidem",
+      "passwordTooShort": "A senha deve ter pelo menos 6 caracteres",
+      "currentPasswordIncorrect": "Senha atual incorreta"
+    }
+  }
+}
