@@ -13,7 +13,10 @@
     "type-check": "tsc --noEmit",
     "clean": "rm -rf node_modules dist .vite",
     "reinstall": "npm run clean && npm install",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@fontsource/montserrat": "^5.2.6",
@@ -38,16 +41,22 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.13",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/qrcode.react": "^1.0.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-v8": "^4.1.5",
     "autoprefixer": "^10.4.19",
+    "happy-dom": "^20.9.0",
     "lefthook": "^2.1.6",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.2.2",
-    "vite": "^7.0.6"
+    "vite": "^7.0.6",
+    "vitest": "^4.1.5"
   }
 }
