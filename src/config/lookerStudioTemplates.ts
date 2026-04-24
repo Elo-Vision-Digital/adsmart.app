@@ -1,6 +1,6 @@
 /**
  * Configuração dos Templates do Looker Studio
- * 
+ *
  * Cada template tem um ID único do Looker Studio que será usado
  * para clonar e criar o relatório personalizado do usuário
  */
@@ -19,32 +19,32 @@ export const LOOKER_STUDIO_TEMPLATES: Record<string, LookerStudioTemplate> = {
     lookerStudioId: 'YOUR_GOOGLE_ADS_LAUNCH_TEMPLATE_ID', // Substituir pelo ID real
     dataSourceType: 'google_ads',
     name: 'Dashboard Google Ads - Lançamento',
-    description: 'Template otimizado para campanhas de lançamento no Google Ads'
+    description: 'Template otimizado para campanhas de lançamento no Google Ads',
   },
-  
+
   meta_lancamento: {
     id: 'meta_lancamento',
     lookerStudioId: 'YOUR_META_ADS_LAUNCH_TEMPLATE_ID', // Substituir pelo ID real
     dataSourceType: 'facebook_ads',
     name: 'Dashboard Meta Ads - Lançamento',
-    description: 'Template otimizado para campanhas de lançamento no Meta Ads'
+    description: 'Template otimizado para campanhas de lançamento no Meta Ads',
   },
-  
+
   google_negocio_local: {
     id: 'google_negocio_local',
     lookerStudioId: 'YOUR_GOOGLE_ADS_LOCAL_TEMPLATE_ID', // Substituir pelo ID real
     dataSourceType: 'google_ads',
     name: 'Dashboard Google Ads - Negócios Locais',
-    description: 'Template especializado para negócios locais no Google Ads'
+    description: 'Template especializado para negócios locais no Google Ads',
   },
-  
+
   meta_negocio_local: {
     id: 'meta_negocio_local',
     lookerStudioId: 'YOUR_META_ADS_LOCAL_TEMPLATE_ID', // Substituir pelo ID real
     dataSourceType: 'facebook_ads',
     name: 'Dashboard Meta Ads - Negócios Locais',
-    description: 'Template especializado para negócios locais no Meta Ads'
-  }
+    description: 'Template especializado para negócios locais no Meta Ads',
+  },
 }
 
 /**
@@ -60,7 +60,7 @@ export function getLookerStudioTemplate(templateId: string): LookerStudioTemplat
 export const LOOKER_STUDIO_URLS = {
   base: 'https://lookerstudio.google.com',
   embed: 'https://lookerstudio.google.com/embed/reporting',
-  api: 'https://lookerstudio.googleapis.com/v1'
+  api: 'https://lookerstudio.googleapis.com/v1',
 }
 
 /**
@@ -70,5 +70,5 @@ export const LOOKER_STUDIO_SHARING = {
   defaultAccess: 'viewer', // visualizador
   linkSharing: true,
   commentAccess: false,
-  downloadAccess: true
+  downloadAccess: true,
 }

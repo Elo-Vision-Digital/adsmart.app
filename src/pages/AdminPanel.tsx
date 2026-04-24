@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
 import { httpsCallable } from 'firebase/functions'
-import { functions } from '@/firebase/config'
-import { Button } from '@/components/ui/button'
-import { MainLayout } from '@/components/layout/MainLayout'
-import { 
-  Shield, 
-  DollarSign, 
-  Activity, 
-  AlertTriangle, 
-  Save,
+import {
+  Activity,
+  AlertTriangle,
+  DollarSign,
+  Plus,
   RefreshCw,
+  Save,
+  Shield,
   Wallet,
-  Plus
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { MainLayout } from '@/components/layout/MainLayout'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/AuthContext'
+import { functions } from '@/firebase/config'
 
 interface SecurityStats {
   total: number
@@ -44,7 +44,7 @@ export function AdminPanel() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
-  
+
   // Estados para gestão de saldo
   const [targetEmail, setTargetEmail] = useState('')
   const [creditAmount, setCreditAmount] = useState('')
@@ -84,12 +84,12 @@ export function AdminPanel() {
       console.log('🔐 É admin local:', isAdmin)
       console.log('🆔 UID:', user?.uid)
       console.log('✅ User object exists:', !!user)
-      
+
       const getSecurityStats = httpsCallable(functions, 'getSecurityStats')
       const result = await getSecurityStats({ days: 7 })
-      
+
       console.log('📊 Resultado da function:', result.data)
-      
+
       // ✅ CORRIGIDO: Extrair os stats do resultado
       const responseData = result.data as any
       if (responseData.success && responseData.stats) {
@@ -118,7 +118,7 @@ export function AdminPanel() {
       console.log('🔍 Tentando carregar preços...')
       console.log('👤 Usuário atual:', user?.email)
       console.log('🔐 É admin:', isAdmin)
-      
+
       const getProductPrices = httpsCallable(functions, 'getProductPrices')
       const result = await getProductPrices()
       if (result.data && (result.data as any).success) {
@@ -137,10 +137,8 @@ export function AdminPanel() {
 
   // Atualizar preço específico
   const updatePrice = (id: string, newPrice: number) => {
-    setProductPrices(prices => 
-      prices.map(price => 
-        price.id === id ? { ...price, price: newPrice } : price
-      )
+    setProductPrices((prices) =>
+      prices.map((price) => (price.id === id ? { ...price, price: newPrice } : price))
     )
   }
 
@@ -150,7 +148,7 @@ export function AdminPanel() {
       setSaving(true)
       const updateProductPrices = httpsCallable(functions, 'updateProductPrices')
       const result = await updateProductPrices({ prices: productPrices })
-      
+
       if ((result.data as any).success) {
         setMessage('Preços atualizados com sucesso!')
         setTimeout(() => setMessage(''), 3000)
@@ -187,12 +185,14 @@ export function AdminPanel() {
       const result = await addUserCredits({
         targetEmail,
         amount: Math.round(amount * 100), // Converter para centavos
-        reason: creditReason
+        reason: creditReason,
       })
 
       if ((result.data as any).success) {
         const data = result.data as any
-        setMessage(`Créditos adicionados com sucesso para ${targetEmail}! Limites diários: R$ ${data.adminLimits.dailyTotalAfter} / R$ ${data.adminLimits.maxDailyAmount}`)
+        setMessage(
+          `Créditos adicionados com sucesso para ${targetEmail}! Limites diários: R$ ${data.adminLimits.dailyTotalAfter} / R$ ${data.adminLimits.maxDailyAmount}`
+        )
         setTargetEmail('')
         setCreditAmount('')
         setCreditReason('')
@@ -225,30 +225,45 @@ export function AdminPanel() {
             <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Debug Info:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-blue-700 dark:text-blue-300"><strong>Email:</strong> {user?.email}</p>
-                <p className="text-blue-700 dark:text-blue-300"><strong>É Admin Local:</strong> {isAdmin ? 'Sim' : 'Não'}</p>
-                <p className="text-blue-700 dark:text-blue-300"><strong>UID:</strong> {user?.uid}</p>
+                <p className="text-blue-700 dark:text-blue-300">
+                  <strong>Email:</strong> {user?.email}
+                </p>
+                <p className="text-blue-700 dark:text-blue-300">
+                  <strong>É Admin Local:</strong> {isAdmin ? 'Sim' : 'Não'}
+                </p>
+                <p className="text-blue-700 dark:text-blue-300">
+                  <strong>UID:</strong> {user?.uid}
+                </p>
               </div>
               <div>
-                <p className="text-blue-700 dark:text-blue-300"><strong>Provider:</strong> {user?.providerData?.[0]?.providerId}</p>
-                <p className="text-blue-700 dark:text-blue-300"><strong>Verificado:</strong> {user?.emailVerified ? 'Sim' : 'Não'}</p>
-                <p className="text-blue-700 dark:text-blue-300"><strong>Display Name:</strong> {user?.displayName || 'N/A'}</p>
+                <p className="text-blue-700 dark:text-blue-300">
+                  <strong>Provider:</strong> {user?.providerData?.[0]?.providerId}
+                </p>
+                <p className="text-blue-700 dark:text-blue-300">
+                  <strong>Verificado:</strong> {user?.emailVerified ? 'Sim' : 'Não'}
+                </p>
+                <p className="text-blue-700 dark:text-blue-300">
+                  <strong>Display Name:</strong> {user?.displayName || 'N/A'}
+                </p>
               </div>
             </div>
             <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700">
               <p className="text-xs text-blue-600 dark:text-blue-400">
-                Se "É Admin Local" = Sim mas ainda há erro 403, o problema está na verificação das Functions.
+                Se "É Admin Local" = Sim mas ainda há erro 403, o problema está na verificação das
+                Functions.
               </p>
             </div>
           </div>
 
           {/* Mensagens */}
           {message && (
-            <div className={`p-4 rounded-lg mb-6 ${
-              message.includes('Erro') 
-                ? 'bg-red-100 text-red-800 border border-red-200' 
-                : 'bg-green-100 text-green-800 border border-green-200'
-            }`}>
+            <div
+              className={`p-4 rounded-lg mb-6 ${
+                message.includes('Erro')
+                  ? 'bg-red-100 text-red-800 border border-red-200'
+                  : 'bg-green-100 text-green-800 border border-green-200'
+              }`}
+            >
               {message}
             </div>
           )}
@@ -328,7 +343,9 @@ export function AdminPanel() {
                       <AlertTriangle className="w-8 h-8 text-red-500" />
                       <div>
                         <h3 className="font-semibold">Eventos Críticos</h3>
-                        <p className="text-2xl font-bold">{securityStats.criticalEvents?.length || 0}</p>
+                        <p className="text-2xl font-bold">
+                          {securityStats.criticalEvents?.length || 0}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -336,12 +353,13 @@ export function AdminPanel() {
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
                     <h3 className="font-semibold mb-3">Por Severidade</h3>
                     <div className="space-y-2">
-                      {securityStats.bySeverity && Object.entries(securityStats.bySeverity).map(([severity, count]) => (
-                        <div key={severity} className="flex justify-between">
-                          <span className="capitalize">{severity}</span>
-                          <span className="font-semibold">{count}</span>
-                        </div>
-                      ))}
+                      {securityStats.bySeverity &&
+                        Object.entries(securityStats.bySeverity).map(([severity, count]) => (
+                          <div key={severity} className="flex justify-between">
+                            <span className="capitalize">{severity}</span>
+                            <span className="font-semibold">{count}</span>
+                          </div>
+                        ))}
                     </div>
                   </div>
 
@@ -349,14 +367,15 @@ export function AdminPanel() {
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow md:col-span-2 lg:col-span-3">
                     <h3 className="font-semibold mb-3">Eventos por Tipo</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {securityStats.byType && Object.entries(securityStats.byType).map(([type, count]) => (
-                        <div key={type} className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            {type.replace(/_/g, ' ').toLowerCase()}
-                          </p>
-                          <p className="font-bold">{count}</p>
-                        </div>
-                      ))}
+                      {securityStats.byType &&
+                        Object.entries(securityStats.byType).map(([type, count]) => (
+                          <div key={type} className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              {type.replace(/_/g, ' ').toLowerCase()}
+                            </p>
+                            <p className="font-bold">{count}</p>
+                          </div>
+                        ))}
                     </div>
                   </div>
                 </div>
@@ -395,10 +414,13 @@ export function AdminPanel() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {productPrices.map((product) => (
-                    <div key={product.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <div
+                      key={product.id}
+                      className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow"
+                    >
                       <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
                       <p className="text-gray-600 text-sm mb-4">{product.description}</p>
-                      
+
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-medium">Preço:</span>
                         <div className="flex items-center gap-2">
@@ -408,7 +430,9 @@ export function AdminPanel() {
                             step="0.01"
                             min="0"
                             value={product.price}
-                            onChange={(e) => updatePrice(product.id, parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updatePrice(product.id, parseFloat(e.target.value) || 0)
+                            }
                             className="w-24 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
@@ -418,7 +442,10 @@ export function AdminPanel() {
                         <p>Categoria: {product.category}</p>
                         <p>Tipo: {product.type.replace('_', ' ')}</p>
                         {product.updatedAt && (
-                          <p>Atualizado: {new Date(product.updatedAt.seconds * 1000).toLocaleString()}</p>
+                          <p>
+                            Atualizado:{' '}
+                            {new Date(product.updatedAt.seconds * 1000).toLocaleString()}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -442,7 +469,7 @@ export function AdminPanel() {
                   <Plus className="w-5 h-5" />
                   Adicionar Créditos a Usuário
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -491,9 +518,15 @@ export function AdminPanel() {
                     </p>
                   </div>
 
-                  <Button 
-                    onClick={handleAddCredits} 
-                    disabled={addingCredits || !targetEmail || !creditAmount || !creditReason || creditReason.length < 10}
+                  <Button
+                    onClick={handleAddCredits}
+                    disabled={
+                      addingCredits ||
+                      !targetEmail ||
+                      !creditAmount ||
+                      !creditReason ||
+                      creditReason.length < 10
+                    }
                     className="w-full"
                   >
                     {addingCredits ? (

@@ -7,7 +7,7 @@ export const colors = {
   mutedForeground: '#A7A8AE',
   primary: '#0181F2',
   white: '#FFFFFF',
-  
+
   // Dark mode colors
   dark: {
     background: '#000000',
@@ -16,7 +16,7 @@ export const colors = {
     border: '#2A2A2A',
     muted: '#3A3A3A',
     mutedForeground: '#6A6A6A',
-  }
+  },
 }
 
 export const shadows = {

@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import type { Language, Translations } from '@/locales/types'
-import ptBR from '@/locales/pt-BR.json'
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 import en from '@/locales/en.json'
 import es from '@/locales/es.json'
+import ptBR from '@/locales/pt-BR.json'
+import type { Language, Translations } from '@/locales/types'
 
 const translations: Record<Language, Translations> = {
   pt: ptBR as Translations,

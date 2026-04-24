@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
 import { httpsCallable } from 'firebase/functions'
+import { useEffect, useState } from 'react'
 import { functions } from '@/firebase/config'
 
 export interface ProductPrice {
@@ -19,7 +19,10 @@ interface UseProductPricesReturn {
   loading: boolean
   error: string | null
   refetch: () => Promise<void>
-  getPriceByCategory: (category: 'google' | 'meta', type: 'lancamento' | 'negocio_local') => ProductPrice | undefined
+  getPriceByCategory: (
+    category: 'google' | 'meta',
+    type: 'lancamento' | 'negocio_local'
+  ) => ProductPrice | undefined
 }
 
 export function useProductPrices(): UseProductPricesReturn {
@@ -33,38 +36,38 @@ export function useProductPrices(): UseProductPricesReturn {
       id: 'google_lancamento',
       name: 'Dashboard Google Ads - Lançamento',
       description: 'Dashboard para campanhas de lançamento no Google Ads',
-      price: 10.00,
+      price: 10.0,
       category: 'google',
       type: 'lancamento',
-      isActive: true
+      isActive: true,
     },
     {
       id: 'meta_lancamento',
       name: 'Dashboard Meta Ads - Lançamento',
       description: 'Dashboard para campanhas de lançamento no Meta Ads',
-      price: 10.00,
+      price: 10.0,
       category: 'meta',
       type: 'lancamento',
-      isActive: true
+      isActive: true,
     },
     {
       id: 'google_negocio_local',
       name: 'Dashboard Google Ads - Negócios Locais',
       description: 'Dashboard para negócios locais no Google Ads',
-      price: 5.00,
+      price: 5.0,
       category: 'google',
       type: 'negocio_local',
-      isActive: true
+      isActive: true,
     },
     {
       id: 'meta_negocio_local',
       name: 'Dashboard Meta Ads - Negócios Locais',
       description: 'Dashboard para negócios locais no Meta Ads',
-      price: 5.00,
+      price: 5.0,
       category: 'meta',
       type: 'negocio_local',
-      isActive: true
-    }
+      isActive: true,
+    },
   ]
 
   // Buscar preços via Cloud Function
@@ -72,10 +75,10 @@ export function useProductPrices(): UseProductPricesReturn {
     try {
       setLoading(true)
       setError(null)
-      
+
       const getPublicProductPrices = httpsCallable(functions, 'getPublicProductPrices')
       const result = await getPublicProductPrices()
-      
+
       if (result.data && (result.data as any).success) {
         const pricesData = (result.data as any).prices
         setPrices(pricesData)
@@ -96,18 +99,21 @@ export function useProductPrices(): UseProductPricesReturn {
   // Buscar preços quando o componente montar
   useEffect(() => {
     fetchPrices()
-    
+
     // Recarregar preços a cada 30 segundos para pegar atualizações
     const interval = setInterval(() => {
       fetchPrices()
     }, 30000) // 30 segundos
-    
+
     return () => clearInterval(interval)
   }, [])
 
   // Função auxiliar para buscar preço específico
-  const getPriceByCategory = (category: 'google' | 'meta', type: 'lancamento' | 'negocio_local') => {
-    return prices.find(p => p.category === category && p.type === type)
+  const getPriceByCategory = (
+    category: 'google' | 'meta',
+    type: 'lancamento' | 'negocio_local'
+  ) => {
+    return prices.find((p) => p.category === category && p.type === type)
   }
 
   // Função para recarregar preços manualmente
@@ -120,6 +126,6 @@ export function useProductPrices(): UseProductPricesReturn {
     loading,
     error,
     refetch,
-    getPriceByCategory
+    getPriceByCategory,
   }
 }

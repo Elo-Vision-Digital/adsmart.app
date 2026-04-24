@@ -1,12 +1,12 @@
+import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LanguageSelector } from '@/components/common/LanguageSelector'
+import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
+import { Button } from '@/components/ui/button'
+import { WalletDisplay } from '@/components/WalletDisplay'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
-import { WalletDisplay } from '@/components/WalletDisplay'
-import { Button } from '@/components/ui/button'
-import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
-import { LanguageSelector } from '@/components/common/LanguageSelector'
-import { ChevronDown } from 'lucide-react'
 
 export function Header() {
   const { user, signOut } = useAuth()
@@ -27,7 +27,11 @@ export function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <img
-              src={theme === 'light' ? 'https://i.imgur.com/T6AehDg.png' : 'https://i.imgur.com/CPDcfYm.png'}
+              src={
+                theme === 'light'
+                  ? 'https://i.imgur.com/T6AehDg.png'
+                  : 'https://i.imgur.com/CPDcfYm.png'
+              }
               alt="adsmart"
               className="h-8"
             />
@@ -36,13 +40,14 @@ export function Header() {
           {/* Saldo e Ações */}
           <div className="flex items-center gap-4">
             <WalletDisplay />
-            
+
             <Button
               onClick={() => setShowAddCredits(true)}
               className={`
-                ${theme === 'light' 
-                  ? 'bg-black hover:bg-gray-800 text-white' 
-                  : 'bg-[#FAFAFA] hover:bg-gray-100 text-black'
+                ${
+                  theme === 'light'
+                    ? 'bg-black hover:bg-gray-800 text-white'
+                    : 'bg-[#FAFAFA] hover:bg-gray-100 text-black'
                 }
               `}
             >
@@ -79,16 +84,13 @@ export function Header() {
               {/* Dropdown Menu */}
               {showDropdown && (
                 <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowDropdown(false)}
-                  />
+                  <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
                   <div className="absolute top-full right-0 mt-2 bg-white dark:bg-surface rounded-lg shadow-lg border border-border py-2 min-w-[200px] z-50">
                     <div className="px-4 py-2 border-b border-border">
                       <p className="font-medium text-sm">{user?.displayName || 'Usuário'}</p>
                       <p className="text-xs text-muted-foreground">{user?.email}</p>
                     </div>
-                    
+
                     <button
                       onClick={() => {
                         navigate('/settings')
@@ -98,7 +100,7 @@ export function Header() {
                     >
                       <span className="text-sm">Configurações</span>
                     </button>
-                    
+
                     <div className="border-t border-border mt-2 pt-2">
                       <button
                         onClick={handleLogout}
@@ -115,10 +117,7 @@ export function Header() {
         </div>
       </header>
 
-      <AddCreditsModal
-        open={showAddCredits}
-        onOpenChange={setShowAddCredits}
-      />
+      <AddCreditsModal open={showAddCredits} onOpenChange={setShowAddCredits} />
     </>
   )
 }

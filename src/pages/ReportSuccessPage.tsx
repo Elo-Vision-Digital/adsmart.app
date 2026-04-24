@@ -1,11 +1,11 @@
+import { doc, getDoc } from 'firebase/firestore'
+import { CheckCircle, Clock, ExternalLink, FileText, Home } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { MainLayout } from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle, Clock, ExternalLink, Home, FileText } from 'lucide-react'
-import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
-import { MainLayout } from '@/components/layout/MainLayout'
 
 export function ReportSuccessPage() {
   const navigate = useNavigate()
@@ -13,7 +13,7 @@ export function ReportSuccessPage() {
   const reportId = searchParams.get('id')
   const [reportData, setReportData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  
+
   useEffect(() => {
     if (!reportId) {
       navigate('/dashboard')
@@ -42,7 +42,9 @@ export function ReportSuccessPage() {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
           <div className="text-center">
             <Clock className="w-12 h-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-            <p className="text-gray-600 dark:text-gray-400">Carregando informações do relatório...</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Carregando informações do relatório...
+            </p>
           </div>
         </div>
       </MainLayout>
@@ -60,7 +62,7 @@ export function ReportSuccessPage() {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full mb-4">
               <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
             </div>
-            
+
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Relatório Gerado com Sucesso!
             </h1>
@@ -88,7 +90,9 @@ export function ReportSuccessPage() {
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Gerado em:</span>
                 <span className="font-medium">
-                  {reportData?.createdAt ? new Date(reportData.createdAt.seconds * 1000).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR')}
+                  {reportData?.createdAt
+                    ? new Date(reportData.createdAt.seconds * 1000).toLocaleString('pt-BR')
+                    : new Date().toLocaleString('pt-BR')}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -109,10 +113,11 @@ export function ReportSuccessPage() {
               <div className="space-y-4">
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                    📊 Seu dashboard interativo está disponível com todas as métricas e análises das campanhas selecionadas.
+                    📊 Seu dashboard interativo está disponível com todas as métricas e análises das
+                    campanhas selecionadas.
                   </p>
-                  <Button 
-                    className="w-full" 
+                  <Button
+                    className="w-full"
                     size="lg"
                     onClick={() => window.open(mockLookerUrl, '_blank')}
                   >
@@ -161,18 +166,11 @@ export function ReportSuccessPage() {
           </Card>
 
           <div className="flex gap-4 mt-6">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/dashboard')}
-            >
+            <Button variant="outline" onClick={() => navigate('/dashboard')}>
               <Home className="mr-2 h-4 w-4" />
               Voltar ao Dashboard
             </Button>
-            <Button 
-              onClick={() => navigate('/templates')}
-            >
-              Gerar Novo Relatório
-            </Button>
+            <Button onClick={() => navigate('/templates')}>Gerar Novo Relatório</Button>
           </div>
         </div>
       </div>

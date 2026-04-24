@@ -1,10 +1,10 @@
-import { useWallet } from '@/hooks/useWallet'
+import { ArrowLeft, Clock, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { MainLayout } from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { MainLayout } from '@/components/layout/MainLayout'
-import { ArrowLeft, TrendingDown, TrendingUp, Wallet, Clock } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useWallet } from '@/hooks/useWallet'
 
 export function TransactionsPage() {
   const { transactions, loading, formatCurrency, balance } = useWallet()
@@ -29,15 +29,11 @@ export function TransactionsPage() {
             <div className="max-w-4xl mx-auto">
               {/* Header */}
               <div className="mb-6">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => navigate('/dashboard')}
-                  className="mb-4"
-                >
+                <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   {t('transactionsPage.backToDashboard')}
                 </Button>
-                
+
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
                   {t('transactionsPage.title')}
                 </h1>
@@ -64,7 +60,9 @@ export function TransactionsPage() {
               {/* Card de Transações */}
               <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700">
                 <CardHeader className="px-4 md:px-6">
-                  <CardTitle className="text-lg md:text-xl">{t('transactionsPage.recentTransactions')}</CardTitle>
+                  <CardTitle className="text-lg md:text-xl">
+                    {t('transactionsPage.recentTransactions')}
+                  </CardTitle>
                   <CardDescription className="text-gray-600 dark:text-gray-400">
                     {t('transactionsPage.lastTransactions')}
                   </CardDescription>
@@ -98,7 +96,7 @@ export function TransactionsPage() {
                                 <TrendingDown className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
                               </div>
                             )}
-                            
+
                             <div className="min-w-0 flex-1">
                               <p className="font-medium text-gray-900 dark:text-white text-sm md:text-base truncate">
                                 {transaction.description}
@@ -106,12 +104,12 @@ export function TransactionsPage() {
                               <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                                 {(() => {
                                   try {
-                                    const createdAt: any = transaction.createdAt;
-                                    
+                                    const createdAt: any = transaction.createdAt
+
                                     if (!createdAt) {
-                                      return t('transactionsPage.dateUnavailable');
+                                      return t('transactionsPage.dateUnavailable')
                                     }
-                                    
+
                                     // Se já é uma Date
                                     if (createdAt instanceof Date) {
                                       return createdAt.toLocaleString(t('common.locale'), {
@@ -119,10 +117,10 @@ export function TransactionsPage() {
                                         month: '2-digit',
                                         year: 'numeric',
                                         hour: '2-digit',
-                                        minute: '2-digit'
-                                      });
+                                        minute: '2-digit',
+                                      })
                                     }
-                                    
+
                                     // Se tem método toDate (Timestamp do Firebase)
                                     if (typeof createdAt.toDate === 'function') {
                                       return createdAt.toDate().toLocaleString(t('common.locale'), {
@@ -130,49 +128,58 @@ export function TransactionsPage() {
                                         month: '2-digit',
                                         year: 'numeric',
                                         hour: '2-digit',
-                                        minute: '2-digit'
-                                      });
+                                        minute: '2-digit',
+                                      })
                                     }
-                                    
+
                                     // Se tem propriedade seconds
                                     if (createdAt.seconds) {
-                                      return new Date(createdAt.seconds * 1000).toLocaleString(t('common.locale'), {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      });
+                                      return new Date(createdAt.seconds * 1000).toLocaleString(
+                                        t('common.locale'),
+                                        {
+                                          day: '2-digit',
+                                          month: '2-digit',
+                                          year: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        }
+                                      )
                                     }
-                                    
-                                    return t('transactionsPage.dateUnavailable');
+
+                                    return t('transactionsPage.dateUnavailable')
                                   } catch (error) {
-                                    return t('transactionsPage.dateUnavailable');
+                                    return t('transactionsPage.dateUnavailable')
                                   }
                                 })()}
                               </p>
                             </div>
                           </div>
-                          
+
                           <div className="text-right flex-shrink-0 ml-auto md:ml-0">
-                            <p className={`font-semibold text-sm md:text-base ${
-                              transaction.status === 'pending'
-                                ? 'text-amber-600 dark:text-amber-400'
-                                : transaction.type === 'credit' 
-                                  ? 'text-green-600 dark:text-green-400' 
-                                  : 'text-red-600 dark:text-red-400'
-                            }`}>
+                            <p
+                              className={`font-semibold text-sm md:text-base ${
+                                transaction.status === 'pending'
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : transaction.type === 'credit'
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-red-600 dark:text-red-400'
+                              }`}
+                            >
                               {transaction.type === 'credit' ? '+' : '-'}
                               {formatCurrency(transaction.amount)}
                             </p>
-                            <p className={`text-xs md:text-sm ${
-                              transaction.status === 'pending'
-                                ? 'text-amber-600 dark:text-amber-400 font-medium'
-                                : 'text-gray-500 dark:text-gray-400'
-                            }`}>
-                              {transaction.status === 'completed' ? t('transactionsPage.transactionStatus.completed') : 
-                               transaction.status === 'pending' ? t('transactionsPage.transactionStatus.pending') : 
-                               t('transactionsPage.transactionStatus.failed')}
+                            <p
+                              className={`text-xs md:text-sm ${
+                                transaction.status === 'pending'
+                                  ? 'text-amber-600 dark:text-amber-400 font-medium'
+                                  : 'text-gray-500 dark:text-gray-400'
+                              }`}
+                            >
+                              {transaction.status === 'completed'
+                                ? t('transactionsPage.transactionStatus.completed')
+                                : transaction.status === 'pending'
+                                  ? t('transactionsPage.transactionStatus.pending')
+                                  : t('transactionsPage.transactionStatus.failed')}
                             </p>
                           </div>
                         </div>
@@ -188,11 +195,13 @@ export function TransactionsPage() {
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('transactionsPage.stats.totalCredits')}</p>
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                          {t('transactionsPage.stats.totalCredits')}
+                        </p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(
                             transactions
-                              .filter(t => t.type === 'credit' && t.status === 'completed')
+                              .filter((t) => t.type === 'credit' && t.status === 'completed')
                               .reduce((sum, t) => sum + t.amount, 0)
                           )}
                         </p>
@@ -208,11 +217,13 @@ export function TransactionsPage() {
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('transactionsPage.stats.totalDebits')}</p>
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                          {t('transactionsPage.stats.totalDebits')}
+                        </p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(
                             transactions
-                              .filter(t => t.type === 'debit' && t.status === 'completed')
+                              .filter((t) => t.type === 'debit' && t.status === 'completed')
                               .reduce((sum, t) => sum + t.amount, 0)
                           )}
                         </p>
@@ -228,7 +239,9 @@ export function TransactionsPage() {
                   <CardContent className="p-3 md:p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('transactionsPage.stats.transactions')}</p>
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                          {t('transactionsPage.stats.transactions')}
+                        </p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                           {transactions.length}
                         </p>

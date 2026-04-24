@@ -1,14 +1,14 @@
+import { AlertCircle, ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { MainLayout } from '@/components/layout/MainLayout'
+import { availableTemplates, TemplateGrid } from '@/components/templates/TemplateGrid'
+import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, AlertCircle } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { useWallet } from '@/hooks/useWallet'
-import { useProductPrices } from '@/hooks/useProductPrices'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { MainLayout } from '@/components/layout/MainLayout'
-import { TemplateGrid, availableTemplates } from '@/components/templates/TemplateGrid'
-import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
+import { useProductPrices } from '@/hooks/useProductPrices'
+import { useWallet } from '@/hooks/useWallet'
 
 export function TemplatesPage() {
   const navigate = useNavigate()
@@ -29,7 +29,7 @@ export function TemplatesPage() {
 
   // Verificar se há saldo para qualquer template
   const hasBalanceForAnyTemplate = () => {
-    return availableTemplates.some(template => {
+    return availableTemplates.some((template) => {
       const price = getTemplatePrice(template.category, template.type)
       return balance >= price
     })
@@ -40,27 +40,29 @@ export function TemplatesPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A0A]">
         <div className="max-w-6xl mx-auto p-4 md:p-6">
           <div className="mb-6">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/dashboard')}
-              className="mb-4"
-            >
+            <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4">
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('templatesPage.backToDashboard')}
             </Button>
-            
+
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{t('templatesPage.title')}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                  {t('templatesPage.title')}
+                </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
                   {t('templatesPage.subtitle')}
                 </p>
               </div>
-              
+
               <Card className="p-4">
                 <div className="text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('templatesPage.currentBalance')}</p>
-                  <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(balance)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {t('templatesPage.currentBalance')}
+                  </p>
+                  <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                    {formatCurrency(balance)}
+                  </p>
                 </div>
               </Card>
             </div>
@@ -76,9 +78,7 @@ export function TemplatesPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-orange-700 dark:text-orange-300">
-                  {pricesError}
-                </p>
+                <p className="text-orange-700 dark:text-orange-300">{pricesError}</p>
               </CardContent>
             </Card>
           )}
@@ -94,12 +94,11 @@ export function TemplatesPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-yellow-700 dark:text-yellow-300">
-                  {t('templatesPage.insufficientBalance.message', { balance: formatCurrency(balance) })}
+                  {t('templatesPage.insufficientBalance.message', {
+                    balance: formatCurrency(balance),
+                  })}
                 </p>
-                <Button 
-                  className="mt-4"
-                  onClick={() => setShowAddCredits(true)}
-                >
+                <Button className="mt-4" onClick={() => setShowAddCredits(true)}>
                   {t('templatesPage.insufficientBalance.button')}
                 </Button>
               </CardContent>
@@ -142,10 +141,7 @@ export function TemplatesPage() {
         </div>
       </div>
 
-      <AddCreditsModal
-        open={showAddCredits}
-        onOpenChange={setShowAddCredits}
-      />
+      <AddCreditsModal open={showAddCredits} onOpenChange={setShowAddCredits} />
     </MainLayout>
   )
 }

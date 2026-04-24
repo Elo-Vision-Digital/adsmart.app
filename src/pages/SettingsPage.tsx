@@ -1,28 +1,28 @@
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { MainLayout } from '@/components/layout/MainLayout'
-import { useAuth } from '@/contexts/AuthContext'
-import { useLanguage } from '@/contexts/LanguageContext'
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  CreditCard, 
-  Lock, 
-  AlertCircle,
-  Check,
-  Loader2,
-  UserCircle,
-  Globe
-} from 'lucide-react'
-import { 
-  updatePassword, 
-  EmailAuthProvider, 
+import {
+  EmailAuthProvider,
   reauthenticateWithCredential,
-  sendEmailVerification 
+  sendEmailVerification,
+  updatePassword,
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
+import {
+  AlertCircle,
+  Check,
+  CreditCard,
+  Globe,
+  Loader2,
+  Lock,
+  Mail,
+  Phone,
+  User,
+  UserCircle,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { MainLayout } from '@/components/layout/MainLayout'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { db } from '@/firebase/config'
 
 interface UserProfile {
@@ -36,28 +36,28 @@ interface UserProfile {
 export function SettingsPage() {
   const { user } = useAuth()
   const { t, language, setLanguage } = useLanguage()
-  
+
   // Estados do formulário de perfil
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
     phone: '',
     documentType: 'cpf',
-    documentNumber: ''
+    documentNumber: '',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
-  
+
   // Estados do formulário de senha
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
   })
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState('')
   const [passwordError, setPasswordError] = useState('')
-  
+
   // Estados de verificação de email
   const [sendingVerification, setSendingVerification] = useState(false)
   const [verificationMessage, setVerificationMessage] = useState('')
@@ -71,18 +71,18 @@ export function SettingsPage() {
 
   const loadUserProfile = async () => {
     if (!user) return
-    
+
     try {
       const docRef = doc(db, 'users', user.uid)
       const docSnap = await getDoc(docRef)
-      
+
       if (docSnap.exists()) {
         const data = docSnap.data()
         setProfile({
           name: data.name || user.displayName || '',
           phone: data.phone || '',
           documentType: data.documentType || 'cpf',
-          documentNumber: data.documentNumber || ''
+          documentNumber: data.documentNumber || '',
         })
       } else {
         // Se não existe, usar dados do auth
@@ -90,7 +90,7 @@ export function SettingsPage() {
           name: user.displayName || '',
           phone: '',
           documentType: 'cpf',
-          documentNumber: ''
+          documentNumber: '',
         })
       }
     } catch (error) {
@@ -105,22 +105,28 @@ export function SettingsPage() {
     e.preventDefault()
     setSaving(true)
     setSaveMessage('')
-    
+
     try {
       if (!user) throw new Error('Usuário não autenticado')
-      
+
       // Validar documento
       if (!validateDocument(profile.documentNumber, profile.documentType)) {
-        throw new Error(t('common.validation.invalidDocument', { type: profile.documentType.toUpperCase() }))
+        throw new Error(
+          t('common.validation.invalidDocument', { type: profile.documentType.toUpperCase() })
+        )
       }
-      
+
       // Salvar no Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        ...profile,
-        email: user.email,
-        updatedAt: new Date()
-      }, { merge: true })
-      
+      await setDoc(
+        doc(db, 'users', user.uid),
+        {
+          ...profile,
+          email: user.email,
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      )
+
       setSaveMessage(t('settingsPage.messages.profileUpdated'))
       setTimeout(() => setSaveMessage(''), 3000)
     } catch (error: any) {
@@ -136,36 +142,33 @@ export function SettingsPage() {
     setPasswordLoading(true)
     setPasswordMessage('')
     setPasswordError('')
-    
+
     try {
       if (!user || !user.email) throw new Error('Usuário não autenticado')
-      
+
       // Validar senhas
       if (passwordForm.newPassword !== passwordForm.confirmPassword) {
         throw new Error(t('settingsPage.messages.passwordsDoNotMatch'))
       }
-      
+
       if (passwordForm.newPassword.length < 6) {
         throw new Error(t('settingsPage.messages.passwordTooShort'))
       }
-      
+
       // Reautenticar usuário
-      const credential = EmailAuthProvider.credential(
-        user.email,
-        passwordForm.currentPassword
-      )
+      const credential = EmailAuthProvider.credential(user.email, passwordForm.currentPassword)
       await reauthenticateWithCredential(user, credential)
-      
+
       // Atualizar senha
       await updatePassword(user, passwordForm.newPassword)
-      
+
       setPasswordMessage(t('settingsPage.messages.passwordChanged'))
       setPasswordForm({
         currentPassword: '',
         newPassword: '',
-        confirmPassword: ''
+        confirmPassword: '',
       })
-      
+
       setTimeout(() => setPasswordMessage(''), 3000)
     } catch (error: any) {
       if (error.code === 'auth/wrong-password') {
@@ -181,10 +184,10 @@ export function SettingsPage() {
   // Enviar email de verificação
   const handleSendVerification = async () => {
     if (!user) return
-    
+
     setSendingVerification(true)
     setVerificationMessage('')
-    
+
     try {
       await sendEmailVerification(user)
       setVerificationMessage(t('settingsPage.emailVerification.verificationSent'))
@@ -199,10 +202,10 @@ export function SettingsPage() {
   // Validar CPF
   const validateCPF = (cpf: string): boolean => {
     cpf = cpf.replace(/[^\d]/g, '')
-    
+
     if (cpf.length !== 11) return false
     if (/^(\d)\1{10}$/.test(cpf)) return false
-    
+
     let sum = 0
     for (let i = 0; i < 9; i++) {
       sum += parseInt(cpf.charAt(i)) * (10 - i)
@@ -210,7 +213,7 @@ export function SettingsPage() {
     let digit = 11 - (sum % 11)
     if (digit >= 10) digit = 0
     if (digit !== parseInt(cpf.charAt(9))) return false
-    
+
     sum = 0
     for (let i = 0; i < 10; i++) {
       sum += parseInt(cpf.charAt(i)) * (11 - i)
@@ -218,44 +221,44 @@ export function SettingsPage() {
     digit = 11 - (sum % 11)
     if (digit >= 10) digit = 0
     if (digit !== parseInt(cpf.charAt(10))) return false
-    
+
     return true
   }
 
   // Validar CNPJ
   const validateCNPJ = (cnpj: string): boolean => {
     cnpj = cnpj.replace(/[^\d]/g, '')
-    
+
     if (cnpj.length !== 14) return false
     if (/^(\d)\1{13}$/.test(cnpj)) return false
-    
+
     let length = cnpj.length - 2
     let numbers = cnpj.substring(0, length)
-    let digits = cnpj.substring(length)
+    const digits = cnpj.substring(length)
     let sum = 0
     let pos = length - 7
-    
+
     for (let i = length; i >= 1; i--) {
       sum += parseInt(numbers.charAt(length - i)) * pos--
       if (pos < 2) pos = 9
     }
-    
+
     let result = sum % 11 < 2 ? 0 : 11 - (sum % 11)
     if (result !== parseInt(digits.charAt(0))) return false
-    
+
     length = length + 1
     numbers = cnpj.substring(0, length)
     sum = 0
     pos = length - 7
-    
+
     for (let i = length; i >= 1; i--) {
       sum += parseInt(numbers.charAt(length - i)) * pos--
       if (pos < 2) pos = 9
     }
-    
+
     result = sum % 11 < 2 ? 0 : 11 - (sum % 11)
     if (result !== parseInt(digits.charAt(1))) return false
-    
+
     return true
   }
 
@@ -267,7 +270,7 @@ export function SettingsPage() {
   // Formatar documento
   const formatDocument = (value: string, type: 'cpf' | 'cnpj') => {
     value = value.replace(/\D/g, '')
-    
+
     if (type === 'cpf') {
       value = value.replace(/(\d{3})(\d)/, '$1.$2')
       value = value.replace(/(\d{3})(\d)/, '$1.$2')
@@ -278,7 +281,7 @@ export function SettingsPage() {
       value = value.replace(/(\d{3})(\d)/, '$1/$2')
       value = value.replace(/(\d{4})(\d)/, '$1-$2')
     }
-    
+
     return value
   }
 
@@ -430,7 +433,9 @@ export function SettingsPage() {
                         <input
                           type="tel"
                           value={profile.phone}
-                          onChange={(e) => setProfile({ ...profile, phone: formatPhone(e.target.value) })}
+                          onChange={(e) =>
+                            setProfile({ ...profile, phone: formatPhone(e.target.value) })
+                          }
                           className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
                           placeholder="(00) 00000-0000"
                           maxLength={15}
@@ -450,7 +455,9 @@ export function SettingsPage() {
                             name="documentType"
                             value="cpf"
                             checked={profile.documentType === 'cpf'}
-                            onChange={() => setProfile({ ...profile, documentType: 'cpf', documentNumber: '' })}
+                            onChange={() =>
+                              setProfile({ ...profile, documentType: 'cpf', documentNumber: '' })
+                            }
                             className="mr-2"
                           />
                           <span className="text-sm text-gray-700 dark:text-gray-300">CPF</span>
@@ -461,7 +468,9 @@ export function SettingsPage() {
                             name="documentType"
                             value="cnpj"
                             checked={profile.documentType === 'cnpj'}
-                            onChange={() => setProfile({ ...profile, documentType: 'cnpj', documentNumber: '' })}
+                            onChange={() =>
+                              setProfile({ ...profile, documentType: 'cnpj', documentNumber: '' })
+                            }
                             className="mr-2"
                           />
                           <span className="text-sm text-gray-700 dark:text-gray-300">CNPJ</span>
@@ -478,12 +487,16 @@ export function SettingsPage() {
                         <input
                           type="text"
                           value={profile.documentNumber}
-                          onChange={(e) => setProfile({ 
-                            ...profile, 
-                            documentNumber: formatDocument(e.target.value, profile.documentType) 
-                          })}
+                          onChange={(e) =>
+                            setProfile({
+                              ...profile,
+                              documentNumber: formatDocument(e.target.value, profile.documentType),
+                            })
+                          }
                           className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
-                          placeholder={profile.documentType === 'cpf' ? '000.000.000-00' : '00.000.000/0000-00'}
+                          placeholder={
+                            profile.documentType === 'cpf' ? '000.000.000-00' : '00.000.000/0000-00'
+                          }
                           maxLength={profile.documentType === 'cpf' ? 14 : 18}
                           required
                         />
@@ -491,11 +504,13 @@ export function SettingsPage() {
                     </div>
 
                     {saveMessage && (
-                      <div className={`p-3 rounded-lg flex items-center gap-2 ${
-                        saveMessage.includes(t('settingsPage.messages.profileUpdated'))
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                      }`}>
+                      <div
+                        className={`p-3 rounded-lg flex items-center gap-2 ${
+                          saveMessage.includes(t('settingsPage.messages.profileUpdated'))
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}
+                      >
                         {saveMessage.includes(t('settingsPage.messages.profileUpdated')) ? (
                           <Check className="w-4 h-4" />
                         ) : (
@@ -505,11 +520,7 @@ export function SettingsPage() {
                       </div>
                     )}
 
-                    <Button 
-                      type="submit" 
-                      className="w-full"
-                      disabled={saving}
-                    >
+                    <Button type="submit" className="w-full" disabled={saving}>
                       {saving ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -543,7 +554,9 @@ export function SettingsPage() {
                       <input
                         type="password"
                         value={passwordForm.currentPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                        onChange={(e) =>
+                          setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
+                        }
                         className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
                         required
                       />
@@ -556,7 +569,9 @@ export function SettingsPage() {
                       <input
                         type="password"
                         value={passwordForm.newPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        onChange={(e) =>
+                          setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+                        }
                         className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
                         placeholder={t('common.validation.minimumCharacters')}
                         required
@@ -570,7 +585,9 @@ export function SettingsPage() {
                       <input
                         type="password"
                         value={passwordForm.confirmPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                        onChange={(e) =>
+                          setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                        }
                         className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
                         required
                       />
@@ -590,11 +607,7 @@ export function SettingsPage() {
                       </div>
                     )}
 
-                    <Button 
-                      type="submit" 
-                      className="w-full"
-                      disabled={passwordLoading}
-                    >
+                    <Button type="submit" className="w-full" disabled={passwordLoading}>
                       {passwordLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />

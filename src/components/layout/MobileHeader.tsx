@@ -1,12 +1,12 @@
+import { ChevronRight, Globe, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
-import { useWallet } from '@/hooks/useWallet'
-import { useTheme } from '@/contexts/ThemeContext'
-import { useLanguage } from '@/contexts/LanguageContext'
-import { SettingsIcon, LogoutIcon, SunIcon, MoonIcon } from '@/components/icons'
-import { Plus, Globe, ChevronRight } from 'lucide-react'
+import { LogoutIcon, MoonIcon, SettingsIcon, SunIcon } from '@/components/icons'
 import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
+import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { useTheme } from '@/contexts/ThemeContext'
+import { useWallet } from '@/hooks/useWallet'
 
 export function MobileHeader() {
   const [showMenu, setShowMenu] = useState(false)
@@ -24,16 +24,20 @@ export function MobileHeader() {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 w-full border-b md:hidden z-40 ${
-        theme === 'dark' 
-          ? 'bg-black border-white/10' 
-          : 'bg-white border-black/10'
-      }`}>
+      <header
+        className={`fixed top-0 left-0 right-0 w-full border-b md:hidden z-40 ${
+          theme === 'dark' ? 'bg-black border-white/10' : 'bg-white border-black/10'
+        }`}
+      >
         <div className="flex items-center justify-between h-14 px-4 max-w-full">
           {/* Logo */}
           <div className="flex-shrink-0">
             <img
-              src={theme === 'light' ? 'https://i.imgur.com/T6AehDg.png' : 'https://i.imgur.com/CPDcfYm.png'}
+              src={
+                theme === 'light'
+                  ? 'https://i.imgur.com/T6AehDg.png'
+                  : 'https://i.imgur.com/CPDcfYm.png'
+              }
               alt="adsmart"
               className="h-8"
             />
@@ -42,20 +46,28 @@ export function MobileHeader() {
           {/* Saldo, Botão Depositar e Avatar */}
           <div className="flex items-center gap-2">
             {/* Container do Saldo e Botão */}
-            <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 ${
-              theme === 'dark' 
-                ? 'bg-white/10' 
-                : 'bg-black/5'
-            }`}>
+            <div
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 ${
+                theme === 'dark' ? 'bg-white/10' : 'bg-black/5'
+              }`}
+            >
               <div className="text-right">
-                <p className={`text-[10px] leading-none ${
-                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                }`}>{t('common.general.balance')}</p>
-                <p className={`font-semibold text-sm ${
-                  theme === 'dark' ? 'text-white' : 'text-black'
-                }`}>{formattedBalance}</p>
+                <p
+                  className={`text-[10px] leading-none ${
+                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                  }`}
+                >
+                  {t('common.general.balance')}
+                </p>
+                <p
+                  className={`font-semibold text-sm ${
+                    theme === 'dark' ? 'text-white' : 'text-black'
+                  }`}
+                >
+                  {formattedBalance}
+                </p>
               </div>
-              
+
               {/* Botão Depositar */}
               <button
                 onClick={() => setShowAddCreditsModal(true)}
@@ -69,7 +81,7 @@ export function MobileHeader() {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            
+
             {/* Avatar */}
             <button
               onClick={() => setShowMenu(!showMenu)}
@@ -84,9 +96,9 @@ export function MobileHeader() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className={`text-lg font-bold ${
-                  theme === 'dark' ? 'text-white' : 'text-black'
-                }`}>
+                <span
+                  className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                >
                   {user?.displayName?.charAt(0)?.toUpperCase() || 'A'}
                 </span>
               )}
@@ -98,47 +110,44 @@ export function MobileHeader() {
       {/* Dropdown Menu */}
       {showMenu && (
         <>
+          <div className="fixed inset-0 z-40 md:hidden" onClick={() => setShowMenu(false)} />
           <div
-            className="fixed inset-0 z-40 md:hidden"
-            onClick={() => setShowMenu(false)}
-          />
-          <div className={`fixed top-14 right-4 rounded-lg shadow-lg border py-2 min-w-[200px] z-50 md:hidden ${
-            theme === 'dark' 
-              ? 'bg-black border-white/20' 
-              : 'bg-white border-black/10'
-          }`}>
-            <div className={`px-4 py-2 border-b ${
-              theme === 'dark' ? 'border-white/20' : 'border-black/10'
-            }`}>
-              <p className={`font-medium text-sm ${
-                theme === 'dark' ? 'text-white' : 'text-black'
-              }`}>{user?.displayName || t('common.general.user')}</p>
-              <p className={`text-xs ${
-                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-              }`}>{user?.email}</p>
+            className={`fixed top-14 right-4 rounded-lg shadow-lg border py-2 min-w-[200px] z-50 md:hidden ${
+              theme === 'dark' ? 'bg-black border-white/20' : 'bg-white border-black/10'
+            }`}
+          >
+            <div
+              className={`px-4 py-2 border-b ${
+                theme === 'dark' ? 'border-white/20' : 'border-black/10'
+              }`}
+            >
+              <p
+                className={`font-medium text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+              >
+                {user?.displayName || t('common.general.user')}
+              </p>
+              <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                {user?.email}
+              </p>
             </div>
-            
+
             <button
               onClick={() => {
                 navigate('/settings')
                 setShowMenu(false)
               }}
               className={`flex items-center gap-3 px-4 py-2 transition-colors w-full ${
-                theme === 'dark' 
-                  ? 'hover:bg-white/10 text-white' 
-                  : 'hover:bg-black/5 text-black'
+                theme === 'dark' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
               }`}
             >
               <SettingsIcon size={18} />
               <span className="text-sm">{t('common.general.settings')}</span>
             </button>
-            
+
             <button
               onClick={toggleTheme}
               className={`flex items-center gap-3 px-4 py-2 transition-colors w-full ${
-                theme === 'dark' 
-                  ? 'hover:bg-white/10 text-white' 
-                  : 'hover:bg-black/5 text-black'
+                theme === 'dark' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
               }`}
             >
               {theme === 'light' ? <MoonIcon size={18} /> : <SunIcon size={18} />}
@@ -146,19 +155,19 @@ export function MobileHeader() {
                 {theme === 'light' ? t('common.theme.dark') : t('common.theme.light')}
               </span>
             </button>
-            
+
             {/* Language Selector */}
             <MobileLanguageSelector onClose={() => setShowMenu(false)} />
-            
-            <div className={`border-t mt-2 pt-2 ${
-              theme === 'dark' ? 'border-white/20' : 'border-black/10'
-            }`}>
+
+            <div
+              className={`border-t mt-2 pt-2 ${
+                theme === 'dark' ? 'border-white/20' : 'border-black/10'
+              }`}
+            >
               <button
                 onClick={handleLogout}
                 className={`flex items-center gap-3 px-4 py-2 transition-colors w-full text-red-600 dark:text-red-400 ${
-                  theme === 'dark' 
-                    ? 'hover:bg-white/10' 
-                    : 'hover:bg-black/5'
+                  theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/5'
                 }`}
               >
                 <LogoutIcon size={18} />
@@ -170,10 +179,7 @@ export function MobileHeader() {
       )}
 
       {/* Modal de Adicionar Créditos */}
-      <AddCreditsModal 
-        open={showAddCreditsModal} 
-        onOpenChange={setShowAddCreditsModal} 
-      />
+      <AddCreditsModal open={showAddCreditsModal} onOpenChange={setShowAddCreditsModal} />
     </>
   )
 }
@@ -187,15 +193,15 @@ function MobileLanguageSelector({ onClose }: { onClose: () => void }) {
   const languageOptions = [
     { code: 'pt', label: 'Português', flag: '🇧🇷' },
     { code: 'en', label: 'English', flag: '🇺🇸' },
-    { code: 'es', label: 'Español', flag: '🇪🇸' }
+    { code: 'es', label: 'Español', flag: '🇪🇸' },
   ]
 
-  const currentLang = languageOptions.find(l => l.code === language) || languageOptions[0]
+  const currentLang = languageOptions.find((l) => l.code === language) || languageOptions[0]
 
   if (showOptions) {
     return (
       <>
-        {languageOptions.map(lang => (
+        {languageOptions.map((lang) => (
           <button
             key={lang.code}
             onClick={() => {
@@ -205,8 +211,12 @@ function MobileLanguageSelector({ onClose }: { onClose: () => void }) {
             }}
             className={`flex items-center gap-3 px-4 py-2 transition-colors w-full ${
               language === lang.code
-                ? theme === 'dark' ? 'bg-white/10' : 'bg-black/10'
-                : theme === 'dark' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
+                ? theme === 'dark'
+                  ? 'bg-white/10'
+                  : 'bg-black/10'
+                : theme === 'dark'
+                  ? 'hover:bg-white/10 text-white'
+                  : 'hover:bg-black/5 text-black'
             }`}
           >
             <span className="text-lg">{lang.flag}</span>
@@ -216,9 +226,7 @@ function MobileLanguageSelector({ onClose }: { onClose: () => void }) {
         <button
           onClick={() => setShowOptions(false)}
           className={`flex items-center gap-3 px-4 py-2 transition-colors w-full ${
-            theme === 'dark' 
-              ? 'hover:bg-white/10 text-gray-400' 
-              : 'hover:bg-black/5 text-gray-600'
+            theme === 'dark' ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-black/5 text-gray-600'
           }`}
         >
           <ChevronRight className="w-4 h-4 rotate-180" />
@@ -232,13 +240,13 @@ function MobileLanguageSelector({ onClose }: { onClose: () => void }) {
     <button
       onClick={() => setShowOptions(true)}
       className={`flex items-center gap-3 px-4 py-2 transition-colors w-full ${
-        theme === 'dark' 
-          ? 'hover:bg-white/10 text-white' 
-          : 'hover:bg-black/5 text-black'
+        theme === 'dark' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
       }`}
     >
       <Globe size={18} />
-      <span className="text-sm">{currentLang.flag} {currentLang.label}</span>
+      <span className="text-sm">
+        {currentLang.flag} {currentLang.label}
+      </span>
       <ChevronRight className="w-3 h-3 ml-auto" />
     </button>
   )

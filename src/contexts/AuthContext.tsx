@@ -1,15 +1,15 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import {
-  User,
-  onAuthStateChanged,
-  signOut as firebaseSignOut,
-  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  FacebookAuthProvider,
+  signOut as firebaseSignOut,
   GoogleAuthProvider,
-  FacebookAuthProvider
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  type User,
 } from 'firebase/auth'
 import { httpsCallable } from 'firebase/functions'
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 import { auth, functions } from '@/firebase/config'
 
 interface AuthContextType {
@@ -39,10 +39,7 @@ interface AuthProviderProps {
 }
 
 // Lista de emails de administradores
-const ADMIN_EMAILS = [
-  'agency.elovisiondigital@gmail.com',
-  'admin@adsmart.app',
-]
+const ADMIN_EMAILS = ['agency.elovisiondigital@gmail.com', 'admin@adsmart.app']
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
@@ -78,20 +75,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signInWithEmail = async (email: string, password: string, recaptchaToken?: string) => {
     // Verificar se é o usuário de teste
     const isTestUser = email.toLowerCase().trim() === 'review.user@adsmart.app'
-    
+
     // Só verificar reCAPTCHA se não for desenvolvimento, usuário de teste ou token especial
-    if (recaptchaToken && recaptchaToken !== 'local-dev' && recaptchaToken !== 'test-user' && !isTestUser) {
+    if (
+      recaptchaToken &&
+      recaptchaToken !== 'local-dev' &&
+      recaptchaToken !== 'test-user' &&
+      !isTestUser
+    ) {
       await verifyRecaptchaToken(recaptchaToken)
     }
-    
+
     if (recaptchaToken === 'local-dev') {
       console.log('🔧 Modo desenvolvimento: Login sem reCAPTCHA')
     }
-    
+
     if (isTestUser || recaptchaToken === 'test-user') {
       console.log('🧪 Usuário de teste: Login sem verificação reCAPTCHA')
     }
-    
+
     await signInWithEmailAndPassword(auth, email, password)
   }
 
@@ -107,31 +109,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signInWithFacebook = async () => {
     try {
       console.log('🔍 Iniciando login com Facebook...')
-      
+
       const provider = new FacebookAuthProvider()
-      
+
       // REMOVIDO: Não solicitar email por enquanto
       // provider.addScope('email')
       // provider.addScope('public_profile')
-      
+
       console.log('📱 Provider configurado, abrindo popup...')
-      
+
       const result = await signInWithPopup(auth, provider)
-      
+
       console.log('✅ Login com Facebook bem-sucedido!', {
         user: result.user.email,
         providerId: result.providerId,
-        additionalUserInfo: result.user.providerData
+        additionalUserInfo: result.user.providerData,
       })
-      
     } catch (error: any) {
       console.error('❌ Erro no login com Facebook:', {
         code: error.code,
         message: error.message,
         email: error.email,
-        credential: error.credential
+        credential: error.credential,
       })
-      
+
       // Re-throw para ser tratado no componente
       throw error
     }
@@ -150,12 +151,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signUp,
     signInWithGoogle,
     signInWithFacebook,
-    signOut
+    signOut,
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>
 }

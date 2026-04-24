@@ -1,20 +1,20 @@
+import { Shield } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
-import { useTheme } from '@/contexts/ThemeContext'
-import { useLanguage } from '@/contexts/LanguageContext'
 import {
+  FinanceIcon,
   HomeIcon,
   IntegrationsIcon,
-  ReportsIcon,
-  TemplatesIcon,
-  FinanceIcon,
-  SettingsIcon,
   LogoutIcon,
+  MoonIcon,
+  ReportsIcon,
+  SettingsIcon,
   SunIcon,
-  MoonIcon
+  TemplatesIcon,
 } from '@/components/icons'
-import { Shield } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { useTheme } from '@/contexts/ThemeContext'
 
 interface MenuItem {
   id: string
@@ -34,17 +34,22 @@ export function Sidebar() {
 
   const menuItems: MenuItem[] = [
     { id: 'dashboard', label: t('sidebar.dashboard'), icon: <HomeIcon />, path: '/dashboard' },
-    { id: 'integrations', label: t('sidebar.integrations'), icon: <IntegrationsIcon />, path: '/accounts' },
+    {
+      id: 'integrations',
+      label: t('sidebar.integrations'),
+      icon: <IntegrationsIcon />,
+      path: '/accounts',
+    },
     { id: 'reports', label: t('sidebar.reports'), icon: <ReportsIcon />, path: '/reports' },
     { id: 'templates', label: t('sidebar.templates'), icon: <TemplatesIcon />, path: '/templates' },
     { id: 'finance', label: t('sidebar.finance'), icon: <FinanceIcon />, path: '/transactions' },
     { id: 'settings', label: t('sidebar.settings'), icon: <SettingsIcon />, path: '/settings' },
-    { 
-      id: 'admin', 
-      label: t('sidebar.administration'), 
-      icon: <Shield />, 
-      path: '/admin', 
-      adminOnly: true 
+    {
+      id: 'admin',
+      label: t('sidebar.administration'),
+      icon: <Shield />,
+      path: '/admin',
+      adminOnly: true,
     },
   ]
 
@@ -56,8 +61,8 @@ export function Sidebar() {
   const isActive = (path: string) => location.pathname === path
 
   // Filtrar itens baseado em permissões de admin
-  const visibleMenuItems = menuItems.filter(item => 
-    !item.adminOnly || (item.adminOnly && isAdmin)
+  const visibleMenuItems = menuItems.filter(
+    (item) => !item.adminOnly || (item.adminOnly && isAdmin)
   )
 
   return (
@@ -65,9 +70,7 @@ export function Sidebar() {
       className={`fixed left-0 top-20 h-[calc(100%-5rem)] transition-all duration-300 z-40 ${
         isExpanded ? 'w-64' : 'w-20'
       } ${
-        theme === 'dark' 
-          ? 'bg-black border-r border-white/10' 
-          : 'bg-white border-r border-black/10'
+        theme === 'dark' ? 'bg-black border-r border-white/10' : 'bg-white border-r border-black/10'
       }`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
@@ -76,42 +79,50 @@ export function Sidebar() {
         {/* Logo and User */}
         <div className="px-6 mb-8">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${
-              theme === 'dark' ? 'bg-white/10' : 'bg-black/5'
-            }`}>
+            <div
+              className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${
+                theme === 'dark' ? 'bg-white/10' : 'bg-black/5'
+              }`}
+            >
               {user?.photoURL ? (
-                <img 
+                <img
                   src={user.photoURL}
                   alt={user.displayName || ''}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className={`text-lg font-bold ${
-                  theme === 'dark' ? 'text-white' : 'text-black'
-                }`}>
+                <span
+                  className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                >
                   {user?.displayName?.charAt(0)?.toUpperCase() || 'A'}
                 </span>
               )}
             </div>
             {isExpanded && (
               <div className="overflow-hidden">
-                <h3 className={`font-semibold text-sm truncate ${
-                  theme === 'dark' ? 'text-white' : 'text-black'
-                }`}>
+                <h3
+                  className={`font-semibold text-sm truncate ${
+                    theme === 'dark' ? 'text-white' : 'text-black'
+                  }`}
+                >
                   {user?.displayName || t('common.general.user')}
                 </h3>
-                <p className={`text-xs truncate ${
-                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                }`}>
+                <p
+                  className={`text-xs truncate ${
+                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                  }`}
+                >
                   {user?.email}
                 </p>
                 {/* Badge de admin */}
                 {isAdmin && (
-                  <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-1 ${
-                    theme === 'dark' 
-                      ? 'bg-yellow-500/20 text-yellow-400' 
-                      : 'bg-yellow-500/10 text-yellow-600'
-                  }`}>
+                  <span
+                    className={`inline-block text-xs px-2 py-0.5 rounded-full mt-1 ${
+                      theme === 'dark'
+                        ? 'bg-yellow-500/20 text-yellow-400'
+                        : 'bg-yellow-500/10 text-yellow-600'
+                    }`}
+                  >
                     {t('common.general.admin')}
                   </span>
                 )}
@@ -140,16 +151,12 @@ export function Sidebar() {
                   }`}
                 >
                   <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
-                    {React.cloneElement(item.icon as React.ReactElement, { 
+                    {React.cloneElement(item.icon as React.ReactElement, {
                       className: 'w-5 h-5',
-                      strokeWidth: isActive(item.path) ? 2 : 1.5
+                      strokeWidth: isActive(item.path) ? 2 : 1.5,
                     })}
                   </span>
-                  {isExpanded && (
-                    <span className="text-sm font-medium truncate">
-                      {item.label}
-                    </span>
-                  )}
+                  {isExpanded && <span className="text-sm font-medium truncate">{item.label}</span>}
                 </Link>
               </li>
             ))}
@@ -178,35 +185,31 @@ export function Sidebar() {
 
           {/* Theme Toggle */}
           {isExpanded ? (
-            <div className={`relative rounded-lg p-1 ${
-              theme === 'dark' ? 'bg-white/10' : 'bg-black/5'
-            }`}>
+            <div
+              className={`relative rounded-lg p-1 ${
+                theme === 'dark' ? 'bg-white/10' : 'bg-black/5'
+              }`}
+            >
               <div
                 className={`absolute inset-y-1 transition-all duration-200 rounded-md ${
-                  theme === 'dark' 
-                    ? 'bg-white left-1/2 right-1' 
-                    : 'bg-black left-1 right-1/2'
+                  theme === 'dark' ? 'bg-white left-1/2 right-1' : 'bg-black left-1 right-1/2'
                 }`}
               />
               <div className="relative flex items-center justify-between">
                 <button
                   onClick={() => theme === 'dark' && toggleTheme()}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors z-10 flex-1 ${
-                    theme === 'light' 
-                      ? 'text-white' 
-                      : 'text-gray-400 hover:text-white'
+                    theme === 'light' ? 'text-white' : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   <SunIcon className="w-4 h-4" />
                   <span className="text-xs font-medium">{t('common.theme.light')}</span>
                 </button>
-                
+
                 <button
                   onClick={() => theme === 'light' && toggleTheme()}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors z-10 flex-1 ${
-                    theme === 'dark' 
-                      ? 'text-black' 
-                      : 'text-gray-600 hover:text-black'
+                    theme === 'dark' ? 'text-black' : 'text-gray-600 hover:text-black'
                   }`}
                 >
                   <MoonIcon className="w-4 h-4" />

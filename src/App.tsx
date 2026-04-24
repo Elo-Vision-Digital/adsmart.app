@@ -1,25 +1,25 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { AuthProvider } from '@/contexts/AuthContext'
-import { ThemeProvider } from '@/contexts/ThemeContext'
-import { LanguageProvider } from '@/contexts/LanguageContext'
-import { LoginPage } from '@/pages/LoginPage'
-import { Dashboard } from '@/pages/Dashboard'
-import { TransactionsPage } from '@/pages/TransactionsPage'
-import { AccountsPage } from '@/pages/AccountsPage'
-import { TemplatesPage } from '@/pages/TemplatesPage'
-import { GenerateReportPage } from '@/pages/GenerateReportPage'
-import { ReportSuccessPage } from '@/pages/ReportSuccessPage'
-import { AdminPanel } from '@/pages/AdminPanel'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { PrivateRoute } from '@/components/PrivateRoute'
-import { ReportsPage } from '@/pages/ReportsPage'
-import { SettingsPage } from '@/pages/SettingsPage'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { LanguageProvider } from '@/contexts/LanguageContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import { AccountsPage } from '@/pages/AccountsPage'
+import { AdminPanel } from '@/pages/AdminPanel'
+import { Dashboard } from '@/pages/Dashboard'
 import { DeleteDataPage } from '@/pages/DeleteDataPage'
-import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
+import { GenerateReportPage } from '@/pages/GenerateReportPage'
+import { HomePage } from '@/pages/HomePage'
+import { LoginPage } from '@/pages/LoginPage'
 import { MetaReviewDemo } from '@/pages/MetaReviewDemo'
+import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
 import { PaymentSuccessPage } from '@/pages/PaymentSuccessPage'
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage'
+import { ReportSuccessPage } from '@/pages/ReportSuccessPage'
+import { ReportsPage } from '@/pages/ReportsPage'
+import { SettingsPage } from '@/pages/SettingsPage'
+import { TemplatesPage } from '@/pages/TemplatesPage'
 import { TermsOfServicePage } from '@/pages/TermsOfServicePage'
-import { HomePage } from '@/pages/HomePage'
+import { TransactionsPage } from '@/pages/TransactionsPage'
 
 function App() {
   return (
@@ -61,18 +61,8 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route 
-                path="/auth/google-ads/callback" 
-                element={
-                  <OAuthCallbackPage />
-                } 
-              />
-              <Route 
-                path="/auth/meta-ads/callback" 
-                element={
-                  <OAuthCallbackPage />
-                } 
-              />
+              <Route path="/auth/google-ads/callback" element={<OAuthCallbackPage />} />
+              <Route path="/auth/meta-ads/callback" element={<OAuthCallbackPage />} />
               <Route
                 path="/templates"
                 element={
@@ -113,13 +103,13 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route 
-                path="/privacy/delete-data" 
+              <Route
+                path="/privacy/delete-data"
                 element={
                   <PrivateRoute>
                     <DeleteDataPage />
                   </PrivateRoute>
-                } 
+                }
               />
               {/* Temporariamente mantido para demonstração Meta - remover após aprovação */}
               <Route

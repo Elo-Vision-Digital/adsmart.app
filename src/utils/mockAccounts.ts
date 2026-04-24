@@ -1,7 +1,7 @@
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore'
+import { addDoc, collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/firebase/config'
-import { addMockCampaigns } from './mockCampaigns'
 import type { AdAccount } from '@/types'
+import { addMockCampaigns } from './mockCampaigns'
 
 export const mockGoogleAccounts: Omit<AdAccount, 'id' | 'userId' | 'createdAt' | 'updatedAt'>[] = [
   {
@@ -10,7 +10,7 @@ export const mockGoogleAccounts: Omit<AdAccount, 'id' | 'userId' | 'createdAt' |
     accountName: 'Empresa ABC - Principal',
     email: 'marketing@empresaabc.com.br',
     isActive: true,
-    lastSyncAt: new Date('2024-01-15')
+    lastSyncAt: new Date('2024-01-15'),
   },
   {
     platform: 'google_ads',
@@ -18,8 +18,8 @@ export const mockGoogleAccounts: Omit<AdAccount, 'id' | 'userId' | 'createdAt' |
     accountName: 'Empresa ABC - Campanhas Sazonais',
     email: 'marketing@empresaabc.com.br',
     isActive: true,
-    lastSyncAt: new Date('2024-01-14')
-  }
+    lastSyncAt: new Date('2024-01-14'),
+  },
 ]
 
 export const mockMetaAccounts: Omit<AdAccount, 'id' | 'userId' | 'createdAt' | 'updatedAt'>[] = [
@@ -29,7 +29,7 @@ export const mockMetaAccounts: Omit<AdAccount, 'id' | 'userId' | 'createdAt' | '
     accountName: 'Empresa XYZ - Facebook Ads',
     email: 'social@empresaxyz.com.br',
     isActive: true,
-    lastSyncAt: new Date('2024-01-15')
+    lastSyncAt: new Date('2024-01-15'),
   },
   {
     platform: 'meta_ads',
@@ -37,8 +37,8 @@ export const mockMetaAccounts: Omit<AdAccount, 'id' | 'userId' | 'createdAt' | '
     accountName: 'Loja Virtual Premium',
     email: 'ads@lojavirtual.com.br',
     isActive: true,
-    lastSyncAt: new Date('2024-01-13')
-  }
+    lastSyncAt: new Date('2024-01-13'),
+  },
 ]
 
 export async function addMockAccounts(userId: string) {
@@ -47,7 +47,7 @@ export async function addMockAccounts(userId: string) {
     const accountsRef = collection(db, 'users', userId, 'adAccounts')
     const q = query(accountsRef, where('platform', 'in', ['google_ads', 'meta_ads']))
     const existingAccounts = await getDocs(q)
-    
+
     if (!existingAccounts.empty) {
       console.log('Contas mock já existem')
       return
@@ -59,7 +59,7 @@ export async function addMockAccounts(userId: string) {
         ...account,
         userId,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
     }
 
@@ -69,12 +69,12 @@ export async function addMockAccounts(userId: string) {
         ...account,
         userId,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
     }
 
     console.log('Contas mock adicionadas com sucesso!')
-    
+
     // Adicionar campanhas mock também
     await addMockCampaigns(userId)
   } catch (error) {

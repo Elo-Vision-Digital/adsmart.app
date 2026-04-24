@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore'
+import { addDoc, collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import type { Campaign } from '@/types'
 
@@ -11,10 +11,10 @@ export const mockGoogleCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Brand - Pesquisa',
     status: 'active',
     budget: 5000,
-    spend: 3421.50,
+    spend: 3421.5,
     impressions: 145320,
     clicks: 8934,
-    lastSyncAt: new Date()
+    lastSyncAt: new Date(),
   },
   {
     accountId: '123-456-7890',
@@ -23,10 +23,10 @@ export const mockGoogleCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Shopping - Produtos Premium',
     status: 'active',
     budget: 8000,
-    spend: 6234.80,
+    spend: 6234.8,
     impressions: 234567,
     clicks: 12453,
-    lastSyncAt: new Date()
+    lastSyncAt: new Date(),
   },
   {
     accountId: '123-456-7890',
@@ -35,10 +35,10 @@ export const mockGoogleCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Display - Remarketing',
     status: 'paused',
     budget: 3000,
-    spend: 2890.00,
+    spend: 2890.0,
     impressions: 567890,
     clicks: 4567,
-    lastSyncAt: new Date()
+    lastSyncAt: new Date(),
   },
   // Campanhas da conta sazonal
   {
@@ -48,10 +48,10 @@ export const mockGoogleCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Black Friday 2023',
     status: 'ended',
     budget: 15000,
-    spend: 14876.90,
+    spend: 14876.9,
     impressions: 890123,
     clicks: 45678,
-    lastSyncAt: new Date()
+    lastSyncAt: new Date(),
   },
   {
     accountId: '098-765-4321',
@@ -60,11 +60,11 @@ export const mockGoogleCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Natal 2023 - Performance Max',
     status: 'active',
     budget: 10000,
-    spend: 4532.10,
+    spend: 4532.1,
     impressions: 456789,
     clicks: 23456,
-    lastSyncAt: new Date()
-  }
+    lastSyncAt: new Date(),
+  },
 ]
 
 export const mockMetaCampaigns: Omit<Campaign, 'id'>[] = [
@@ -76,10 +76,10 @@ export const mockMetaCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Tráfego - Conversões Site',
     status: 'active',
     budget: 6000,
-    spend: 4567.30,
+    spend: 4567.3,
     impressions: 678901,
     clicks: 34567,
-    lastSyncAt: new Date()
+    lastSyncAt: new Date(),
   },
   {
     accountId: 'act_987654321',
@@ -88,10 +88,10 @@ export const mockMetaCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Engajamento - Instagram',
     status: 'active',
     budget: 3500,
-    spend: 2345.60,
+    spend: 2345.6,
     impressions: 456789,
     clicks: 23456,
-    lastSyncAt: new Date()
+    lastSyncAt: new Date(),
   },
   {
     accountId: 'act_987654321',
@@ -100,10 +100,10 @@ export const mockMetaCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Video Views - Stories',
     status: 'paused',
     budget: 2000,
-    spend: 1890.40,
+    spend: 1890.4,
     impressions: 345678,
     clicks: 12345,
-    lastSyncAt: new Date()
+    lastSyncAt: new Date(),
   },
   // Campanhas Loja Virtual
   {
@@ -113,10 +113,10 @@ export const mockMetaCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Catálogo - Dynamic Ads',
     status: 'active',
     budget: 12000,
-    spend: 8901.20,
+    spend: 8901.2,
     impressions: 1234567,
     clicks: 56789,
-    lastSyncAt: new Date()
+    lastSyncAt: new Date(),
   },
   {
     accountId: 'act_123456789',
@@ -125,11 +125,11 @@ export const mockMetaCampaigns: Omit<Campaign, 'id'>[] = [
     campaignName: 'Lookalike - Compradores',
     status: 'active',
     budget: 7500,
-    spend: 5432.10,
+    spend: 5432.1,
     impressions: 890123,
     clicks: 45678,
-    lastSyncAt: new Date()
-  }
+    lastSyncAt: new Date(),
+  },
 ]
 
 export async function addMockCampaigns(userId: string) {
@@ -137,7 +137,7 @@ export async function addMockCampaigns(userId: string) {
     // Buscar as contas do usuário
     const accountsRef = collection(db, 'users', userId, 'adAccounts')
     const accountsSnapshot = await getDocs(accountsRef)
-    
+
     if (accountsSnapshot.empty) {
       console.log('Nenhuma conta encontrada')
       return
@@ -147,21 +147,21 @@ export async function addMockCampaigns(userId: string) {
     for (const accountDoc of accountsSnapshot.docs) {
       const account = accountDoc.data()
       const campaignsRef = collection(db, 'users', userId, 'campaigns')
-      
+
       // Verificar se já existem campanhas para esta conta
       const existingCampaigns = await getDocs(
         query(campaignsRef, where('accountId', '==', account.accountId))
       )
-      
+
       if (!existingCampaigns.empty) continue
 
       // Adicionar campanhas baseadas na plataforma e accountId
       let campaignsToAdd: Omit<Campaign, 'id'>[] = []
-      
+
       if (account.platform === 'google_ads') {
-        campaignsToAdd = mockGoogleCampaigns.filter(c => c.accountId === account.accountId)
+        campaignsToAdd = mockGoogleCampaigns.filter((c) => c.accountId === account.accountId)
       } else if (account.platform === 'meta_ads') {
-        campaignsToAdd = mockMetaCampaigns.filter(c => c.accountId === account.accountId)
+        campaignsToAdd = mockMetaCampaigns.filter((c) => c.accountId === account.accountId)
       }
 
       for (const campaign of campaignsToAdd) {

@@ -1,7 +1,16 @@
-import { useState, useEffect } from 'react'
-import { doc, onSnapshot, setDoc, collection, addDoc, query, orderBy, limit } from 'firebase/firestore'
-import { db } from '@/firebase/config'
+import {
+  addDoc,
+  collection,
+  doc,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+} from 'firebase/firestore'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { db } from '@/firebase/config'
 
 interface Wallet {
   balance: number // em centavos
@@ -33,7 +42,7 @@ export function useWallet() {
     }
 
     const walletRef = doc(db, 'users', user.uid, 'wallet', 'current')
-    
+
     const unsubscribe = onSnapshot(walletRef, async (doc) => {
       if (doc.exists()) {
         setWallet(doc.data() as Wallet)
@@ -42,7 +51,7 @@ export function useWallet() {
         const newWallet: Wallet = {
           balance: 0,
           currency: 'BRL',
-          updatedAt: new Date()
+          updatedAt: new Date(),
         }
         await setDoc(walletRef, newWallet)
         setWallet(newWallet)
@@ -58,19 +67,18 @@ export function useWallet() {
     if (!user) return
 
     const transactionsRef = collection(db, 'users', user.uid, 'transactions')
-    const q = query(
-      transactionsRef,
-      orderBy('createdAt', 'desc'),
-      limit(50)
-    )
-    
+    const q = query(transactionsRef, orderBy('createdAt', 'desc'), limit(50))
+
     // Usar onSnapshot para atualizações em tempo real
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const trans = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Transaction))
-      
+      const trans = snapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as Transaction
+      )
+
       setTransactions(trans)
     })
 
@@ -86,7 +94,7 @@ export function useWallet() {
       amount,
       description: 'Adição de créditos',
       status: 'completed',
-      createdAt: new Date()
+      createdAt: new Date(),
     }
 
     // Adicionar transação
@@ -95,12 +103,16 @@ export function useWallet() {
     // Atualizar saldo
     const walletRef = doc(db, 'users', user.uid, 'wallet', 'current')
     const newBalance = (wallet?.balance || 0) + amount
-    
-    await setDoc(walletRef, {
-      balance: newBalance,
-      currency: 'BRL',
-      updatedAt: new Date()
-    }, { merge: true })
+
+    await setDoc(
+      walletRef,
+      {
+        balance: newBalance,
+        currency: 'BRL',
+        updatedAt: new Date(),
+      },
+      { merge: true }
+    )
   }
 
   // Debitar valor (para relatórios)
@@ -113,7 +125,7 @@ export function useWallet() {
       amount,
       description,
       status: 'completed',
-      createdAt: new Date()
+      createdAt: new Date(),
     }
 
     // Só adicionar reportId se for fornecido
@@ -127,19 +139,23 @@ export function useWallet() {
     // Atualizar saldo
     const walletRef = doc(db, 'users', user.uid, 'wallet', 'current')
     const newBalance = wallet.balance - amount
-    
-    await setDoc(walletRef, {
-      balance: newBalance,
-      currency: 'BRL',
-      updatedAt: new Date()
-    }, { merge: true })
+
+    await setDoc(
+      walletRef,
+      {
+        balance: newBalance,
+        currency: 'BRL',
+        updatedAt: new Date(),
+      },
+      { merge: true }
+    )
   }
 
   // Formatar valor para exibição
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(cents / 100)
   }
 
@@ -151,6 +167,6 @@ export function useWallet() {
     debitAmount,
     formatCurrency,
     balance: wallet?.balance || 0,
-    formattedBalance: formatCurrency(wallet?.balance || 0)
+    formattedBalance: formatCurrency(wallet?.balance || 0),
   }
 }

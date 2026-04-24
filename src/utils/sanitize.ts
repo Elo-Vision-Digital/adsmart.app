@@ -2,9 +2,9 @@ import DOMPurify from 'dompurify'
 
 export function sanitizeInput(input: string): string {
   // Remove todas as tags HTML e atributos
-  return DOMPurify.sanitize(input, { 
+  return DOMPurify.sanitize(input, {
     ALLOWED_TAGS: [],
-    ALLOWED_ATTR: []
+    ALLOWED_ATTR: [],
   }).trim()
 }
 
@@ -13,7 +13,7 @@ export function sanitizeHTML(html: string): string {
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
     ALLOWED_ATTR: ['href', 'target', 'rel'],
-    ALLOW_DATA_ATTR: false
+    ALLOW_DATA_ATTR: false,
   })
 }
 

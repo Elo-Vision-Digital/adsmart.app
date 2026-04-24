@@ -13,9 +13,9 @@ export const mockTemplates: Omit<ReportTemplate, 'id' | 'createdAt'>[] = [
       'Métricas de conversão',
       'Análise de palavras-chave',
       'Gráficos de tendência',
-      'ROI e ROAS detalhado'
+      'ROI e ROAS detalhado',
     ],
-    isActive: true
+    isActive: true,
   },
   {
     name: 'Relatório Performance Meta Ads',
@@ -29,8 +29,8 @@ export const mockTemplates: Omit<ReportTemplate, 'id' | 'createdAt'>[] = [
       'Performance por plataforma (FB/IG)',
       'Análise demográfica',
       'Funil de conversão',
-      'Comparativo de campanhas'
+      'Comparativo de campanhas',
     ],
-    isActive: true
-  }
+    isActive: true,
+  },
 ]

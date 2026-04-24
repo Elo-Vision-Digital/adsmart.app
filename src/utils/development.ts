@@ -4,7 +4,7 @@
  */
 export const isDevelopment = (): boolean => {
   const hostname = window.location.hostname
-  
+
   return (
     // Localhost
     hostname === 'localhost' ||
@@ -26,21 +26,15 @@ export const isDevelopment = (): boolean => {
 export const getDevConfig = () => ({
   // TEMPORÁRIO: Forçar reCAPTCHA em desenvolvimento para teste
   skipRecaptcha: false, // MUDADO DE isDevelopment() PARA false
-  
+
   // Token especial para desenvolvimento
   devRecaptchaToken: 'local-dev',
-  
+
   // Mensagem de aviso para o usuário
   devWarningMessage: 'Modo desenvolvimento: Testando reCAPTCHA real',
-  
+
   // IPs permitidos para desenvolvimento
-  allowedDevIps: [
-    '192.168.0.0/16',
-    '10.0.0.0/8',
-    '172.16.0.0/12',
-    'localhost',
-    '127.0.0.1'
-  ]
+  allowedDevIps: ['192.168.0.0/16', '10.0.0.0/8', '172.16.0.0/12', 'localhost', '127.0.0.1'],
 })
 
 /**
@@ -49,9 +43,9 @@ export const getDevConfig = () => ({
 export const isPrivateIP = (ip: string): boolean => {
   const parts = ip.split('.')
   if (parts.length !== 4) return false
-  
+
   const [a, b] = parts.map(Number)
-  
+
   return (
     // 10.x.x.x
     a === 10 ||
