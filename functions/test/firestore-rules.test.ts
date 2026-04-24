@@ -66,10 +66,7 @@ describe('users/{userId}', () => {
     )
   })
 
-  // SKIP: Known rule bug — the `users/{userId}/{document=**}` subcollection
-  // wildcard rule allows write on the parent doc itself, bypassing the email
-  // validation on the top-level `users/{userId}` rule. Fix scheduled for Fase 3.
-  it.skip('creating user with invalid email fails', async () => {
+  it('creating user with invalid email fails', async () => {
     const uid = 'u1'
     const db = env.authenticatedContext(uid).firestore()
     await assertFails(
@@ -80,10 +77,7 @@ describe('users/{userId}', () => {
     )
   })
 
-  // SKIP: Same root cause as above — subcollection wildcard's broad `write`
-  // permission overrides the parent's `allow delete: if false;`. Fix scheduled
-  // for Fase 3.
-  it.skip('deleting own user doc is blocked', async () => {
+  it('deleting own user doc is blocked', async () => {
     const uid = 'u1'
     await env.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), `users/${uid}`), {

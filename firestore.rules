@@ -32,9 +32,17 @@ service cloud.firestore {
       allow delete: if false; // Usuários não podem deletar suas contas diretamente
     }
     
-    // Subcoleções do usuário
-    match /users/{userId}/{document=**} {
-      allow read, write: if isOwner(userId);
+    // Subcoleções do usuário — the wildcard MUST NOT cover the parent doc
+    // (otherwise it would override the strict rules on /users/{userId}).
+    // The required {subcollection} segment ensures this rule only matches
+    // documents at path /users/{userId}/{subcollection}/{docId}/...
+    match /users/{userId}/{subcollection}/{docId=**} {
+      // Wallet and transactions are system-managed — writes only via
+      // Cloud Functions using the Admin SDK. Reads are owner-only.
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId)
+        && subcollection != 'wallet'
+        && subcollection != 'transactions';
     }
     
     // Campanhas publicitárias
