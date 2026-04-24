@@ -1,3 +1,9 @@
+/**
+ * @deprecated SuitPay integration is being phased out in favor of Asaas.
+ * This file will be removed in a future phase. No new features should be
+ * added here; existing behaviour is maintained only until Asaas migration
+ * completes.
+ */
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
