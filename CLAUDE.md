@@ -1,0 +1,106 @@
+# CLAUDE.md — AdSmart
+
+This file supplements AGENTS.md with Claude Code-specific guidance and inline design system reference.
+
+Read [AGENTS.md](AGENTS.md) first. This file adds what's unique to Claude Code sessions.
+
+## Stack (quick reference)
+
+React 18 · TypeScript · Vite · Tailwind 3 · shadcn/ui · react-router-dom v6 · Firebase SDK 10 · framer-motion 12 · Biome · Vitest · Firebase Functions v2 (Node 22) · firebase-admin 12
+
+## Design system
+
+### Typography
+
+- **Font family**: Montserrat (400, 500, 600, 700) loaded from `@fontsource/montserrat`
+- **Base**: `font-sans` in Tailwind → `Montserrat, system-ui, sans-serif`
+- **Scale**: Use standard Tailwind text-xs through text-4xl; no custom size tokens
+
+### Color tokens (CSS variables)
+
+All colors use CSS variables defined in `src/index.css`. Use Tailwind utility names, not raw hex values.
+
+| Token | Light | Dark | Tailwind class |
+|---|---|---|---|
+| `--background` | `#FFFFFF` | `#000000` | `bg-background` |
+| `--surface` | `#FAFAFA` | `#0A0A0A` | `bg-surface` |
+| `--text` | `#000000` | `#FFFFFF` | `text-foreground` |
+| `--border` | `#E5E5E5` | `#1A1A1A` | `border-border` |
+| `--muted` | `#666666` | `#999999` | `text-muted` |
+| `--muted-foreground` | `#999999` | `#666666` | `text-muted-foreground` |
+| `--primary` | `#000000` | `#FFFFFF` | `text-primary` / `bg-primary` |
+
+Theme switching: `data-theme="dark"` on `<html>` (managed by `ThemeContext`).
+
+### shadcn/ui components in use
+
+| Component | File |
+|---|---|
+| Button | `src/components/ui/button.tsx` |
+| Card | `src/components/ui/card.tsx` |
+| Checkbox | `src/components/ui/checkbox.tsx` |
+| Dialog | `src/components/ui/dialog.tsx` |
+| Input | `src/components/ui/input.tsx` |
+| Label | `src/components/ui/label.tsx` |
+| Toast | `src/components/ui/toast.tsx` |
+
+When adding new UI, prefer extending existing components. Do not install new Radix primitives without checking if the pattern already exists.
+
+### Animations
+
+Framer Motion is loaded as `framer-motion` (import from `framer-motion`). Custom Tailwind animations: `animate-slide-in`, `animate-slide-out`, `animate-fade-in-up`, `animate-fade-in`.
+
+## Contexts
+
+| Context | Hook | Provides |
+|---|---|---|
+| `AuthContext` | `useAuth()` | `user`, `loading`, `isAdmin`, sign-in/out methods |
+| `LanguageContext` | `useLanguage()` | `language`, `setLanguage`, `t(key)` |
+| `ThemeContext` | `useTheme()` | `theme`, `toggleTheme` |
+
+Provider nesting order in `App.tsx`: `LanguageProvider → ThemeProvider → AuthProvider`.
+
+## Route guard components
+
+- `PrivateRoute` (`src/components/PrivateRoute.tsx`): redirects unauthenticated users to `/login`.
+- `AdminRoute` (`src/components/AdminRoute.tsx`): redirects non-admins to `/dashboard`. Wraps `PrivateRoute` logic internally.
+
+## Testing in Claude sessions
+
+```bash
+# Run all web tests
+npm test
+
+# Run all functions tests (from functions/)
+cd functions && npm test
+
+# Run with coverage
+npm run test:coverage
+```
+
+Tests live in `*.test.tsx` / `*.test.ts` next to the files they test (web) or in `functions/test/` (functions).
+
+## Biome linter notes
+
+- Biome replaces ESLint + Prettier in the frontend.
+- Pre-commit hook runs `biome check --staged`.
+- Common traps: `noAssignInExpressions` (no chained assignment `a = b = c`), `noConsole` (warn level).
+- Fix automatically: `npm run lint:fix`.
+
+## Memory system
+
+This project has a memory system at `.claude/projects/.../memory/`. Key memories:
+- `admin_claim_policy.md` — admin access uses custom claims + email fallback
+- `firebase_secrets.md` — all secrets via `defineSecret` from `functions/src/config/index.ts`
+- `suitpay_deprecated.md` — do NOT harden SuitPay; Asaas replaces it
+- `phase_ordering.md` — Phase 1 → 3 → 4 → 2
+
+## What changed in Phase 3 (security baseline)
+
+Before Phase 2 upgrades, these security fixes are in place:
+- Firestore rules: `wallet`/`transactions` write-blocked client-side; `rateLimits` write-only via Admin SDK
+- CSP/HSTS/COOP/CORP headers in `firebase.json`
+- GTM moved to `src/lib/gtm.ts` (no inline script)
+- AdminRoute guards `/admin` with custom claim check
+- All secrets via `defineSecret` (no `process.env.XXX_SECRET`)
+- securityLogger re-entrancy guard prevents infinite loops on SUSPICIOUS_ACTIVITY events
