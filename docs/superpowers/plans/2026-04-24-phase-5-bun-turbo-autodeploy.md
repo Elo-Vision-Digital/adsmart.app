@@ -39,11 +39,9 @@ These require human action in the Firebase Console and GitHub. Complete them bef
 1. Firebase Console → `adsmart-web` project → Project settings → Your apps → Web app
 2. Copy all config values — you'll need them in Task 9 (`.env.production`)
 
-### C. Register a reCAPTCHA key for dev
+### C. Add `localhost` to the existing reCAPTCHA key
 
-1. [Google reCAPTCHA Admin](https://www.google.com/recaptcha/admin) → Create new site
-2. Type: reCAPTCHA v3, domains: `localhost`
-3. Copy the **site key** → goes in `.env` as `VITE_RECAPTCHA_SITE_KEY`
+The production key can be reused for dev. Go to [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → select the existing key → **Settings** → under **Domains** add `localhost` → save. No separate key needed — the same key is already set in `.env`.
 
 ### D. Set up dev project secrets in Secret Manager
 
