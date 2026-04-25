@@ -88,7 +88,7 @@ Tests live in `*.test.tsx` / `*.test.ts` next to the files they test (web) or in
 - Biome replaces ESLint + Prettier in the frontend.
 - Pre-commit hook runs `biome check --staged`.
 - Common traps: `noAssignInExpressions` (no chained assignment `a = b = c`), `noConsole` (warn level).
-- Fix automatically: `npm run lint:fix`.
+- Fix automatically: `bun run lint:fix`.
 
 ## Memory system
 

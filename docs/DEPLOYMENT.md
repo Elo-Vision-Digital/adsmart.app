@@ -42,14 +42,14 @@ AdSmart deploys to Firebase. There are two deployable targets:
 
 Before deploying, verify:
 
-- [ ] `npm run build` succeeds (TypeScript + Vite)
-- [ ] `cd functions && npm run build` succeeds
+- [ ] `bun run build` succeeds (TypeScript + Vite)
+- [ ] `cd functions && bun run build` succeeds
 - [ ] All secrets set in Secret Manager (`googleAdsClientSecret`, `metaAdsAppSecret`, `recaptchaSecretKey`)
 - [ ] `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_DEVELOPER_TOKEN`, `META_ADS_APP_ID` configured in functions environment
 - [ ] OAuth redirect URIs updated in Google Cloud Console and Meta App Dashboard if domain changed
 - [ ] reCAPTCHA domain allowlist includes `adsmart.app`
-- [ ] `npm test` passes (web)
-- [ ] `cd functions && npm test` passes
+- [ ] `bun run test` passes (web)
+- [ ] `cd functions && bun run test` passes
 
 ## Deploy commands
 
@@ -87,14 +87,14 @@ Region: `us-central1`. All functions use Firebase Functions v2 (`firebase-functi
 Build before deploy:
 ```bash
 cd functions
-npm run build  # outputs to functions/lib/
+bun run build  # outputs to functions/lib/
 ```
 
 Deploy:
 ```bash
 firebase deploy --only functions
 # or from functions/ directory:
-npm run deploy
+bun run deploy
 ```
 
 ### Adding a new function
@@ -120,11 +120,11 @@ Test rules locally before deploying — see `docs/TESTING.md`.
 
 File: `.github/workflows/ci.yml`
 
-Triggers: push or PR to `main` or `migrate`.
+Triggers: push to `main`, `develop`, or `migrate`; PR to `main` or `develop`.
 
 Jobs:
-- **Frontend**: `npm ci` → Biome lint → `tsc --noEmit` → `vite build`
-- **Functions**: `npm ci` → ESLint (non-blocking, `continue-on-error: true`) → `tsc`
+- **Frontend**: `bun install --frozen-lockfile` → Biome lint → `bun run typecheck` → `bun run build`
+- **Functions**: `bun install --frozen-lockfile` → ESLint (non-blocking, `continue-on-error: true`) → `bun run build`
 
 Tests are not in CI yet (to be added in Phase 2).
 
@@ -145,6 +145,6 @@ firebase hosting:rollback
 For function rollbacks, redeploy the previous git tag:
 ```bash
 git checkout <previous-tag>
-cd functions && npm run build
+cd functions && bun run build
 firebase deploy --only functions
 ```
