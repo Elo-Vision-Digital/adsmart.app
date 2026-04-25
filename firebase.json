@@ -62,7 +62,8 @@
     ]
   },
   "functions": {
-    "source": "functions"
+    "source": "functions",
+    "predeploy": ["cd functions && bun run build"]
   },
   "firestore": {
     "rules": "firestore.rules",
