@@ -18,32 +18,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { db } from '@/firebase/config'
+import { useReports } from '@/hooks/useReports'
 import type { AdAccount } from '@/types'
-
-// Mock data para demonstração
-const mockReports = [
-  {
-    id: '1',
-    name: 'Dashboard Google Ads - Lançamento',
-    platform: 'google_ads',
-    createdAt: new Date('2025-01-10'),
-    accountName: 'Minha Conta',
-  },
-  {
-    id: '2',
-    name: 'Dashboard Meta Ads - Janeiro',
-    platform: 'meta_ads',
-    createdAt: new Date('2025-01-08'),
-    accountName: 'Conta de Anúncio',
-  },
-  {
-    id: '3',
-    name: 'Análise de Performance Q1',
-    platform: 'google_ads',
-    createdAt: new Date('2025-01-05'),
-    accountName: 'Conta Principal',
-  },
-]
 
 // Componente para ícone do Google Ads
 const GoogleAdsIcon = () => (
@@ -92,8 +68,8 @@ export function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useLanguage()
+  const { reports, loading: reportsLoading } = useReports()
   const [searchReport, setSearchReport] = useState('')
-  const [reports] = useState(mockReports)
   const [connections, setConnections] = useState<AdAccount[]>([])
   const [connectionsLoading, setConnectionsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
@@ -192,7 +168,12 @@ export function Dashboard() {
                     </div>
                   </CardHeader>
                   <CardContent className="px-4 md:px-6">
-                    {filteredReports.length === 0 ? (
+                    {reportsLoading ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="w-12 h-12 mx-auto mb-3 opacity-50 animate-pulse" />
+                        <p>{t('common.general.loading')}</p>
+                      </div>
+                    ) : filteredReports.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                         <p>{t('dashboard.noReportsFound')}</p>
@@ -207,11 +188,7 @@ export function Dashboard() {
                           >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                {report.platform === 'google_ads' ? (
-                                  <GoogleAdsIcon />
-                                ) : (
-                                  <MetaAdsIcon />
-                                )}
+                                {report.type === 'google_ads' ? <GoogleAdsIcon /> : <MetaAdsIcon />}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
@@ -222,7 +199,9 @@ export function Dashboard() {
                                     {report.createdAt.toLocaleDateString('pt-BR')}
                                   </span>
                                   <span>•</span>
-                                  <span className="truncate">{report.accountName}</span>
+                                  <span className="truncate">
+                                    {report.type === 'google_ads' ? 'Google Ads' : 'Meta Ads'}
+                                  </span>
                                 </div>
                               </div>
                             </div>

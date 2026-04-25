@@ -5,82 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/contexts/LanguageContext'
-
-// Mock data para demonstração - será substituído por dados do Firestore
-const mockReports = [
-  {
-    id: '1',
-    name: 'Dashboard Google Ads - Lançamento',
-    platform: 'google_ads',
-    createdAt: new Date('2025-01-10'),
-    accountName: 'Minha Conta',
-    status: 'completed',
-    campaignCount: 5,
-  },
-  {
-    id: '2',
-    name: 'Dashboard Meta Ads - Janeiro',
-    platform: 'meta_ads',
-    createdAt: new Date('2025-01-08'),
-    accountName: 'Conta de Anúncio',
-    status: 'completed',
-    campaignCount: 3,
-  },
-  {
-    id: '3',
-    name: 'Análise de Performance Q1',
-    platform: 'google_ads',
-    createdAt: new Date('2025-01-05'),
-    accountName: 'Conta Principal',
-    status: 'completed',
-    campaignCount: 8,
-  },
-  {
-    id: '4',
-    name: 'Dashboard Meta Ads - Dezembro',
-    platform: 'meta_ads',
-    createdAt: new Date('2024-12-28'),
-    accountName: 'Conta de Anúncio',
-    status: 'completed',
-    campaignCount: 4,
-  },
-  {
-    id: '5',
-    name: 'Relatório Black Friday',
-    platform: 'google_ads',
-    createdAt: new Date('2024-11-25'),
-    accountName: 'Minha Conta',
-    status: 'completed',
-    campaignCount: 12,
-  },
-  {
-    id: '6',
-    name: 'Dashboard Natal 2024',
-    platform: 'meta_ads',
-    createdAt: new Date('2024-12-20'),
-    accountName: 'Conta Secundária',
-    status: 'completed',
-    campaignCount: 6,
-  },
-  {
-    id: '7',
-    name: 'Análise Q4 2024',
-    platform: 'google_ads',
-    createdAt: new Date('2024-12-15'),
-    accountName: 'Conta Principal',
-    status: 'completed',
-    campaignCount: 10,
-  },
-  {
-    id: '8',
-    name: 'Dashboard Meta Ads - Novembro',
-    platform: 'meta_ads',
-    createdAt: new Date('2024-11-30'),
-    accountName: 'Conta de Anúncio',
-    status: 'completed',
-    campaignCount: 7,
-  },
-]
+import { useReports } from '@/hooks/useReports'
 
 // Componente para ícone do Google Ads
 const GoogleAdsIcon = () => (
@@ -128,29 +53,24 @@ const MetaAdsIcon = () => (
 export function ReportsPage() {
   const navigate = useNavigate()
   const { t } = useLanguage()
+  const { reports, loading } = useReports()
   const [searchReport, setSearchReport] = useState('')
-  const [reports] = useState(mockReports)
   const [currentPage, setCurrentPage] = useState(1)
   const [filterPlatform, setFilterPlatform] = useState<'all' | 'google_ads' | 'meta_ads'>('all')
   const [sortBy, setSortBy] = useState<'recent' | 'oldest'>('recent')
 
   const reportsPerPage = 6
 
-  // Filtrar relatórios
   const filteredReports = reports
     .filter((report) => {
-      const matchesSearch =
-        report.name.toLowerCase().includes(searchReport.toLowerCase()) ||
-        report.accountName.toLowerCase().includes(searchReport.toLowerCase())
-      const matchesPlatform = filterPlatform === 'all' || report.platform === filterPlatform
+      const matchesSearch = report.name.toLowerCase().includes(searchReport.toLowerCase())
+      const matchesPlatform = filterPlatform === 'all' || report.type === filterPlatform
       return matchesSearch && matchesPlatform
     })
     .sort((a, b) => {
-      if (sortBy === 'recent') {
-        return b.createdAt.getTime() - a.createdAt.getTime()
-      } else {
-        return a.createdAt.getTime() - b.createdAt.getTime()
-      }
+      const aTime = a.createdAt.getTime()
+      const bTime = b.createdAt.getTime()
+      return sortBy === 'recent' ? bTime - aTime : aTime - bTime
     })
 
   // Paginação
@@ -247,7 +167,12 @@ export function ReportsPage() {
                 </CardHeader>
 
                 <CardContent className="px-4 md:px-6">
-                  {currentReports.length === 0 ? (
+                  {loading ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <FileText className="w-16 h-16 mx-auto mb-4 opacity-50 animate-pulse" />
+                      <p className="text-sm">{t('common.general.loading')}</p>
+                    </div>
+                  ) : currentReports.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                       <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
                       <p className="text-lg mb-2">{t('reportsPage.noReportsFound')}</p>
@@ -265,11 +190,7 @@ export function ReportsPage() {
                           >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                {report.platform === 'google_ads' ? (
-                                  <GoogleAdsIcon />
-                                ) : (
-                                  <MetaAdsIcon />
-                                )}
+                                {report.type === 'google_ads' ? <GoogleAdsIcon /> : <MetaAdsIcon />}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
@@ -280,7 +201,9 @@ export function ReportsPage() {
                                     {report.createdAt.toLocaleDateString(t('common.locale'))}
                                   </span>
                                   <span>•</span>
-                                  <span className="truncate">{report.accountName}</span>
+                                  <span className="truncate">
+                                    {report.type === 'google_ads' ? 'Google Ads' : 'Meta Ads'}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -339,7 +262,7 @@ export function ReportsPage() {
                           Google Ads
                         </p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                          {reports.filter((r) => r.platform === 'google_ads').length}
+                          {reports.filter((r) => r.type === 'google_ads').length}
                         </p>
                       </div>
                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
@@ -357,7 +280,7 @@ export function ReportsPage() {
                           Meta Ads
                         </p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                          {reports.filter((r) => r.platform === 'meta_ads').length}
+                          {reports.filter((r) => r.type === 'meta_ads').length}
                         </p>
                       </div>
                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
