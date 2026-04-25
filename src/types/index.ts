@@ -57,7 +57,7 @@ export interface Campaign {
 export interface Report {
   id: string
   userId: string
-  type: 'google_ads' | 'facebook_ads'
+  type: 'google_ads' | 'meta_ads'
   templateId: string
   name: string
   status: 'pending' | 'processing' | 'completed' | 'failed'

@@ -143,13 +143,27 @@ Rule: owner only. Created with `status: "draft"`. Only owner can delete when `st
 ```
 {
   userId: string,
-  type: string,
+  type: "google_ads" | "meta_ads",   // canonical; legacy docs may use "facebook_ads"
+  templateId: string,                 // FK → reportTemplates/{id}
+  name: string,
+  status: "pending" | "processing" | "completed" | "failed",
+  campaignIds?: string[],
+  allCampaigns: boolean,
+  dateRange: { startDate: string, endDate: string },  // ISO 8601
+  lookerStudioUrl?: string,           // populated when status === 'completed'
+  cost: number,                       // BRL centavos (e.g. 500 = R$ 5,00)
+  paidAt?: Timestamp,
   createdAt: Timestamp,
-  // additional report-specific fields
+  completedAt?: Timestamp,
+  error?: string                      // populated when status === 'failed'
 }
 ```
 
+Source of truth: [src/types/index.ts](../src/types/index.ts) `Report` interface.
+
 Rule: owner only. Delete blocked.
+
+**Legacy note:** docs created before the schema standardization may carry `type: "facebook_ads"`. The web client normalizes this to `"meta_ads"` on read via `useReports()`. A one-shot migration to rewrite those docs is pending.
 
 ---
 

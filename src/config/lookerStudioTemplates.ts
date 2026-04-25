@@ -8,7 +8,7 @@
 export interface LookerStudioTemplate {
   id: string
   lookerStudioId: string // ID do template no Looker Studio
-  dataSourceType: 'google_ads' | 'facebook_ads'
+  dataSourceType: 'google_ads' | 'meta_ads'
   name: string
   description: string
 }
@@ -25,7 +25,7 @@ export const LOOKER_STUDIO_TEMPLATES: Record<string, LookerStudioTemplate> = {
   meta_lancamento: {
     id: 'meta_lancamento',
     lookerStudioId: 'YOUR_META_ADS_LAUNCH_TEMPLATE_ID', // Substituir pelo ID real
-    dataSourceType: 'facebook_ads',
+    dataSourceType: 'meta_ads',
     name: 'Dashboard Meta Ads - Lançamento',
     description: 'Template otimizado para campanhas de lançamento no Meta Ads',
   },
@@ -41,7 +41,7 @@ export const LOOKER_STUDIO_TEMPLATES: Record<string, LookerStudioTemplate> = {
   meta_negocio_local: {
     id: 'meta_negocio_local',
     lookerStudioId: 'YOUR_META_ADS_LOCAL_TEMPLATE_ID', // Substituir pelo ID real
-    dataSourceType: 'facebook_ads',
+    dataSourceType: 'meta_ads',
     name: 'Dashboard Meta Ads - Negócios Locais',
     description: 'Template especializado para negócios locais no Meta Ads',
   },
