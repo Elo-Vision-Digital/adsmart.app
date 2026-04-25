@@ -33,6 +33,9 @@ functions/.runtimeconfig.json
 functions/.runtimeconfig.json.
 .runtimeconfig.json
 
+# Claude Code — per-user settings (shared settings.json is committed)
+.claude/settings.local.json
+
 # Firebase service account key
 serviceAccountKey.json
 **/serviceAccountKey.json
