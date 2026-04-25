@@ -22,6 +22,7 @@ src/
   hooks/
     useProductPrices.ts
     useRateLimit.ts
+    useReports.ts
     useWallet.ts
   lib/
     gtm.ts              # GTM boot (initGtm)

@@ -12,7 +12,7 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 |---|---|---|
 | Frontend runtime | React | 18.3 |
 | Language | TypeScript | 5.x |
-| Build tool | Vite | 5.x |
+| Build tool | Vite | 7.x |
 | Styling | Tailwind CSS | 3.x |
 | Component library | shadcn/ui (Radix UI) | — |
 | Routing | react-router-dom | 6.23 |
@@ -24,10 +24,10 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 | Functions runtime | Node | 22 |
 | Functions SDK | firebase-functions v2 | 6.4 |
 | Admin SDK | firebase-admin | 12.7 |
-| Linter (frontend) | Biome | 1.x |
+| Linter (frontend) | Biome | 2.x |
 | Linter (functions) | ESLint 8 (→ ESLint 9 in Phase 2) | 8.x |
 | Git hooks | lefthook | — |
-| Test framework | Vitest | 2.x |
+| Test framework | Vitest | 4.x |
 | CI | GitHub Actions | — |
 
 ## Read-first map
@@ -44,6 +44,7 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 | Add a translation key | `docs/I18N.md`, `src/locales/pt-BR.json` (then en.json and es.json) |
 | Write tests | `docs/TESTING.md`, `vitest.config.ts` (root + functions/) |
 | Deploy | `docs/DEPLOYMENT.md`, `firebase.json`, `.github/workflows/ci.yml` |
+| Run a one-shot data migration | `scripts/migrations/`, `docs/REFACTOR-PLAN.md` |
 
 ## Commit scopes
 

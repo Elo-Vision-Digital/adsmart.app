@@ -4,12 +4,12 @@ Run this checklist before every production deploy. Check each item manually unle
 
 ## Build and CI
 
-- [ ] `npm run build` exits 0 (TypeScript + Vite)
-- [ ] `cd functions && npm run build` exits 0
-- [ ] `npm run type-check` exits 0
-- [ ] `npm run lint` exits 0 (Biome — no errors, only warnings acceptable)
-- [ ] `npm test` — all web tests pass
-- [ ] `cd functions && npm test` — all functions tests pass
+- [ ] `bun run build` exits 0 (TypeScript + Vite)
+- [ ] `cd functions && bun run build` exits 0
+- [ ] `bun run typecheck` exits 0
+- [ ] `bun run lint` exits 0 (Biome — no errors, only warnings acceptable)
+- [ ] `bun run test` — all web tests pass
+- [ ] `cd functions && bun run test` — all functions tests pass (emulators required)
 - [ ] GitHub Actions CI is green on the deploy branch
 
 ## Authentication

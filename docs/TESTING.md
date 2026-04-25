@@ -2,21 +2,24 @@
 
 ## Framework
 
-Vitest 2.x in both the frontend (root) and Cloud Functions (`functions/`).
+Vitest 4.x in both the frontend (root) and Cloud Functions (`functions/`).
 
 ## Running tests
 
 ```bash
 # Frontend
-npm test                   # run once
-npm run test:watch         # watch mode
-npm run test:coverage      # coverage report to coverage/
+bun run test               # run once
+bun run test:watch         # watch mode
+bun run test:coverage      # coverage report to coverage/
 
 # Functions
 cd functions
-npm test
-npm run test:watch
-npm run test:coverage
+bun run test
+bun run test:watch
+bun run test:coverage
+
+# Both workspaces in parallel via Turbo
+bun run test:all
 ```
 
 ## Test layout
@@ -50,15 +53,15 @@ Functions tests hit real Firebase emulators:
 
 Start emulators before running functions tests:
 ```bash
-firebase emulators:start --only firestore,auth
+bunx firebase emulators:start --only firestore,auth
 ```
 
 Or run functions tests via the serve script which starts emulators automatically:
 ```bash
 # From functions/
-npm run serve
+bun run serve
 # In another terminal:
-npm test
+bun run test
 ```
 
 ## Test coverage areas and counts (as of Phase 3)

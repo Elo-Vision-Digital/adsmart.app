@@ -143,8 +143,8 @@ Tests are in `functions/test/`. They hit real emulators — no mocks. See `docs/
 To run:
 ```bash
 # Start emulators first
-firebase emulators:start --only firestore,auth
+bunx firebase emulators:start --only firestore,auth
 
-# Then in another terminal
-npm test
+# Then in another terminal, from functions/
+bun run test
 ```
