@@ -46,17 +46,13 @@ Cobrir o restante do inventário de mock data antes de refatorar fundação.
 
 Eliminar a normalização defensiva no `useReports()` deixando o schema 100% canônico.
 
-- [ ] **B1.** Criar `scripts/migrations/2026-04-meta-ads-rename.ts` (Admin SDK, `bulkWriter`):
-  - Lê `reports` onde `type == 'facebook_ads'`.
-  - Atualiza para `type: 'meta_ads'`.
-  - Loga contagem antes/depois.
-  - Idempotente (rodar 2× não causa efeito colateral).
-- [ ] **B2.** Dry-run em ambiente `dev` (Firebase project secundário). Verificar contagem.
-- [ ] **B3.** Rodar em `prod` durante janela de baixo tráfego.
-- [ ] **B4.** Remover `normalizeType` de [src/hooks/useReports.ts:24-26](../src/hooks/useReports.ts#L24-L26).
-- [ ] **B5.** Atualizar nota de "Legacy" em [docs/DATA-MODEL.md](DATA-MODEL.md) confirmando migração executada com data.
+- [x] **B1.** [scripts/migrations/2026-04-meta-ads-rename.ts](../scripts/migrations/2026-04-meta-ads-rename.ts) — Admin SDK + `BulkWriter` (validado via Context7), defaults to dry-run, idempotente, exige `--write` explícito. Adiciona `firebase-admin` + `tsx` como devDeps na raiz (Bun isolated linker bloqueava resolução cross-workspace).
+- [x] **B2.** Dry-run em `adsmart-web-dev` (2026-04-25): `facebook_ads=0, meta_ads=0` — projeto dev sem dados.
+- [x] **B3.** Dry-run em `adsmart-web` (prod, 2026-04-25): `facebook_ads=0, meta_ads=1` — produção já 100% canônica. Write não executado por desnecessário (script é idempotente; rodar `--write` agora seria no-op).
+- [x] **B4.** `normalizeType` removido de [src/hooks/useReports.ts](../src/hooks/useReports.ts).
+- [x] **B5.** Nota de "Legacy" em [docs/DATA-MODEL.md](DATA-MODEL.md) atualizada com data e contagem real observada.
 
-**Critério de aceite:** `grep -r facebook_ads src/ functions/src/` retorna zero resultados.
+**Critério de aceite:** `grep -rn "facebook_ads" src/ functions/src/` retorna zero resultados ✓ (verificado pós-B4).
 
 ---
 

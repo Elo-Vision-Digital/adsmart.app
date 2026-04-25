@@ -10,6 +10,23 @@ Format conventions:
 
 ---
 
+## [2026-04-25] — Refactor Phase B: legacy `facebook_ads` removed
+
+Closes Phase B of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). The defensive `normalizeType` helper added when standardizing the `meta_ads` key (commit `32b5f39`) is no longer necessary.
+
+- **Migration script** (committed earlier as `9dc9334`): `scripts/migrations/2026-04-meta-ads-rename.ts` — firebase-admin BulkWriter, idempotent, defaults to dry-run, requires `--write` to apply. Adds `firebase-admin@12.7.0` + `tsx@4.21.0` as root devDependencies (Bun isolated linker prevents resolving from the `functions` workspace for a root-level script).
+- **Dry-run results (2026-04-25):**
+  - `adsmart-web-dev`: `facebook_ads=0, meta_ads=0` — dev project has no reports yet.
+  - `adsmart-web` (prod): `facebook_ads=0, meta_ads=1` — production is already 100% canonical. The `--write` step was therefore a no-op and was not run; the script remains in-tree for repeatability.
+- **Code change:** removed `normalizeType` from [src/hooks/useReports.ts](../src/hooks/useReports.ts). `mapReport` now reads `data.type` directly.
+- **Doc:** [docs/DATA-MODEL.md](DATA-MODEL.md) `Legacy note` rewritten to record the observed prod state (zero legacy docs) instead of a "pending" caveat.
+
+Acceptance criterion (`grep -rn "facebook_ads" src/ functions/src/` returns zero) verified ✓.
+
+Verification: `bun run typecheck` ✓, `bun run build` ✓, `bun run test` ✓.
+
+---
+
 ## [2026-04-25] — Refactor Phase A: schema-cleanup quick wins
 
 Executes Phase A of [REFACTOR-PLAN.md](REFACTOR-PLAN.md) — removes the remaining mock-data leftovers and fixes one race-condition bug surfaced while reading the related code.

@@ -143,7 +143,7 @@ Rule: owner only. Created with `status: "draft"`. Only owner can delete when `st
 ```
 {
   userId: string,
-  type: "google_ads" | "meta_ads",   // canonical; legacy docs may use "facebook_ads"
+  type: "google_ads" | "meta_ads",
   templateId: string,                 // FK → reportTemplates/{id}
   name: string,
   status: "pending" | "processing" | "completed" | "failed",
@@ -159,11 +159,11 @@ Rule: owner only. Created with `status: "draft"`. Only owner can delete when `st
 }
 ```
 
-Source of truth: [src/types/index.ts](../src/types/index.ts) `Report` interface.
+Source of truth: [src/types/index.ts](../src/types/index.ts) `Report` interface (to be replaced by Zod schema in Phase C of REFACTOR-PLAN.md).
 
 Rule: owner only. Delete blocked.
 
-**Legacy note:** docs created before the schema standardization may carry `type: "facebook_ads"`. The web client normalizes this to `"meta_ads"` on read via `useReports()`. A one-shot migration to rewrite those docs is pending.
+**Legacy note (resolved 2026-04-25):** the legacy `type: "facebook_ads"` value is no longer present in production. The one-shot migration script `scripts/migrations/2026-04-meta-ads-rename.ts` was executed in dry-run mode against `adsmart-web` on 2026-04-25 and reported 0 docs to rewrite (`facebook_ads=0, meta_ads=1`). The defensive `normalizeType` helper in `useReports()` was removed in the same change.
 
 ---
 

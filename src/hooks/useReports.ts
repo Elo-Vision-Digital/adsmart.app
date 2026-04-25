@@ -21,16 +21,12 @@ const toDate = (value: unknown): Date | undefined => {
   return undefined
 }
 
-// Docs antigos no Firestore podem ter type === 'facebook_ads'; o schema canônico é 'meta_ads'.
-const normalizeType = (raw: unknown): Report['type'] =>
-  raw === 'facebook_ads' ? 'meta_ads' : (raw as Report['type'])
-
 const mapReport = (snapshot: QueryDocumentSnapshot<DocumentData>): Report => {
   const data = snapshot.data()
   return {
     id: snapshot.id,
     userId: data.userId,
-    type: normalizeType(data.type),
+    type: data.type as Report['type'],
     templateId: data.templateId,
     name: data.name,
     status: data.status,
