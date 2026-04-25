@@ -16,6 +16,17 @@
 
 These require human action in the Firebase Console and GitHub. Complete them before running the tasks.
 
+> **Status as of 2026-04-25:** Prerequisites A through E have been completed.
+> - ✅ A: `adsmart-web-dev` created — Auth, Firestore, Functions (Node 22), Hosting all enabled, web app registered
+> - ✅ B: Production config in `.env.production` (committed in `579c9a1`)
+> - ✅ C: `localhost` added to existing reCAPTCHA key (same key reused)
+> - ✅ D: Dev project secrets provisioned in Secret Manager (`GOOGLE_ADS_CLIENT_SECRET`, `META_ADS_APP_SECRET`, `RECAPTCHA_SECRET_KEY`, `ENCRYPTION_KEY`). Separate dev OAuth apps created (Option A): Google Cloud OAuth client `1038801646092-i8f21n02...` and Meta app `868260879616608` (Development mode)
+> - ✅ E: `FIREBASE_TOKEN` set in GitHub Actions secrets
+> - ✅ `.env` (local, gitignored) updated with `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_DEVELOPER_TOKEN`, `META_ADS_APP_ID` for the dev OAuth apps
+> - ✅ Production `RECAPTCHA_SECRET_KEY` verified correct in Secret Manager
+>
+> Skip this section and proceed to Task 1.
+
 ### A. Create the `adsmart-web-dev` Firebase project
 
 1. Open [console.firebase.google.com](https://console.firebase.google.com) → Add project → name it `adsmart-web-dev`
