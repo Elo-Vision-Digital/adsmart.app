@@ -69,13 +69,16 @@ Provider nesting order in `App.tsx`: `LanguageProvider → ThemeProvider → Aut
 
 ```bash
 # Run all web tests
-npm test
+bun run test
 
 # Run all functions tests (from functions/)
-cd functions && npm test
+cd functions && bun run test
 
-# Run with coverage
-npm run test:coverage
+# Run all tests across workspaces (via Turbo)
+bun run test:all
+
+# Run with coverage (web)
+bun run test:coverage
 ```
 
 Tests live in `*.test.tsx` / `*.test.ts` next to the files they test (web) or in `functions/test/` (functions).

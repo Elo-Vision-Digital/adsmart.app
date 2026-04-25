@@ -85,12 +85,13 @@ Functions tests (`functions/test/`) always connect to the emulators via `@fireba
 
 ## Environments
 
-| Name | Firebase project | Frontend URL |
-|---|---|---|
-| Production | `adsmart-web` | `https://adsmart.app` |
-| Development | Local emulators | `http://localhost:5173` |
+| Name | Firebase project | Frontend URL | Trigger |
+|---|---|---|---|
+| Production | `adsmart-web` | `https://adsmart.app` | Push to `main` |
+| Development | `adsmart-web-dev` | `https://adsmart-web-dev.web.app` | Push to `develop` |
+| Local | Local emulators | `http://localhost:5173` | `bun run dev` |
 
-There is no staging environment currently. All testing is done locally with emulators.
+`bun run dev` connects to `adsmart-web-dev` by default (values in `.env`). Set `VITE_USE_FIREBASE_EMULATOR=true` in `.env` to use local emulators instead.
 
 ## Deployment prerequisites
 
@@ -102,3 +103,9 @@ Before deploying to production:
 4. reCAPTCHA domain allowlist includes `adsmart.app`.
 
 See `docs/DEPLOYMENT.md` for the full deploy checklist.
+
+## GitHub Actions secrets
+
+| Secret | Where to set | Description |
+|---|---|---|
+| `FIREBASE_TOKEN` | GitHub repo → Settings → Secrets | Firebase CI token. Generate: `bunx firebase-tools login:ci`. Works for both `adsmart-web-dev` and `adsmart-web`. |

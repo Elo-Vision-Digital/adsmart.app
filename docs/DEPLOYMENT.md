@@ -1,5 +1,37 @@
 # Deployment
 
+## Auto-deploy (CI/CD)
+
+Pushes to `develop` and `main` trigger automatic deploys via `.github/workflows/deploy.yml`:
+
+| Branch | Firebase project | URL |
+|---|---|---|
+| `develop` | `adsmart-web-dev` | `https://adsmart-web-dev.web.app` |
+| `main` | `adsmart-web` | `https://adsmart.app` |
+
+**Deploy flow:**
+1. `bun install --frozen-lockfile`
+2. `turbo run build` → builds web (`dist/`) and functions (`functions/lib/`) with caching
+3. `firebase deploy --only hosting,functions --project <target>`
+
+**Prerequisites (one-time):**
+- `FIREBASE_TOKEN` GitHub secret set (see `docs/ENVIRONMENT.md`)
+- All Firebase Secret Manager secrets provisioned in the target project
+- `adsmart-web-dev` project created and configured (see `docs/ENVIRONMENT.md`)
+
+**Manual deploy from local machine:**
+```bash
+# Deploy to dev
+bun run build:all
+bunx firebase-tools deploy --only hosting,functions --project adsmart-web-dev
+
+# Deploy to production (prefer letting CI handle this)
+bun run build:all
+bunx firebase-tools deploy --only hosting,functions --project adsmart-web
+```
+
+---
+
 ## Overview
 
 AdSmart deploys to Firebase. There are two deployable targets:
