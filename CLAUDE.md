@@ -90,6 +90,26 @@ Tests live in `*.test.tsx` / `*.test.ts` next to the files they test (web) or in
 - Common traps: `noAssignInExpressions` (no chained assignment `a = b = c`), `noConsole` (warn level).
 - Fix automatically: `bun run lint:fix`.
 
+## Code review router
+
+Three review paths exist; pick the right one for the situation:
+
+| Situation | Use | Why |
+|---|---|---|
+| Reviewing a real GitHub PR (already pushed) | `/code-review` (code-review plugin) | Operates on PR diff via `gh`; produces PR-level summary |
+| Mid-implementation, want a sanity check on code in the working tree | `superpowers:requesting-code-review` | Returns Strengths / Issues / Assessment for unpushed work |
+| Inside a `feature-dev:feature-dev` flow that produced architecture + code | `feature-dev:code-reviewer` agent | Knows the feature-dev plan and reviews against its blueprint |
+
+Default: when in doubt and reviewing local changes before push → `superpowers:requesting-code-review`. After push, on the open PR → `/code-review`.
+
+## Firebase operations
+
+When operating Firebase live (queries, logs, rules, secrets, Auth), invoke `firebase-operations` skill. It documents when to use the MCP plugin vs `bunx firebase-tools` vs editing local files like `firestore.rules`.
+
+## Docs hygiene
+
+To audit documentation drift after a migration or before a release, invoke `docs-lint` skill. It checks for stale commands, broken cross-doc links, orphan docs, undated CHANGES entries, and contradictions vs AGENTS.md / CLAUDE.md.
+
 ## Memory system
 
 This project has a memory system at `.claude/projects/.../memory/`. Key memories:
