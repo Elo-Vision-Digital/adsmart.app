@@ -33,10 +33,10 @@ Durante o cleanup de mock data (commits `3d2480e`, `32b5f39`) descobrimos que o 
 
 Cobrir o restante do inventário de mock data antes de refatorar fundação.
 
-- [ ] **A1.** Dedup `availableTemplates` em [src/pages/GenerateReportPage.tsx:17-50](../src/pages/GenerateReportPage.tsx#L17-L50) — importar de [src/components/templates/templateData.ts](../src/components/templates/templateData.ts).
-- [ ] **A2.** Logging em [src/hooks/useProductPrices.ts:34-71](../src/hooks/useProductPrices.ts#L34-L71): no `catch` que cai pra `DEFAULT_PRICES`, logar `console.error` + Toast informando preços em modo degradado.
-- [ ] **A3.** Decisão de produto sobre [src/pages/MetaReviewDemo.tsx](../src/pages/MetaReviewDemo.tsx): demo permanente (adicionar banner "Modo demonstração — dados fictícios") **ou** TODO de integração com Meta Graph API (mover para feature flag + branch).
-- [ ] **A4.** Verificar uso de [src/utils/mockTemplates.ts](../src/utils/mockTemplates.ts); se órfão, remover.
+- [x] **A1.** Dedup `availableTemplates` em [src/pages/GenerateReportPage.tsx](../src/pages/GenerateReportPage.tsx) — importa `getTemplateById` de [src/components/templates/templateData.ts](../src/components/templates/templateData.ts); nome/descrição vêm de `useProductPrices` + i18n (mesmo padrão do `TemplateCard`).
+- [x] **A2.** [src/hooks/useProductPrices.ts](../src/hooks/useProductPrices.ts): mensagem `console.error` explícita ("preços em modo degradado"), `error` propagado para [GenerateReportPage](../src/pages/GenerateReportPage.tsx) com Card-aviso, e correção de race-condition adicionando flag `ignore` no `useEffect` (padrão React 18 oficial validado via Context7). `refetch` (nunca consumido) removido.
+- [x] **A3.** [src/pages/MetaReviewDemo.tsx](../src/pages/MetaReviewDemo.tsx): banner persistente "Demo mode — fictitious data" no topo da página, deixando explícito para qualquer reviewer/usuário que os números são mock para Meta App Review.
+- [x] **A4.** [src/utils/mockTemplates.ts](../src/utils/mockTemplates.ts) era órfão (`grep -r mockTemplates src/ functions/src/` só achava a própria declaração) — removido.
 
 **Critério de aceite:** nenhum array hardcoded de domínio renderiza em produção fora dos utilitários `dev-only`.
 

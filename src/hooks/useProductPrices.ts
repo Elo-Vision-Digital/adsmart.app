@@ -18,7 +18,6 @@ interface UseProductPricesReturn {
   prices: ProductPrice[]
   loading: boolean
   error: string | null
-  refetch: () => Promise<void>
   getPriceByCategory: (
     category: 'google' | 'meta',
     type: 'lancamento' | 'negocio_local'
@@ -70,42 +69,45 @@ export function useProductPrices(): UseProductPricesReturn {
     },
   ]
 
-  // Buscar preços via Cloud Function
-  const fetchPrices = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const getPublicProductPrices = httpsCallable(functions, 'getPublicProductPrices')
-      const result = await getPublicProductPrices()
-
-      if (result.data && (result.data as any).success) {
-        const pricesData = (result.data as any).prices
-        setPrices(pricesData)
-        console.log('✅ Preços carregados:', pricesData.length)
-      } else {
-        throw new Error('Falha ao carregar preços')
-      }
-    } catch (err: any) {
-      console.error('❌ Erro ao buscar preços:', err)
-      setError('Erro ao carregar preços. Usando valores padrão.')
-      // Usar preços padrão em caso de erro
-      setPrices(DEFAULT_PRICES)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Buscar preços quando o componente montar
+  // Buscar preços quando o componente montar.
+  // Padrão "ignore flag" recomendado por React 18 docs (synchronizing-with-effects)
+  // para evitar setState em componente desmontado / race conditions sob StrictMode.
   useEffect(() => {
+    let ignore = false
+
+    const fetchPrices = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const getPublicProductPrices = httpsCallable(functions, 'getPublicProductPrices')
+        const result = await getPublicProductPrices()
+
+        if (ignore) return
+
+        if (result.data && (result.data as any).success) {
+          const pricesData = (result.data as any).prices
+          setPrices(pricesData)
+        } else {
+          throw new Error('Falha ao carregar preços')
+        }
+      } catch (err) {
+        if (ignore) return
+        console.error('[useProductPrices] preços em modo degradado — usando DEFAULT_PRICES.', err)
+        setError('Erro ao carregar preços. Usando valores padrão.')
+        setPrices(DEFAULT_PRICES)
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+
     fetchPrices()
+    const interval = setInterval(fetchPrices, 30000)
 
-    // Recarregar preços a cada 30 segundos para pegar atualizações
-    const interval = setInterval(() => {
-      fetchPrices()
-    }, 30000) // 30 segundos
-
-    return () => clearInterval(interval)
+    return () => {
+      ignore = true
+      clearInterval(interval)
+    }
   }, [])
 
   // Função auxiliar para buscar preço específico
@@ -116,16 +118,10 @@ export function useProductPrices(): UseProductPricesReturn {
     return prices.find((p) => p.category === category && p.type === type)
   }
 
-  // Função para recarregar preços manualmente
-  const refetch = async () => {
-    await fetchPrices()
-  }
-
   return {
     prices,
     loading,
     error,
-    refetch,
     getPriceByCategory,
   }
 }

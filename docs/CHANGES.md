@@ -10,6 +10,22 @@ Format conventions:
 
 ---
 
+## [2026-04-25] — Refactor Phase A: schema-cleanup quick wins
+
+Executes Phase A of [REFACTOR-PLAN.md](REFACTOR-PLAN.md) — removes the remaining mock-data leftovers and fixes one race-condition bug surfaced while reading the related code.
+
+- **A1 — `availableTemplates` deduplicated:** [GenerateReportPage.tsx](../src/pages/GenerateReportPage.tsx) no longer carries a hard-coded copy of the templates array. It imports `getTemplateById` from [templateData.ts](../src/components/templates/templateData.ts); template name now resolves via `useProductPrices().getPriceByCategory()` with i18n fallback, mirroring the [TemplateCard](../src/components/templates/TemplateCard.tsx) pattern.
+- **A2 — `useProductPrices` degraded mode + race-condition fix:** explicit `console.error('[useProductPrices] preços em modo degradado — usando DEFAULT_PRICES.', err)` in the catch path; `error` propagated and now rendered as an inline warning Card on [GenerateReportPage](../src/pages/GenerateReportPage.tsx) (was previously discarded). `useEffect` now uses the official React 18 `let ignore = false` pattern (validated via Context7 against `reactjs/react.dev` synchronizing-with-effects) to prevent setState on unmounted components and StrictMode double-invocation. Unused `refetch` removed.
+- **A3 — `MetaReviewDemo` demo banner:** persistent yellow banner "Demo mode — fictitious data" added at the top of [MetaReviewDemo.tsx](../src/pages/MetaReviewDemo.tsx). Page kept routable (it's needed for Meta App Review) but hard-coded mock values are now visually disclosed.
+- **A4 — `mockTemplates.ts` removed:** confirmed orphan via `grep -r mockTemplates src/ functions/src/`; deleted [src/utils/mockTemplates.ts](../src/utils/mockTemplates.ts).
+- **Open follow-ups:**
+  - shadcn/ui's Radix `toast` was deprecated in Feb/2025 in favour of `sonner` (Context7 confirmation). The current hand-rolled `src/components/ui/toast.tsx` is per-page state, so it can't be triggered from inside hooks. Migration to `sonner` (with global Toaster) recommended as a future task — captured here, not yet in the plan.
+  - Phase B (rename migration `facebook_ads → meta_ads` + remove `normalizeType`) still pending.
+
+Verification: `bun run typecheck` ✓, `bun run build` ✓ (1.12 MB bundle, unchanged), `bun run test` ✓ (31/31), Biome ✓ (only pre-existing `<label>` warnings remain).
+
+---
+
 ## [2026-04-25] — Phase 5: Bun + Turborepo + multi-environment + auto-deploy
 
 - **Package manager:** npm → Bun 1.3.10. `bunfig.toml` pins `linker = "isolated"` (required for Firebase Functions deploy compat — symlinked deps would break the deploy zip).

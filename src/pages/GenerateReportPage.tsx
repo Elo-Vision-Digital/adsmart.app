@@ -1,63 +1,41 @@
 import { addDoc, collection, getDocs, query, Timestamp, where } from 'firebase/firestore'
-import { ArrowLeft, CheckCircle, CreditCard, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, CheckCircle, CreditCard, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
+import { getTemplateById } from '@/components/templates/templateData'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { db } from '@/firebase/config'
 import { useProductPrices } from '@/hooks/useProductPrices'
 import { useWallet } from '@/hooks/useWallet'
 import type { AdAccount, Campaign } from '@/types'
 
-// Templates disponíveis (mesmo array da TemplatesPage)
-const availableTemplates = [
-  {
-    id: 'google_lancamento',
-    platform: 'google_ads',
-    name: 'Dashboard Google Ads - Lançamento',
-    description: 'Análise completa para campanhas de lançamento no Google Ads',
-    category: 'google' as const,
-    type: 'lancamento' as const,
-  },
-  {
-    id: 'meta_lancamento',
-    platform: 'meta_ads',
-    name: 'Dashboard Meta Ads - Lançamento',
-    description: 'Visão 360° das suas campanhas de lançamento no Meta Ads',
-    category: 'meta' as const,
-    type: 'lancamento' as const,
-  },
-  {
-    id: 'google_negocio_local',
-    platform: 'google_ads',
-    name: 'Dashboard Google Ads - Negócios Locais',
-    description: 'Relatórios especializados para empresas locais no Google',
-    category: 'google' as const,
-    type: 'negocio_local' as const,
-  },
-  {
-    id: 'meta_negocio_local',
-    platform: 'meta_ads',
-    name: 'Dashboard Meta Ads - Negócios Locais',
-    description: 'Maximize seus resultados locais com insights do Meta Ads',
-    category: 'meta' as const,
-    type: 'negocio_local' as const,
-  },
-]
-
 export function GenerateReportPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
+  const { t } = useLanguage()
   const { balance, formatCurrency, debitAmount } = useWallet()
-  const { getPriceByCategory } = useProductPrices()
+  const { getPriceByCategory, error: pricesError } = useProductPrices()
 
   const templateId = searchParams.get('template')
-  const template = availableTemplates.find((t) => t.id === templateId)
+  const template = templateId ? getTemplateById(templateId) : undefined
+  const priceInfo = template ? getPriceByCategory(template.category, template.type) : undefined
+
+  const platformLabel = template?.category === 'google' ? 'Google Ads' : 'Meta Ads'
+  const typeLabel = template
+    ? template.type === 'lancamento'
+      ? t('templateCard.templateTypes.launch')
+      : t('templateCard.templateTypes.localBusiness')
+    : ''
+  const templateName = template
+    ? (priceInfo?.name ?? `Dashboard ${platformLabel} - ${typeLabel}`)
+    : ''
 
   const [accounts, setAccounts] = useState<AdAccount[]>([])
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -176,7 +154,7 @@ export function GenerateReportPage() {
         userId: user.uid,
         type: template.platform,
         templateId: template.id,
-        name: reportName || `${template.name} - ${new Date().toLocaleDateString('pt-BR')}`,
+        name: reportName || `${templateName} - ${new Date().toLocaleDateString('pt-BR')}`,
         status: 'processing',
         campaignIds: selectedCampaigns,
         allCampaigns: selectAll,
@@ -194,7 +172,7 @@ export function GenerateReportPage() {
       console.log('Relatório salvo com ID:', docRef.id)
 
       // Depois debitar o valor passando o ID do relatório
-      await debitAmount(reportCost, `Relatório: ${reportName || template.name}`, docRef.id)
+      await debitAmount(reportCost, `Relatório: ${reportName || templateName}`, docRef.id)
       console.log('Valor debitado com sucesso')
 
       // Simular processamento
@@ -235,9 +213,18 @@ export function GenerateReportPage() {
 
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gerar Relatório</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Configure os detalhes do seu relatório {template.name}
+              Configure os detalhes do seu relatório {templateName}
             </p>
           </div>
+
+          {pricesError && (
+            <Card className="mb-6 border-orange-200 bg-orange-50 dark:bg-orange-900/20">
+              <CardContent className="pt-6 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-300 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-orange-800 dark:text-orange-200">{pricesError}</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Progress Steps */}
           <div className="mb-8">
@@ -430,7 +417,7 @@ export function GenerateReportPage() {
                 </CardHeader>
                 <CardContent>
                   <Input
-                    placeholder={`Ex: ${template.name} - ${new Date().toLocaleDateString('pt-BR')}`}
+                    placeholder={`Ex: ${templateName} - ${new Date().toLocaleDateString('pt-BR')}`}
                     value={reportName}
                     onChange={(e) => setReportName(e.target.value)}
                   />
@@ -460,7 +447,7 @@ export function GenerateReportPage() {
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Template:</span>
-                    <span className="font-medium">{template.name}</span>
+                    <span className="font-medium">{templateName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Campanhas:</span>

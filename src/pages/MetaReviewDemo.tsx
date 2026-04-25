@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   BarChart3,
   Building2,
   DollarSign,
@@ -76,6 +77,20 @@ export function MetaReviewDemo() {
     <MainLayout>
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto space-y-6">
+          {/* Demo-mode banner — all data on this page is fictitious */}
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-800 rounded-lg p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-700 dark:text-yellow-300 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-yellow-900 dark:text-yellow-200">
+                Demo mode — fictitious data
+              </p>
+              <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                This page exists for Meta App Review and uses hard-coded mock values to demonstrate
+                the requested permissions. No real Meta Graph API calls are made.
+              </p>
+            </div>
+          </div>
+
           {/* Header */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h1 className="text-2xl font-bold mb-2">Meta API Review Demo</h1>
