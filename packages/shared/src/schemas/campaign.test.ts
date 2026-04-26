@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore'
+import { fakeTimestamp } from './test-helpers'
 import { describe, expect, it } from 'vitest'
 import { CampaignSchema } from './campaign'
 
@@ -83,7 +83,7 @@ describe('CampaignSchema', () => {
   })
 
   it('normalizes a Firestore Timestamp on lastSyncAt', () => {
-    const ts = Timestamp.fromDate(new Date('2026-04-26T08:00:00Z'))
+    const ts = fakeTimestamp('2026-04-26T08:00:00Z')
     const result = CampaignSchema.parse({ ...validCampaign, lastSyncAt: ts })
     expect(result.lastSyncAt).toBeInstanceOf(Date)
   })

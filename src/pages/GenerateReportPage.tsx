@@ -1,3 +1,4 @@
+import { AdAccountSchema, CampaignSchema } from '@adsmart/shared'
 import { addDoc, collection, getDocs, query, Timestamp, where } from 'firebase/firestore'
 import { AlertCircle, ArrowLeft, CheckCircle, CreditCard, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -13,8 +14,6 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import { db } from '@/firebase/config'
 import { useProductPrices } from '@/hooks/useProductPrices'
 import { useWallet } from '@/hooks/useWallet'
-import { AdAccountSchema } from '@/schemas/adAccount'
-import { CampaignSchema } from '@/schemas/campaign'
 import { zodConverter } from '@/schemas/firestore-converter'
 import type { AdAccount, Campaign } from '@/types'
 

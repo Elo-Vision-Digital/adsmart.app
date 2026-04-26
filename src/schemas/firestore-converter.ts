@@ -1,19 +1,14 @@
-import {
-  type DocumentData,
-  type FirestoreDataConverter,
-  type QueryDocumentSnapshot,
-  type SnapshotOptions,
-  Timestamp,
+import type {
+  DocumentData,
+  FirestoreDataConverter,
+  QueryDocumentSnapshot,
+  SnapshotOptions,
 } from 'firebase/firestore'
-import * as z from 'zod'
+import type * as z from 'zod'
 
-/**
- * Schema fragment for fields that arrive from Firestore as `Timestamp` and
- * should be exposed to the app as native `Date`. The converter never sees
- * `Timestamp` on the write path — the Firestore SDK accepts `Date` directly.
- */
-export const zTimestamp = () =>
-  z.preprocess((value) => (value instanceof Timestamp ? value.toDate() : value), z.date())
+// Re-export so existing `import { zTimestamp } from '@/schemas/firestore-converter'`
+// callers keep working after the move to @adsmart/shared in Phase D.
+export { zTimestamp } from '@adsmart/shared'
 
 /**
  * Builds a `FirestoreDataConverter` from a Zod schema.

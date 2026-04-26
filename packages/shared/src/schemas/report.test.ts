@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore'
+import { fakeTimestamp } from './test-helpers'
 import { describe, expect, it } from 'vitest'
 import { ReportSchema, ReportStatusSchema, ReportTypeSchema } from './report'
 
@@ -64,7 +64,7 @@ describe('ReportSchema', () => {
   })
 
   it('normalizes a Firestore Timestamp on createdAt', () => {
-    const ts = Timestamp.fromDate(new Date('2026-04-25T10:00:00Z'))
+    const ts = fakeTimestamp('2026-04-25T10:00:00Z')
     const result = ReportSchema.parse({ ...validReport, createdAt: ts })
     expect(result.createdAt).toBeInstanceOf(Date)
     expect(result.createdAt.toISOString()).toBe('2026-04-25T10:00:00.000Z')

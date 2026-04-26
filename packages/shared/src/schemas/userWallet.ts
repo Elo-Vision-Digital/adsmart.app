@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { zTimestamp } from './firestore-converter'
+import { zTimestamp } from '../firestore'
 
 export const UserWalletSchema = z.object({
   id: z.string(),

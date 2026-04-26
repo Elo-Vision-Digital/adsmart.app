@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { zTimestamp } from './firestore-converter'
+import { zTimestamp } from '../firestore'
 
 export const ReportTypeSchema = z.enum(['google_ads', 'meta_ads'])
 export type ReportType = z.infer<typeof ReportTypeSchema>

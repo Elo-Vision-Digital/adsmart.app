@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore'
+import { fakeTimestamp } from './test-helpers'
 import { describe, expect, it } from 'vitest'
 import { UserWalletSchema } from './userWallet'
 
@@ -44,7 +44,7 @@ describe('UserWalletSchema', () => {
   })
 
   it('normalizes a Firestore Timestamp on updatedAt', () => {
-    const ts = Timestamp.fromDate(new Date('2026-04-26T12:00:00Z'))
+    const ts = fakeTimestamp('2026-04-26T12:00:00Z')
     const result = UserWalletSchema.parse({ ...validWallet, updatedAt: ts })
     expect(result.updatedAt).toBeInstanceOf(Date)
   })

@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { zTimestamp } from './firestore-converter'
+import { zTimestamp } from '../firestore'
 
 export const AdPlatformSchema = z.enum(['google_ads', 'meta_ads'])
 export type AdPlatform = z.infer<typeof AdPlatformSchema>

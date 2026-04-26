@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore'
+import { fakeTimestamp } from './test-helpers'
 import { describe, expect, it } from 'vitest'
 import { AdAccountSchema, AdPlatformSchema } from './adAccount'
 
@@ -56,8 +56,8 @@ describe('AdAccountSchema', () => {
   it('normalizes Firestore Timestamps on date fields', () => {
     const result = AdAccountSchema.parse({
       ...validAdAccount,
-      createdAt: Timestamp.fromDate(new Date('2026-04-01T00:00:00Z')),
-      updatedAt: Timestamp.fromDate(new Date('2026-04-25T12:00:00Z')),
+      createdAt: fakeTimestamp('2026-04-01T00:00:00Z'),
+      updatedAt: fakeTimestamp('2026-04-25T12:00:00Z'),
     })
     expect(result.createdAt).toBeInstanceOf(Date)
     expect(result.updatedAt).toBeInstanceOf(Date)

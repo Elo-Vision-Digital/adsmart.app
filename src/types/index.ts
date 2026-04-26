@@ -10,16 +10,12 @@ export interface User {
 }
 
 // Source of truth: src/schemas/adAccount.ts (Zod schema).
-export type { AdAccount } from '@/schemas/adAccount'
 // Source of truth: src/schemas/campaign.ts (Zod schema).
-export type { Campaign } from '@/schemas/campaign'
 // Source of truth: src/schemas/report.ts (Zod schema). Reexported here so
 // existing `import type { Report } from '@/types'` callers continue working.
-export type { Report } from '@/schemas/report'
 // Source of truth: src/schemas/transaction.ts (Zod schema).
-export type { Transaction } from '@/schemas/transaction'
 // Source of truth: src/schemas/userWallet.ts (Zod schema).
-export type { UserWallet } from '@/schemas/userWallet'
+export type { AdAccount, Campaign, Report, Transaction, UserWallet } from '@adsmart/shared'
 
 // `ReportTemplate` interface removed in C6.5 — the `reportTemplates/{id}`
 // Firestore collection had zero readers/writers in app code; templates are

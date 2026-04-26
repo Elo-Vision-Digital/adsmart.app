@@ -1,3 +1,5 @@
+import type { Transaction, UserWallet } from '@adsmart/shared'
+import { TransactionSchema, UserWalletSchema } from '@adsmart/shared'
 import {
   addDoc,
   collection,
@@ -12,10 +14,6 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { db } from '@/firebase/config'
 import { zodConverter } from '@/schemas/firestore-converter'
-import type { Transaction } from '@/schemas/transaction'
-import { TransactionSchema } from '@/schemas/transaction'
-import type { UserWallet } from '@/schemas/userWallet'
-import { UserWalletSchema } from '@/schemas/userWallet'
 
 export function useWallet() {
   const { user } = useAuth()

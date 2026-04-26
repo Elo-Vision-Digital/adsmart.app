@@ -1,3 +1,4 @@
+import { AdAccountSchema } from '@adsmart/shared'
 import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore'
 import {
   ChevronLeft,
@@ -19,7 +20,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { db } from '@/firebase/config'
 import { useReports } from '@/hooks/useReports'
-import { AdAccountSchema } from '@/schemas/adAccount'
 import { zodConverter } from '@/schemas/firestore-converter'
 import type { AdAccount } from '@/types'
 

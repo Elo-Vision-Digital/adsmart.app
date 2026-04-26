@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore'
+import { fakeTimestamp } from './test-helpers'
 import { describe, expect, it } from 'vitest'
 import { TransactionSchema, TransactionStatusSchema, TransactionTypeSchema } from './transaction'
 
@@ -83,8 +83,8 @@ describe('TransactionSchema', () => {
   it('normalizes Firestore Timestamps on createdAt and completedAt', () => {
     const result = TransactionSchema.parse({
       ...validTransaction,
-      createdAt: Timestamp.fromDate(new Date('2026-04-25T10:00:00Z')),
-      completedAt: Timestamp.fromDate(new Date('2026-04-25T10:01:00Z')),
+      createdAt: fakeTimestamp('2026-04-25T10:00:00Z'),
+      completedAt: fakeTimestamp('2026-04-25T10:01:00Z'),
     })
     expect(result.createdAt).toBeInstanceOf(Date)
     expect(result.completedAt).toBeInstanceOf(Date)

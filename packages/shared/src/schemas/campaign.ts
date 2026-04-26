@@ -1,6 +1,6 @@
 import * as z from 'zod'
 import { AdPlatformSchema } from './adAccount'
-import { zTimestamp } from './firestore-converter'
+import { zTimestamp } from '../firestore'
 
 // Status arrives lowercased from the upstream Ads APIs (Google Ads:
 // enabled/paused/removed/...; Meta: active/paused/archived/with_issues/...).

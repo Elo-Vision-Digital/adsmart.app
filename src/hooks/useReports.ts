@@ -1,9 +1,9 @@
+import { ReportSchema } from '@adsmart/shared'
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { db } from '@/firebase/config'
 import { zodConverter } from '@/schemas/firestore-converter'
-import { ReportSchema } from '@/schemas/report'
 import type { Report } from '@/types'
 
 const reportsCollection = collection(db, 'reports').withConverter(

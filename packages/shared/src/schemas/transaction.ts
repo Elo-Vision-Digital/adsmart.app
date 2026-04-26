@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { zTimestamp } from './firestore-converter'
+import { zTimestamp } from '../firestore'
 
 export const TransactionTypeSchema = z.enum(['credit', 'debit'])
 export type TransactionType = z.infer<typeof TransactionTypeSchema>

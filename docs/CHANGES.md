@@ -10,6 +10,31 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Refactor Phase D1–D4: schemas moved to `@adsmart/shared`
+
+First slice of Phase D from [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Establishes the shared workspace package and migrates web consumers; functions integration (D5) and Turbo wiring (D6) ship in subsequent commits.
+
+- **New package** [packages/shared/](../packages/shared/) (`@adsmart/shared`, `workspace:*`):
+  - `package.json` exports `./src/index.ts` directly — no build step. Web (Vite) and shared (TS) both resolve TS source; functions will compile via its own tsc (D5).
+  - Standalone `tsconfig.json` — no `extends`, because web and functions have incompatible compilation targets (ESNext bundler vs CJS es2017). The shared package targets ES2022 / ESNext (the lowest common denominator that doesn't sacrifice modern features both consumers can handle).
+  - Local `vitest.config.ts` with `environment: 'node'` so the schema tests don't pull happy-dom.
+- **Workspaces** expanded in [root package.json](../package.json) from `[".", "functions"]` to `[".", "functions", "packages/*"]`. `bun install` resolved the symlink at `node_modules/@adsmart/shared`.
+- **`zTimestamp()` made SDK-agnostic.** The previous web-only implementation used `value instanceof Timestamp` (web SDK). Replaced with a structural duck-type check (`'toDate' in value && typeof value.toDate === 'function'`) so it works under both `firebase/firestore` (web) and `firebase-admin/firestore` (Functions) — those ship distinct `Timestamp` classes that would cross-fail an `instanceof` check.
+- **`firestore-converter.ts` stays web-only.** It depends on `FirestoreDataConverter`/`QueryDocumentSnapshot` types from the web SDK; functions don't use it (Admin SDK has no equivalent). The file now just re-exports `zTimestamp` from `@adsmart/shared` so existing `import { zTimestamp } from '@/schemas/firestore-converter'` callers keep working.
+- **Schemas moved via `git mv`** (preserving history) from `src/schemas/` to `packages/shared/src/schemas/`: `report.ts`, `adAccount.ts`, `campaign.ts`, `userWallet.ts`, `transaction.ts` — and their `*.test.ts` siblings. Each schema's `import { zTimestamp } from './firestore-converter'` rewritten to `from '../firestore'`.
+- **Schema tests use a local `fakeTimestamp` helper** in [test-helpers.ts](../packages/shared/src/schemas/test-helpers.ts) (`{ toDate: () => Date }` duck-type) instead of `Timestamp.fromDate()` from `firebase/firestore`, keeping `@adsmart/shared` free of any Firebase dependency.
+- **Web imports rewritten** in 6 files (`types/index.ts`, `hooks/useReports.ts`, `hooks/useWallet.ts`, `pages/AccountsPage.tsx`, `pages/Dashboard.tsx`, `pages/GenerateReportPage.tsx`) from `@/schemas/{name}` to `@adsmart/shared`.
+- **Test counts after move:**
+  - Web: 38 (was 78 before the schemas moved out — the 40 schema tests now run from shared).
+  - Shared: 40 — all passing.
+  - Total still 78, just split across two packages.
+
+Verification: `bun run typecheck` ✓ (root and `packages/shared`), `bun run build` ✓, `bun run test` ✓ (38/38), `cd packages/shared && bun run test` ✓ (40/40).
+
+D5 (Functions write-side validation) and D6 (Turbo task graph) remain.
+
+---
+
 ## [2026-04-26] — Refactor Phase C7: Vitest tests for all Zod schemas
 
 Closes Phase C of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Six new test files in `src/schemas/` exercise every schema introduced during C2–C6 plus the converter helper.
