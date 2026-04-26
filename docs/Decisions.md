@@ -194,3 +194,45 @@ Consequences for code authors:
 - [packages/shared/src/index.ts](../packages/shared/src/index.ts) — schema exports.
 - [src/schemas/firestore-converter.ts](../src/schemas/firestore-converter.ts) — `zodConverter()` helper.
 - [docs/DATA-MODEL.md](DATA-MODEL.md) — human-facing field documentation; each entry links back to its schema file as the source of truth.
+
+---
+
+## ADR-010: Wallet bootstrap moved to server-side Auth blocking trigger
+
+**Date:** 2026-04-26
+**Status:** Accepted
+
+**Context:**
+
+Phase 3 firestore.rules block all client-side writes to `users/{uid}/wallet/{...}` (the rule excludes `wallet` and `transactions` from the writable subcollection set). However, [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) still attempted a `setDoc(walletRef, { balance: 0, ... })` whenever the snapshot reported the document missing — typical first-login scenario. The write hit the rule and surfaced as `FirebaseError: Missing or insufficient permissions` for every new user. Documentation in [docs/DATA-MODEL.md](DATA-MODEL.md) still claimed that the hook performed the bootstrap, contradicting the deployed rule.
+
+**Decision:**
+
+1. Remove the client-side bootstrap from `useWallet`. When the snapshot reports the document missing, surface a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) without writing.
+2. Add a Firebase Auth blocking trigger `bootstrapUserWallet` ([functions/src/bootstrapUserWallet.ts](../functions/src/bootstrapUserWallet.ts)) that runs `beforeUserCreated` and seeds `users/{uid}/wallet/current` with `{ balance: 0, currency: 'BRL', updatedAt: now }` via the Admin SDK. The seed is validated through `UserWalletSchema` from `@adsmart/shared` (ADR-009).
+3. Use `firebase-functions/v2/identity` `beforeUserCreated` rather than the deprecated v1 `functions.auth.user().onCreate` — v6 of `firebase-functions` only exposes the v2 surface for Identity Platform triggers.
+
+**Why a blocking trigger (not a non-blocking onCreate)?**
+
+Authentication blocking triggers are synchronous: the user account is not finalized until the trigger returns. This guarantees that by the time the client receives a successful sign-in callback, the wallet document already exists. A non-blocking `onUserCreated` could race with the client's `onSnapshot` subscription, producing a brief flash of the virtual `EMPTY_WALLET`. The trade-off is added sign-up latency (~100-300ms); acceptable for our scale.
+
+**Pre-requisites:**
+
+- Identity Platform must be enabled on the Firebase project (one-click enable in Firebase Console → Authentication → Settings). The CLI deploy will refuse the trigger otherwise.
+
+**Trade-offs:**
+
+- Existing users created before this trigger landed have no wallet document. They'll see the virtual `EMPTY_WALLET` until an admin grants them credit (which seeds the doc via `addUserCredits`) or until a one-shot backfill script runs (not in scope for this ADR).
+- Wallet bootstrap latency now lives on the auth path rather than the first-render path.
+
+**Alternatives considered:**
+
+- **Relax firestore.rules to allow client wallet writes.** Rejected — Phase 3 hardening exists precisely to prevent client-controlled balances. Re-opening the door defeats the threat model.
+- **Add a callable `bootstrapWallet` invoked from the client on first login.** Rejected — extra round trip, extra failure mode, and the client could simply not call it (defeating the purpose for a server-controlled balance).
+- **Keep client write + accept the permission error silently.** Rejected — pollutes the console and breaks the strict "no unhandled FirebaseError on login" invariant.
+
+**References:**
+- [functions/src/bootstrapUserWallet.ts](../functions/src/bootstrapUserWallet.ts) — implementation.
+- [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) — virtual-wallet read path.
+- [firestore.rules:39-46](../firestore.rules) — Phase 3 wallet write block.
+- Firebase docs: Identity Platform blocking functions (validated via Context7 2026-04-26).

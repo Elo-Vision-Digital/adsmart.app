@@ -105,7 +105,7 @@ bun run deploy
 4. If the secret is new, create it: `firebase functions:secrets:set mySecret`.
 5. Add the secret handle to `functions/src/config/index.ts`.
 
-## Firestore rules
+## Firestore rules and indexes
 
 Rules file: `firestore.rules`. Indexes: `firestore.indexes.json`.
 
@@ -114,7 +114,25 @@ Deploy rules:
 firebase deploy --only firestore:rules
 ```
 
+Deploy indexes:
+```bash
+firebase deploy --only firestore:indexes
+```
+
+Index builds are **asynchronous** on Firebase's side — even after `firebase deploy --only firestore:indexes` returns, queries that depend on a brand-new index keep failing for ~1–3 minutes (longer for large collections) until the build completes. Confirm in Firebase Console → Firestore → Indexes that the new index status is `Enabled` before declaring the fix landed. Any change to a query's filter/orderBy combination can require a new composite index — adding the index to `firestore.indexes.json` and deploying it is part of the same change set as the query.
+
 Test rules locally before deploying — see `docs/TESTING.md`.
+
+## Auth blocking triggers (Identity Platform)
+
+Functions that use `firebase-functions/v2/identity` (e.g. `bootstrapUserWallet` — see [ADR-010](Decisions.md#adr-010-wallet-bootstrap-moved-to-server-side-auth-blocking-trigger)) require Identity Platform to be enabled on the target Firebase project. The CLI deploy refuses the trigger otherwise.
+
+One-time enablement per project (dev and prod):
+1. Firebase Console → Authentication → Settings → "User actions" tab.
+2. Enable Identity Platform (Google may surface a billing-tier upgrade prompt; blocking functions are included on Blaze).
+3. Re-run `firebase deploy --only functions:bootstrapUserWallet --project <target>`.
+
+Blocking triggers run **synchronously** on every signup — they add latency to the auth flow. Keep them small (a single Admin SDK write is the upper bound for `bootstrapUserWallet`).
 
 ## GitHub Actions CI
 

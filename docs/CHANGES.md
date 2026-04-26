@@ -10,6 +10,20 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Login console errors fixed: undeployed callable, missing index, client wallet bootstrap
+
+Three independent post-login console errors on `adsmart-web-dev` traced to one common root: the dev project had drifted from the source tree (no functions deployed, indexes empty, Phase 3 rules vs. legacy client write).
+
+- **Callable `getPublicProductPrices` returned 404** — the entire functions deploy was missing on `adsmart-web-dev` (`firebase functions:list` returned an empty table). The browser surfaced a misleading "CORS error" because Cloud Functions returns plain HTML 404 (no `Access-Control-Allow-Origin`) when the function name does not exist. The `useProductPrices` hook entered its degraded fallback path, logging `FirebaseError: internal`. Fix: redeploy all functions to dev (`bunx firebase deploy --only functions --project adsmart-web-dev` after `cd functions && bun run build`). Validation: `curl https://us-central1-adsmart-web-dev.cloudfunctions.net/getPublicProductPrices` → expect HTTP 200 instead of 404.
+- **`useReports` query missing composite index** — [firestore.indexes.json](../firestore.indexes.json) was empty (`"indexes": []`). [src/hooks/useReports.ts](../src/hooks/useReports.ts) executes `where('userId','==',uid) + orderBy('createdAt','desc')` on the `reports` collection; Firestore requires a composite index. Added `{collectionGroup: reports, fields: [userId asc, createdAt desc]}`. Deploy: `bunx firebase deploy --only firestore:indexes --project adsmart-web-dev`. Index build is async — surface remains red for ~1-3 min after deploy.
+- **`useWallet` permission denied on first login** — Phase 3 [firestore.rules:39-46](../firestore.rules) blocks client writes to `wallet`/`transactions`, but `useWallet` still ran `setDoc(walletRef, { balance: 0, ... })` whenever the snapshot reported the doc missing. Documentation in [DATA-MODEL.md:67](DATA-MODEL.md) still claimed the hook performed the bootstrap (stale). Resolution per **[ADR-010](Decisions.md#adr-010-wallet-bootstrap-moved-to-server-side-auth-blocking-trigger)**: removed the client write; surface a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) on missing snapshot; added [functions/src/bootstrapUserWallet.ts](../functions/src/bootstrapUserWallet.ts) — a `beforeUserCreated` Auth blocking trigger that seeds `users/{uid}/wallet/current` via Admin SDK. Pre-req: Identity Platform must be enabled on the Firebase project before deploy (Console → Authentication → Settings).
+- **Doc refresh.** Added ADR-010, rewrote the wallet write section in [DATA-MODEL.md](DATA-MODEL.md), updated [CLAUDE.md](../CLAUDE.md) wallet bootstrap memory hint, added `firestore:indexes` deploy reminder to [DEPLOYMENT.md](DEPLOYMENT.md).
+- **Memory updated.** Saved a `dev_environment_drift` memory: dev Firebase project is treated as ephemeral and must be redeployed end-to-end before browser-side QA.
+
+Out of scope (intentionally left): the `addCredits`/`debitAmount` paths in `useWallet` are still client writes blocked by Phase 3 rules. Those flows are guarded by the `NOTE` JSDoc and are user-action paths (not first-login), so they don't pollute the post-login console. Migration to a callable lives in the Asaas migration phase (ADR-003).
+
+---
+
 ## [2026-04-26] — Refactor Phase E: tooling for continuous drift prevention
 
 Closes the entire REFACTOR-PLAN (Phases A–E). Locks in the schema-as-code contract with documentation, automation, and a published architectural decision.

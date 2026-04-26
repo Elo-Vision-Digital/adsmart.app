@@ -140,3 +140,13 @@ Before Phase 2 upgrades, these security fixes are in place:
 - AdminRoute guards `/admin` with custom claim check
 - All secrets via `defineSecret` (no `process.env.XXX_SECRET`)
 - securityLogger re-entrancy guard prevents infinite loops on SUSPICIOUS_ACTIVITY events
+
+## Wallet bootstrap (post-Phase-3 invariant)
+
+The `useWallet` hook **never writes** to `users/{uid}/wallet/current`. The doc is seeded server-side by the `bootstrapUserWallet` Auth blocking trigger ([functions/src/bootstrapUserWallet.ts](functions/src/bootstrapUserWallet.ts)) on every new signup, via `beforeUserCreated` from `firebase-functions/v2/identity`. Existing users created before the trigger landed see a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) until an admin grants credit (which seeds the doc) or a backfill runs.
+
+When touching wallet code, never re-introduce a client `setDoc(walletRef, ...)` — Phase 3 [firestore.rules:39-46](firestore.rules) reject it. See [ADR-010](docs/Decisions.md#adr-010-wallet-bootstrap-moved-to-server-side-auth-blocking-trigger).
+
+## Adding Firestore queries
+
+Any new query that combines `where(...)` with `orderBy(...)` (or two range filters on different fields) needs a composite index in [firestore.indexes.json](firestore.indexes.json). The Firebase SDK throws `FirebaseError: The query requires an index. You can create it here: ...` with the auto-create link, but committing the index in source is required so dev/prod stay in sync. After editing the file, run `firebase deploy --only firestore:indexes --project <target>` for each environment — index builds are async (1–3 min) so the query stays red until status flips to `Enabled`. See [DEPLOYMENT.md → Firestore rules and indexes](docs/DEPLOYMENT.md).

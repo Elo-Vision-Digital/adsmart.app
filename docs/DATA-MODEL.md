@@ -64,7 +64,12 @@ Single document per user (doc ID is the literal `current`).
 
 Source of truth: [packages/shared/src/schemas/userWallet.ts](../packages/shared/src/schemas/userWallet.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `UserWallet` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts`.
 
-Client rule: `allow write: if false` (enforced by subcollection rule for `wallet`). Writes happen via the [useWallet hook](../src/hooks/useWallet.ts) (placeholder creation only — the doc bootstraps as `balance: 0` if it does not exist) and via Admin SDK in [adminWalletManager](../functions/src/adminWalletManager.ts) and the (deprecated) [suitpayWebhook](../functions/src/suitpayWebhook.ts).
+Client rule: `allow write: if false` (enforced by subcollection rule for `wallet`). Writes are server-only:
+
+- **Bootstrap** (`balance: 0`) — seeded by the [bootstrapUserWallet](../functions/src/bootstrapUserWallet.ts) Auth blocking trigger when a new account is created (`beforeUserCreated`). See [ADR-010](Decisions.md#adr-010-wallet-bootstrap-moved-to-server-side-auth-blocking-trigger) for rationale.
+- **Credit / debit** — via Admin SDK in [adminWalletManager](../functions/src/adminWalletManager.ts) and the (deprecated) [suitpayWebhook](../functions/src/suitpayWebhook.ts).
+
+The [useWallet hook](../src/hooks/useWallet.ts) only **reads**. If the snapshot reports the document missing (typical for users created before the trigger existed), the hook surfaces a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) without writing. Once any server-side write lands (admin credit, payment webhook), the snapshot replaces the virtual wallet with the real one.
 
 Note: ownership is encoded in the path (`users/{uid}/...`); no `userId` field is stored on the doc.
 
