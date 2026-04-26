@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions'
+import { onCall } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 
 // Inicializar admin se ainda não foi
@@ -59,8 +59,10 @@ const DEFAULT_PRICES: Omit<ProductPrice, 'updatedAt' | 'updatedBy'>[] = [
   }
 ]
 
-// ✅ NOVA FUNÇÃO: Buscar preços públicos (não requer admin)
-export const getPublicProductPrices = functions.https.onCall(async (request) => {
+// Public callable — anonymous reads allowed (price catalog).
+// invoker: 'public' grants allUsers/run.invoker at deploy time, so the
+// browser can hit the function before the user has signed in.
+export const getPublicProductPrices = onCall({ invoker: 'public' }, async (request) => {
   try {
     console.log('🔍 Buscando preços públicos...')
     
