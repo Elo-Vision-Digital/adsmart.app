@@ -10,6 +10,18 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — bootstrapUserWallet → bootstrapUser: also seed users/{uid}
+
+Same-day extension of [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) after surfacing a parallel "Missing or insufficient permissions" symptom in [SettingsPage](../src/pages/SettingsPage.tsx) — root cause: `AuthContext.signUp` only created the Firebase Auth user, never the `users/{uid}` doc, so the first profile save fell into the `create` rule path which requires `createdAt == request.time`.
+
+- **Trigger renamed and extended.** [functions/src/bootstrapUserWallet.ts](../functions/src/bootstrapUser.ts) → [functions/src/bootstrapUser.ts](../functions/src/bootstrapUser.ts). Single batched Admin SDK write seeds `users/{uid}` (`email`, `createdAt`, `updatedAt`) AND `users/{uid}/wallet/current` (`balance: 0`, `currency`, `updatedAt`). Wallet still validated through `UserWalletSchema`. User doc intentionally minimal — name/phone/document fields filled in by SettingsPage on first save (now hits the `update` rule path).
+- **SettingsPage.handleSaveProfile simplified.** Removed the read-first `setDoc(merge:true)` workaround that had landed earlier today. Now uses `updateDoc({...profile, updatedAt: serverTimestamp()})` directly — `email`/`createdAt` aren't sent so the `update` rule's immutability checks pass trivially. Net delta vs. earlier in the day: -8 lines, -1 round trip.
+- **No backfill needed.** Confirmed with project owner: no legacy users predate the trigger. The simplification was safe.
+- **Required follow-up: delete the orphan `bootstrapUserWallet` function** in dev (and never deploy it elsewhere) — the rename creates a new function on deploy but leaves the old one running on every signup. Run `bunx firebase functions:delete bootstrapUserWallet --project adsmart-web-dev` once after the new function deploys.
+- **Doc updates.** ADR-010 reframed as "per-user state bootstrap" with a 2026-04-26 revision note. [DATA-MODEL.md](DATA-MODEL.md) `users/{uid}` and `users/{uid}/wallet/current` sections rewritten to reflect server-only seeding. [CLAUDE.md](../CLAUDE.md) wallet invariant section expanded into "per-user state bootstrap" covering both docs.
+
+---
+
 ## [2026-04-26] — Functions deploy unblocked: bundled artifact + clean dep separation (ADR-011)
 
 Closing the gap that ADR-009 itself flagged as "paper-thin." First end-to-end functions deploy after `@adsmart/shared` was introduced (commits `98be1a7` → `3ab593d` in early April) failed at three layers; resolution required a small architectural change to how functions are packaged for Cloud Build.

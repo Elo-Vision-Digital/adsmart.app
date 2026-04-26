@@ -35,18 +35,25 @@ Collections marked **(deprecated)** belong to the SuitPay integration being repl
 
 ## users/{uid}
 
-Profile document created on first sign-in.
+Profile document seeded server-side at signup time by the [bootstrapUser](../functions/src/bootstrapUser.ts) Auth blocking trigger (`beforeUserCreated`). Name/phone/document fields are filled in by [SettingsPage](../src/pages/SettingsPage.tsx) on first save (via `updateDoc`).
 
 ```
 {
-  email: string,         // immutable after creation
-  createdAt: Timestamp,  // immutable after creation
+  email: string,         // immutable after creation, seeded by trigger
+  createdAt: Timestamp,  // immutable after creation, seeded by trigger
+  updatedAt: Timestamp,
+  name?: string,
+  phone?: string,
+  documentType?: 'cpf' | 'cnpj',
+  documentNumber?: string,
   displayName?: string,
   photoURL?: string
 }
 ```
 
-Rules: owner read/create/update. `email` and `createdAt` cannot be changed after creation. Delete blocked (only Cloud Function can delete via Admin SDK).
+Rules: owner read/create/update. `email` and `createdAt` cannot be changed after creation. The client never hits the `create` rule path under normal use because the doc is already seeded by the trigger when the user first signs in. Delete blocked (only Cloud Function can delete via Admin SDK).
+
+See [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for the full rationale of seeding both this doc and `users/{uid}/wallet/current` from a single batched trigger write.
 
 ---
 
@@ -66,10 +73,10 @@ Source of truth: [packages/shared/src/schemas/userWallet.ts](../packages/shared/
 
 Client rule: `allow write: if false` (enforced by subcollection rule for `wallet`). Writes are server-only:
 
-- **Bootstrap** (`balance: 0`) — seeded by the [bootstrapUserWallet](../functions/src/bootstrapUserWallet.ts) Auth blocking trigger when a new account is created (`beforeUserCreated`). See [ADR-010](Decisions.md#adr-010-wallet-bootstrap-moved-to-server-side-auth-blocking-trigger) for rationale.
+- **Bootstrap** (`balance: 0`) — seeded together with `users/{uid}` by the [bootstrapUser](../functions/src/bootstrapUser.ts) Auth blocking trigger (`beforeUserCreated`, single batched write). See [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for rationale.
 - **Credit / debit** — via Admin SDK in [adminWalletManager](../functions/src/adminWalletManager.ts) and the (deprecated) [suitpayWebhook](../functions/src/suitpayWebhook.ts).
 
-The [useWallet hook](../src/hooks/useWallet.ts) only **reads**. If the snapshot reports the document missing (typical for users created before the trigger existed), the hook surfaces a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) without writing. Once any server-side write lands (admin credit, payment webhook), the snapshot replaces the virtual wallet with the real one.
+The [useWallet hook](../src/hooks/useWallet.ts) only **reads**. As a defensive fallback, if the snapshot reports the document missing the hook surfaces a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) without writing — but post-trigger every signup arrives with a real doc.
 
 Note: ownership is encoded in the path (`users/{uid}/...`); no `userId` field is stored on the doc.
 

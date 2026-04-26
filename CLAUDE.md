@@ -141,11 +141,13 @@ Before Phase 2 upgrades, these security fixes are in place:
 - All secrets via `defineSecret` (no `process.env.XXX_SECRET`)
 - securityLogger re-entrancy guard prevents infinite loops on SUSPICIOUS_ACTIVITY events
 
-## Wallet bootstrap (post-Phase-3 invariant)
+## Per-user state bootstrap (post-Phase-3 invariant)
 
-The `useWallet` hook **never writes** to `users/{uid}/wallet/current`. The doc is seeded server-side by the `bootstrapUserWallet` Auth blocking trigger ([functions/src/bootstrapUserWallet.ts](functions/src/bootstrapUserWallet.ts)) on every new signup, via `beforeUserCreated` from `firebase-functions/v2/identity`. Existing users created before the trigger landed see a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) until an admin grants credit (which seeds the doc) or a backfill runs.
+Both `users/{uid}` (profile doc) and `users/{uid}/wallet/current` are seeded server-side at signup by the `bootstrapUser` Auth blocking trigger ([functions/src/bootstrapUser.ts](functions/src/bootstrapUser.ts)) — `beforeUserCreated` from `firebase-functions/v2/identity`, single batched Admin SDK write. By the time the client sees a successful sign-in both docs exist.
 
-When touching wallet code, never re-introduce a client `setDoc(walletRef, ...)` — Phase 3 [firestore.rules:39-46](firestore.rules) reject it. See [ADR-010](docs/Decisions.md#adr-010-wallet-bootstrap-moved-to-server-side-auth-blocking-trigger).
+Client code that reads either path can assume it exists and use `updateDoc` directly (e.g. [SettingsPage.handleSaveProfile](src/pages/SettingsPage.tsx)). Client code that *writes* to either path must not re-introduce `setDoc` with merge:true — Phase 3 [firestore.rules](firestore.rules) reject client wallet writes outright, and reject `users/{uid}` writes that fail the `email`/`createdAt` immutability checks.
+
+`useWallet` keeps a defensive virtual `EMPTY_WALLET` for the snapshot-missing case (e.g. dev/test scenarios where the trigger didn't fire), but in production every signup arrives with a real doc. See [ADR-010](docs/Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for the full rationale.
 
 ## Adding Firestore queries
 

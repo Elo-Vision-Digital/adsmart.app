@@ -197,19 +197,23 @@ Consequences for code authors:
 
 ---
 
-## ADR-010: Wallet bootstrap moved to server-side Auth blocking trigger
+## ADR-010: Per-user state bootstrap moved to server-side Auth blocking trigger
 
 **Date:** 2026-04-26
-**Status:** Accepted
+**Status:** Accepted (revised — see "2026-04-26 revision" below)
 
 **Context:**
 
 Phase 3 firestore.rules block all client-side writes to `users/{uid}/wallet/{...}` (the rule excludes `wallet` and `transactions` from the writable subcollection set). However, [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) still attempted a `setDoc(walletRef, { balance: 0, ... })` whenever the snapshot reported the document missing — typical first-login scenario. The write hit the rule and surfaced as `FirebaseError: Missing or insufficient permissions` for every new user. Documentation in [docs/DATA-MODEL.md](DATA-MODEL.md) still claimed that the hook performed the bootstrap, contradicting the deployed rule.
 
+A second symptom (surfaced same day): `SettingsPage.handleSaveProfile` returned `Missing or insufficient permissions` whenever a user tried to save their profile, because `AuthContext.signUp` only created the Firebase Auth user — the `users/{uid}` Firestore doc was never created. The first save then triggered the `create` rule path which requires `createdAt == request.time` (a field the page didn't send), so it failed; subsequent updates failed because `resource.data.createdAt` was missing.
+
+Both symptoms shared a root cause: per-user state initialization was happening client-side (or not at all) in a model where Phase 3 hardening intentionally forbade client-side writes to that state.
+
 **Decision:**
 
 1. Remove the client-side bootstrap from `useWallet`. When the snapshot reports the document missing, surface a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) without writing.
-2. Add a Firebase Auth blocking trigger `bootstrapUserWallet` ([functions/src/bootstrapUserWallet.ts](../functions/src/bootstrapUserWallet.ts)) that runs `beforeUserCreated` and seeds `users/{uid}/wallet/current` with `{ balance: 0, currency: 'BRL', updatedAt: now }` via the Admin SDK. The seed is validated through `UserWalletSchema` from `@adsmart/shared` (ADR-009).
+2. Add a Firebase Auth blocking trigger `bootstrapUser` ([functions/src/bootstrapUser.ts](../functions/src/bootstrapUser.ts)) that runs `beforeUserCreated` and seeds **both** `users/{uid}` (`{ email, createdAt, updatedAt }`) **and** `users/{uid}/wallet/current` (`{ balance: 0, currency: 'BRL', updatedAt }`) via the Admin SDK in a single batched write. The wallet seed is validated through `UserWalletSchema` from `@adsmart/shared` (ADR-009); the user doc is intentionally minimal — name/phone/document fields are filled in by `SettingsPage` on first save (which, post-bootstrap, hits the `update` rule path with all required invariants in place).
 3. Use `firebase-functions/v2/identity` `beforeUserCreated` rather than the deprecated v1 `functions.auth.user().onCreate` — v6 of `firebase-functions` only exposes the v2 surface for Identity Platform triggers.
 
 **Why a blocking trigger (not a non-blocking onCreate)?**
@@ -231,10 +235,17 @@ Authentication blocking triggers are synchronous: the user account is not finali
 - **Add a callable `bootstrapWallet` invoked from the client on first login.** Rejected — extra round trip, extra failure mode, and the client could simply not call it (defeating the purpose for a server-controlled balance).
 - **Keep client write + accept the permission error silently.** Rejected — pollutes the console and breaks the strict "no unhandled FirebaseError on login" invariant.
 
+**2026-04-26 revision:**
+
+The original ADR scoped the trigger to wallet bootstrap only (`bootstrapUserWallet`). Same-day investigation surfaced the parallel `users/{uid}` profile-doc gap, with the same root cause (client trying to bootstrap state Phase 3 forbids). The trigger was renamed to `bootstrapUser` and extended to seed both docs in a single batched write. `SettingsPage.handleSaveProfile` correspondingly switched from `setDoc(merge:true)` to `updateDoc()` — the `create` rule path is no longer reachable from the client. Both old name (`bootstrapUserWallet`) and the read-first `setDoc` workaround in `SettingsPage` are removed.
+
+This change was safe because the project has no legacy users predating the trigger — confirmed with the project owner before the simplification.
+
 **References:**
-- [functions/src/bootstrapUserWallet.ts](../functions/src/bootstrapUserWallet.ts) — implementation.
-- [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) — virtual-wallet read path.
-- [firestore.rules:39-46](../firestore.rules) — Phase 3 wallet write block.
+- [functions/src/bootstrapUser.ts](../functions/src/bootstrapUser.ts) — implementation (seeds user doc + wallet).
+- [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) — virtual-wallet read path (defensive — every signup should have a doc post-trigger).
+- [src/pages/SettingsPage.tsx](../src/pages/SettingsPage.tsx) — `updateDoc()` write that depends on the doc existing.
+- [firestore.rules:23-46](../firestore.rules) — Phase 3 user-doc rules + wallet write block.
 - Firebase docs: Identity Platform blocking functions (validated via Context7 2026-04-26).
 
 ---
