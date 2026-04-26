@@ -10,6 +10,27 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Refactor Phase C6.2: Zod schema for `campaigns`
+
+Third commit of Phase C6. Migrates the `users/{uid}/campaigns/{id}` subcollection (the only live "Campaign" surface) to the Zod-driven `FirestoreDataConverter` foundation.
+
+- **New module:** [src/schemas/campaign.ts](../src/schemas/campaign.ts) — `CampaignSchema` (reuses `AdPlatformSchema` from `adAccount.ts`) plus `z.infer`-derived `Campaign` type.
+- **Schema vs prior interface — drift corrected:**
+  - `status` **loosened to `z.string()`**. The prior interface declared `'active' | 'paused' | 'ended'`, but Functions write `campaign.status.toLowerCase()` directly from upstream APIs (Google Ads emits `enabled/paused/removed/...`; Meta emits `active/paused/archived/with_issues/...`). Tightening to a real enum is deferred until a production sync surfaces the full value set — preventing the same class of drift bug that motivated this whole refactor (e.g., `facebook_ads` vs `meta_ads`).
+  - `objective` **added** as `z.string().optional()`. [metaAdsOAuth.ts](../functions/src/metaAdsOAuth.ts) writes it for Meta campaigns; the prior interface omitted it entirely.
+  - `lastSyncAt` **migrated to `zTimestamp()`** (was bare `Date`). Functions write `serverTimestamp()`; reads come back as Firestore `Timestamp` and are normalized to `Date` by the converter.
+  - `budget/spend/impressions/clicks` **kept optional** (no `.default(0)`) — distinguishing "field absent" from "synced and zero" matters for any future reporting layer.
+- **Two-worlds finding:** A top-level `campaigns/{id}` collection is defined in [firestore.rules:49-65](../firestore.rules) (with required fields `userId, name, budget, status` and status enum `draft|active|paused|ended`), documented in [DATA-MODEL.md](DATA-MODEL.md), and listed in [backupScheduler.ts:28](../functions/src/backupScheduler.ts). **Zero application code reads or writes it** — leftover from an earlier "user-created campaign drafts" design abandoned for the synced-from-platform model. Cleanup (rule + DATA-MODEL + backup config) tracked as a follow-up to Phase D in [REFACTOR-PLAN.md](REFACTOR-PLAN.md), pending production-data verification via `gcloud firestore`.
+- **`src/types/index.ts`:** the hand-written `Campaign` interface is gone; the file reexports the schema-derived type.
+- **Consumer refactored** to use `.withConverter(zodConverter(CampaignSchema, 'Campaign'))`:
+  - [src/pages/GenerateReportPage.tsx:92-99](../src/pages/GenerateReportPage.tsx) — manual `as Campaign` cast removed.
+- **`src/utils/mockCampaigns.ts`:** no changes — existing `status` strings (`active|paused|ended`) remain valid under permissive `z.string()`.
+- **DATA-MODEL.md:** entry rewritten to document the live subcollection schema; legacy top-level collection moved to a "_dead code — pending removal_" section with explicit reference to the cleanup task.
+
+Verification: `bun run typecheck` ✓, `bun run build` ✓ (1.18 MB JS / 321 KB gz — no regression vs C6.1).
+
+---
+
 ## [2026-04-25] — Refactor Phase C6.1: Zod schema for `adAccounts`
 
 Second commit of Phase C6 (one schema per commit). Migrates the `adAccounts` subcollection to the Zod-driven `FirestoreDataConverter` foundation introduced in commit `365c44e`.

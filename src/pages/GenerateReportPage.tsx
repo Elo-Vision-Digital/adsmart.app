@@ -14,6 +14,7 @@ import { db } from '@/firebase/config'
 import { useProductPrices } from '@/hooks/useProductPrices'
 import { useWallet } from '@/hooks/useWallet'
 import { AdAccountSchema } from '@/schemas/adAccount'
+import { CampaignSchema } from '@/schemas/campaign'
 import { zodConverter } from '@/schemas/firestore-converter'
 import type { AdAccount, Campaign } from '@/types'
 
@@ -90,18 +91,12 @@ export function GenerateReportPage() {
     if (!user || !selectedAccount) return
 
     const fetchCampaigns = async () => {
-      const campaignsRef = collection(db, 'users', user.uid, 'campaigns')
+      const campaignsRef = collection(db, 'users', user.uid, 'campaigns').withConverter(
+        zodConverter(CampaignSchema, 'Campaign')
+      )
       const q = query(campaignsRef, where('accountId', '==', selectedAccount))
       const snapshot = await getDocs(q)
-      const campaignsData = snapshot.docs.map(
-        (doc) =>
-          ({
-            id: doc.id,
-            ...doc.data(),
-          }) as Campaign
-      )
-
-      setCampaigns(campaignsData)
+      setCampaigns(snapshot.docs.map((doc) => doc.data()))
     }
 
     fetchCampaigns()

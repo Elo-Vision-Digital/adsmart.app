@@ -30,19 +30,8 @@ export interface Transaction {
 // Source of truth: src/schemas/adAccount.ts (Zod schema).
 export type { AdAccount } from '@/schemas/adAccount'
 
-export interface Campaign {
-  id: string
-  accountId: string // ID da AdAccount
-  platform: 'google_ads' | 'meta_ads'
-  campaignId: string
-  campaignName: string
-  status: 'active' | 'paused' | 'ended'
-  budget?: number
-  spend?: number
-  impressions?: number
-  clicks?: number
-  lastSyncAt: Date
-}
+// Source of truth: src/schemas/campaign.ts (Zod schema).
+export type { Campaign } from '@/schemas/campaign'
 
 // Source of truth: src/schemas/report.ts (Zod schema). Reexported here so
 // existing `import type { Report } from '@/types'` callers continue working.

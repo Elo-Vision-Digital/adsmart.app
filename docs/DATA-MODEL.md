@@ -11,7 +11,8 @@ Firestore database for project `adsmart-app`. All monetary values are in **BRL c
 | `users/{uid}/transactions/{txId}` | Balance history | Admin SDK only (write) |
 | `users/{uid}/oauth_tokens/google_ads` | Encrypted Google Ads tokens | Admin SDK only (write) |
 | `users/{uid}/adAccounts/{id}` | Connected ad accounts | Owner (write via Function) |
-| `campaigns/{id}` | Ad campaign records | Owner only |
+| `users/{uid}/campaigns/{id}` | Ads-platform-synced campaigns (cache) | Owner read; Function write (Admin SDK) |
+| `campaigns/{id}` | _Dead code_ — see note below | n/a |
 | `reports/{id}` | Generated report records | Owner only |
 | `productPrices/{id}` | Product pricing config | Authenticated read; Function write |
 | `reportTemplates/{id}` | Looker Studio template configs | Authenticated read; Admin SDK write |
@@ -124,19 +125,53 @@ Source of truth: [src/schemas/adAccount.ts](../src/schemas/adAccount.ts). Owners
 
 ---
 
-## campaigns/{campaignId}
+## users/{uid}/campaigns/{platform_externalId}
+
+Cache of campaigns synced from external Ads platforms. Document ID format: `{platform}_{externalId}` (e.g., `google_ads_123`, `meta_ads_456`).
 
 ```
 {
-  userId: string,
-  name: string,
-  budget: number,        // BRL centavos, >= 0
-  status: "draft" | "active" | "paused" | "ended",
-  createdAt: Timestamp   // immutable
+  accountId: string,           // FK → users/{uid}/adAccounts/{id}.accountId
+  platform: "google_ads" | "meta_ads",
+  campaignId: string,          // external ID from the platform
+  campaignName: string,
+  status: string,              // lowercased value from upstream API
+                               // (Google: enabled/paused/removed/...; Meta: active/paused/archived/with_issues/...)
+  budget?: number,
+  spend?: number,
+  impressions?: number,        // integer
+  clicks?: number,             // integer
+  objective?: string,          // Meta only — campaign objective
+  lastSyncAt: Timestamp        // serverTimestamp() at write
 }
 ```
 
-Rule: owner only. Created with `status: "draft"`. Only owner can delete when `status === "draft"`. `userId` and `createdAt` are immutable.
+Source of truth: [src/schemas/campaign.ts](../src/schemas/campaign.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `Campaign` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts` for backward-compatible imports.
+
+Writes: Cloud Functions only (Admin SDK), via `getGoogleAdsCampaigns` / `getMetaAdsCampaigns` callable handlers, after fetching from the upstream platform API. Mock data for dev seeding lives in [src/utils/mockCampaigns.ts](../src/utils/mockCampaigns.ts).
+
+Reads: owner only — used by [GenerateReportPage](../src/pages/GenerateReportPage.tsx) to populate the campaign multi-select.
+
+Subcollection write rule (`/users/{userId}/{subcollection}/{docId=**}`) does not block `campaigns`, so the dev-only mock util can seed via the client SDK as the owner.
+
+---
+
+## campaigns/{campaignId} _(dead code — pending removal)_
+
+A top-level `campaigns/{id}` collection is defined in [firestore.rules:49-65](../firestore.rules) (required fields `userId, name, budget, status` with status enum `draft|active|paused|ended`) and listed in the daily backup config at [functions/src/backupScheduler.ts](../functions/src/backupScheduler.ts). **No application code reads or writes this collection** — it is a leftover from an early design where users would create campaign drafts directly. The live model is the synced `users/{uid}/campaigns/{id}` subcollection above.
+
+Cleanup (rule + DATA-MODEL entry + backup config) is tracked as a follow-up to Phase D in [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Verification of zero documents in production via `gcloud firestore` is a prerequisite before deletion.
+
+```
+// Legacy schema documented for reference only:
+{
+  userId: string,
+  name: string,
+  budget: number,
+  status: "draft" | "active" | "paused" | "ended",
+  createdAt: Timestamp
+}
+```
 
 ---
 
