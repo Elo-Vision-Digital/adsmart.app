@@ -1,11 +1,14 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AdminRoute } from '@/components/AdminRoute'
 import { PrivateRoute } from '@/components/PrivateRoute'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AccountsPage } from '@/pages/AccountsPage'
-import { AdminPanel } from '@/pages/AdminPanel'
+import { AdminLayout } from '@/pages/admin/AdminLayout'
+import { PricesConfigPage } from '@/pages/admin/PricesConfigPage'
+import { SecurityLogsPage } from '@/pages/admin/SecurityLogsPage'
+import { WalletAdminPage } from '@/pages/admin/WalletAdminPage'
 import { Dashboard } from '@/pages/Dashboard'
 import { DeleteDataPage } from '@/pages/DeleteDataPage'
 import { GenerateReportPage } from '@/pages/GenerateReportPage'
@@ -125,10 +128,15 @@ function App() {
                 path="/admin"
                 element={
                   <AdminRoute>
-                    <AdminPanel />
+                    <AdminLayout />
                   </AdminRoute>
                 }
-              />
+              >
+                <Route index element={<Navigate to="security" replace />} />
+                <Route path="security" element={<SecurityLogsPage />} />
+                <Route path="prices" element={<PricesConfigPage />} />
+                <Route path="wallet" element={<WalletAdminPage />} />
+              </Route>
               {/* Public Pages */}
               <Route path="/" element={<HomePage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
