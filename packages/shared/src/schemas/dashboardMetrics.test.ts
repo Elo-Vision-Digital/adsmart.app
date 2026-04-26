@@ -91,4 +91,16 @@ describe('GetDashboardMetricsOutputSchema', () => {
     })
     expect(result.success).toBe(false)
   })
+
+  it('rejects sparkline date in non-YYYY-MM-DD format', () => {
+    const bad = {
+      ...validOutput,
+      revenue: {
+        ...validOutput.revenue,
+        sparkline: [{ date: '2026/04/01', realCents: 0, creditsCents: 0 }],
+      },
+    }
+    const result = GetDashboardMetricsOutputSchema.safeParse(bad)
+    expect(result.success).toBe(false)
+  })
 })

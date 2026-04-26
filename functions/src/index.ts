@@ -67,4 +67,7 @@ export { bootstrapUser } from './bootstrapUser'
 // per-user immutability. See ADR-012.
 export { reserveUserDocument } from './reserveUserDocument'
 
+// Subprojeto 2 — admin dashboard read-only metrics
+export { getDashboardMetrics } from './getDashboardMetrics'
+
 console.log('🚀 Funções exportadas do index.ts')
