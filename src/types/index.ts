@@ -9,12 +9,8 @@ export interface User {
   updatedAt: Date
 }
 
-export interface UserWallet {
-  userId: string
-  balance: number // Saldo em centavos (500 = R$ 5,00)
-  currency: 'BRL'
-  updatedAt: Date
-}
+// Source of truth: src/schemas/userWallet.ts (Zod schema).
+export type { UserWallet } from '@/schemas/userWallet'
 
 export interface Transaction {
   id: string

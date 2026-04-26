@@ -11,12 +11,9 @@ import {
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { db } from '@/firebase/config'
-
-interface Wallet {
-  balance: number // em centavos
-  currency: 'BRL'
-  updatedAt: Date
-}
+import { zodConverter } from '@/schemas/firestore-converter'
+import type { UserWallet } from '@/schemas/userWallet'
+import { UserWalletSchema } from '@/schemas/userWallet'
 
 interface Transaction {
   id?: string
@@ -29,7 +26,7 @@ interface Transaction {
 
 export function useWallet() {
   const { user } = useAuth()
-  const [wallet, setWallet] = useState<Wallet | null>(null)
+  const [wallet, setWallet] = useState<UserWallet | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -41,14 +38,16 @@ export function useWallet() {
       return
     }
 
-    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current')
+    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current').withConverter(
+      zodConverter(UserWalletSchema, 'UserWallet')
+    )
 
-    const unsubscribe = onSnapshot(walletRef, async (doc) => {
-      if (doc.exists()) {
-        setWallet(doc.data() as Wallet)
+    const unsubscribe = onSnapshot(walletRef, async (snap) => {
+      if (snap.exists()) {
+        setWallet(snap.data())
       } else {
-        // Criar carteira se não existir
-        const newWallet: Wallet = {
+        const newWallet: UserWallet = {
+          id: 'current',
           balance: 0,
           currency: 'BRL',
           updatedAt: new Date(),
@@ -101,12 +100,15 @@ export function useWallet() {
     await addDoc(collection(db, 'users', user.uid, 'transactions'), transaction)
 
     // Atualizar saldo
-    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current')
+    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current').withConverter(
+      zodConverter(UserWalletSchema, 'UserWallet')
+    )
     const newBalance = (wallet?.balance || 0) + amount
 
     await setDoc(
       walletRef,
       {
+        id: 'current',
         balance: newBalance,
         currency: 'BRL',
         updatedAt: new Date(),
@@ -137,12 +139,15 @@ export function useWallet() {
     await addDoc(collection(db, 'users', user.uid, 'transactions'), transaction)
 
     // Atualizar saldo
-    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current')
+    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current').withConverter(
+      zodConverter(UserWalletSchema, 'UserWallet')
+    )
     const newBalance = wallet.balance - amount
 
     await setDoc(
       walletRef,
       {
+        id: 'current',
         balance: newBalance,
         currency: 'BRL',
         updatedAt: new Date(),

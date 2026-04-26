@@ -10,6 +10,26 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Refactor Phase C6.3: Zod schema for `userWallet`
+
+Fourth commit of Phase C6. Migrates the `users/{uid}/wallet/current` single-document subcollection to the Zod-driven `FirestoreDataConverter` foundation.
+
+- **New module:** [src/schemas/userWallet.ts](../src/schemas/userWallet.ts) — `UserWalletSchema` plus `z.infer`-derived `UserWallet` type.
+- **Schema vs prior interface — drift corrected:**
+  - `userId` **dropped**. The path (`users/{uid}/wallet/current`) already encodes ownership; none of the three writers ([useWallet.ts](../src/hooks/useWallet.ts), [adminWalletManager.ts](../functions/src/adminWalletManager.ts), [suitpayWebhook.ts](../functions/src/suitpayWebhook.ts)) ever set the field. Same drift class as `AdAccount` (C6.1).
+  - `balance` **tightened to `z.number().int().nonnegative()`**. DATA-MODEL declares "BRL centavos (integer) ≥ 0", but the prior interface accepted `number` (would silently allow floats and negatives).
+  - `currency` **tightened to `z.literal('BRL')`**. All three writers hardcode `'BRL'`; loosen if multi-currency support is ever added.
+  - `updatedAt` **migrated to `zTimestamp()`** (was bare `Date`). The three writers use a mix of `new Date()` (client SDK), `admin.firestore.Timestamp.now()`, and `serverTimestamp()` — reads always come back as `Timestamp` and are normalized to `Date` by the converter.
+- **`src/types/index.ts`:** the hand-written `UserWallet` interface is gone; the file reexports the schema-derived type.
+- **Consumer refactored** to use `.withConverter(zodConverter(UserWalletSchema, 'UserWallet'))`:
+  - [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) — local `interface Wallet` (which duplicated `UserWallet` minus `userId`) removed; all three `walletRef` constructions (`onSnapshot` observer at line 44, `addCredits` at 104, `debitAmount` at 140) wrapped with the converter. The bootstrap path now writes `{ id: 'current', ... }` to satisfy the schema id field.
+- **Functions:** intentionally untouched. Admin SDK does not use `FirestoreDataConverter`; runtime validation runs only at the client boundary. Functions continue to write directly via Admin SDK.
+- **DATA-MODEL.md:** entry rewritten to mark `balance` as `integer`, `currency` as a literal, and reference the schema as source of truth. Explicit note added that ownership lives in the path (no `userId` field on the doc).
+
+Verification: `bun run typecheck` ✓, `bun run build` ✓ (1.19 MB JS / 320 KB gz — no regression vs C6.2).
+
+---
+
 ## [2026-04-26] — Refactor Phase C6.2: Zod schema for `campaigns`
 
 Third commit of Phase C6. Migrates the `users/{uid}/campaigns/{id}` subcollection (the only live "Campaign" surface) to the Zod-driven `FirestoreDataConverter` foundation.

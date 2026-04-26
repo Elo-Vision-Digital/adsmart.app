@@ -52,17 +52,21 @@ Rules: owner read/create/update. `email` and `createdAt` cannot be changed after
 
 ## users/{uid}/wallet/current
 
-Single document per user. Written only by `adminWalletManager.addUserCredits` and report-generation functions via Admin SDK.
+Single document per user (doc ID is the literal `current`).
 
 ```
 {
-  balance: number,       // BRL centavos, >= 0
-  currency: "BRL",
+  balance: number,       // BRL centavos, integer, >= 0
+  currency: "BRL",       // literal
   updatedAt: Timestamp
 }
 ```
 
-Client rule: `allow write: if false` (enforced by subcollection rule for `wallet`).
+Source of truth: [src/schemas/userWallet.ts](../src/schemas/userWallet.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `UserWallet` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts`.
+
+Client rule: `allow write: if false` (enforced by subcollection rule for `wallet`). Writes happen via the [useWallet hook](../src/hooks/useWallet.ts) (placeholder creation only — the doc bootstraps as `balance: 0` if it does not exist) and via Admin SDK in [adminWalletManager](../functions/src/adminWalletManager.ts) and the (deprecated) [suitpayWebhook](../functions/src/suitpayWebhook.ts).
+
+Note: ownership is encoded in the path (`users/{uid}/...`); no `userId` field is stored on the doc.
 
 ---
 
