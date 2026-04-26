@@ -50,10 +50,20 @@ Run this checklist before every production deploy. Check each item manually unle
 
 ## Admin panel
 
-- [ ] Admin user can add credits to a user by email
+Routes (post-Subprojeto 1 IA refactor): `/admin` → `/admin/security` (default redirect), `/admin/prices`, `/admin/wallet`. Single `AdminRoute` guard at the parent.
+
+- [ ] `/admin` redirects to `/admin/security`
+- [ ] Sub-nav has three tabs: Logs de Segurança, Configuração de Preços, Gestão de Saldo
+- [ ] Active tab matches the URL (clicking tabs updates URL; pasting a sub-route URL highlights the right tab)
+- [ ] Refreshing on `/admin/prices` or `/admin/wallet` stays on that route (does not redirect to `/admin/security`)
+- [ ] Non-admin cannot access `/admin/security`, `/admin/prices`, or `/admin/wallet` (each redirects to `/dashboard`)
+- [ ] Security tab loads stats from `getSecurityStats` without console errors
+- [ ] Prices tab loads from `getProductPrices` and shows the 4 default products
+- [ ] Saving prices calls `updateProductPrices` and shows the success message
+- [ ] Wallet tab: admin can add credits to a user by email
 - [ ] Amount validation: > 0, ≤ R$ 1.000
 - [ ] Reason validation: ≥ 10 characters
-- [ ] Non-admin cannot access `/admin`
+- [ ] Switching language re-renders the admin panel labels (no raw `admin.*` keys visible)
 
 ## Settings
 
