@@ -12,7 +12,7 @@ Format conventions:
 
 ## [2026-04-26] — Admin dashboard server + foundations landed (Subprojeto 2 — WIP)
 
-**Status:** Tasks 1-7 of 20 complete. The server side and shared contracts are in place; UI, routing, i18n, and deploy are pending. **`getDashboardMetrics` is exported in `functions/src/index.ts` but NOT yet invoked from the client and NOT yet deployed.** Final docs sweep + AGENTS.md/CLAUDE.md/QA-CHECKLIST.md/DATA-MODEL.md/DEPLOYMENT.md updates land at Task 19 once the feature ships end-to-end.
+**Status:** Tasks 1-8 of 20 complete. The server side, shared contracts, and shadcn UI primitives are in place; date-range filter, cards, page, routing, i18n, and deploy are pending. **`getDashboardMetrics` is exported in `functions/src/index.ts` but NOT yet invoked from the client and NOT yet deployed.** Final docs sweep + AGENTS.md/CLAUDE.md/QA-CHECKLIST.md/DATA-MODEL.md/DEPLOYMENT.md updates land at Task 19 once the feature ships end-to-end.
 
 What's committed so far on `develop`:
 
@@ -21,10 +21,10 @@ What's committed so far on `develop`:
 - **Pure helpers.** [src/pages/admin/dashboard/getDateRangeFromPreset.ts](../src/pages/admin/dashboard/getDateRangeFromPreset.ts) maps `'today'|'7d'|'30d'|'60d'|'90d'|'180d'|'365d'` to ISO ranges. [formatBRL.ts](../src/pages/admin/dashboard/formatBRL.ts) formats integer cents → `R$ 1.234,56` with `Intl.NumberFormat('pt-BR', { currency: 'BRL' })`. Both fully tested. (commits `1286845`, `5d937cb`).
 - **Firestore composite indexes.** Five new entries in [firestore.indexes.json](../firestore.indexes.json) for collectionGroup `transactions` (3 variants — type+status+createdAt, type+status+adminAction+createdAt, createdAt only), collectionGroup `adAccounts` (isActive+platform), and collection `users` (createdAt). **Not yet deployed** — Task 18 deploys to dev then prod (commit `5dad3aa`).
 - **Cloud Function `getDashboardMetrics`.** [functions/src/getDashboardMetrics.ts](../functions/src/getDashboardMetrics.ts) — admin-only callable (custom claim OR allowlist). Auth typed via `CallableRequest['auth']`. `onCall({ memory: '512MiB' }, …)`. All 7 reads run via `Promise.all`. Materialized snapshots use `.select(...)` projections. Sparklines bucketed by `America/Sao_Paulo` day-string via a BRT-anchored `enumerateDays` (fix in `7dbc5f2` resolved a UTC/BRT cusp bug that dropped the last day of a UTC-midnight-bounded range). `realCents = max(0, totalCents - grantedCents)` derives real revenue from total minus admin-issued credits — bypasses Firestore's lack of `!=` aggregation operator. 6 tests passing locally (5 auth/validation + 1 emulator-gated payload-shape skip when emulator absent). Exported in [functions/src/index.ts](../functions/src/index.ts) (commits `ae2b494`, `198623e`, `7dbc5f2`).
+- **shadcn `<Popover>` + `<Calendar>` wrappers.** [src/components/ui/popover.tsx](../src/components/ui/popover.tsx) is a thin Radix wrapper (`Popover`, `PopoverTrigger`, `PopoverContent` with `Portal` + zoom/fade transitions). [src/components/ui/calendar.tsx](../src/components/ui/calendar.tsx) wraps `react-day-picker@^9.14.0` with v9 API: `locale={ptBR}` from `react-day-picker/locale`, single `Chevron` component (orientation prop) instead of v8's `IconLeft`/`IconRight`, and v9 `classNames` keys (`month_caption`, `month_grid`, `weekdays`/`weekday`/`week`, `day`/`day_button`, `selected`/`today`/`outside`/`disabled`/`range_*`/`hidden`, `button_previous`/`button_next`). Plan's snippet originally used v8 keys; corrected via Context7 lookup before implementation. Both files pass typecheck and Biome with no behavioral tests (pure pass-through to Radix/DayPicker — visual coverage lands with Task 9 onward) (commit `2adf62d`).
 
 What's still missing before this entry can graduate to "shipped":
 
-- shadcn `<Popover>` + `<Calendar>` ui wrappers (Task 8).
 - `DateRangeFilter` component (Task 9).
 - Three cards: `RevenueCard`, `UsersCard`, `IntegrationsCard` (Tasks 10-12).
 - `AdminDashboardPage` + skeleton (Task 13).
