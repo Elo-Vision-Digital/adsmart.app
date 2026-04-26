@@ -11,6 +11,7 @@ SaaS platform for advertising management dashboards. Connects Google Ads and Met
 | Routing | react-router-dom v6 |
 | Auth / DB | Firebase (Auth + Firestore) |
 | Functions | Firebase Cloud Functions v2 (Node 22) |
+| Schemas | Zod 4 (single source of truth in `@adsmart/shared` workspace package) |
 | Tooling | Bun 1.3.10 (package manager + runtime), Turborepo 2.x (task pipeline), Biome (lint+format), lefthook (git hooks), Vitest |
 
 ## Prerequisites
@@ -23,7 +24,7 @@ SaaS platform for advertising management dashboards. Connects Google Ads and Met
 ## Setup
 
 ```bash
-# Install all workspace deps (root + functions)
+# Install all workspace deps (root + functions + packages/shared)
 bun install
 
 # Copy env template — pre-filled with adsmart-web-dev defaults
