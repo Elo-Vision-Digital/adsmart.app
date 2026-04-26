@@ -63,4 +63,8 @@ export { addUserCredits } from './adminWalletManager'
 // firestore.rules forbid client-side writes to either path.
 export { bootstrapUser } from './bootstrapUser'
 
+// Atomic CPF/CNPJ reservation. Enforces uniqueness across users and
+// per-user immutability. See ADR-012.
+export { reserveUserDocument } from './reserveUserDocument'
+
 console.log('🚀 Funções exportadas do index.ts')
