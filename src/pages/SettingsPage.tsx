@@ -374,48 +374,55 @@ export function SettingsPage() {
                 </div>
               </div>
 
-              {/* Alerta de email não verificado */}
-              {user && !user.emailVerified && (
-                <Card className="mb-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-yellow-800 dark:text-yellow-200 font-medium">
-                          {t('settingsPage.emailVerification.notVerified')}
-                        </p>
-                        <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
-                          {t('settingsPage.emailVerification.verifyToAccess')}
-                        </p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="mt-3"
-                          onClick={handleSendVerification}
-                          disabled={sendingVerification}
-                        >
-                          {sendingVerification ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              {t('common.button.sending')}
-                            </>
-                          ) : (
-                            <>
-                              <Mail className="w-4 h-4 mr-2" />
-                              {t('settingsPage.emailVerification.resendVerification')}
-                            </>
-                          )}
-                        </Button>
-                        {verificationMessage && (
-                          <p className="text-sm mt-2 text-yellow-700 dark:text-yellow-300">
-                            {verificationMessage}
+              {/* Alerta de email não verificado.
+                  Suprimido para contas OAuth (Google/Facebook) — esses providers
+                  já entregam o email autenticado pela plataforma de origem, então
+                  uma "verificação" extra é redundante. */}
+              {user &&
+                !user.emailVerified &&
+                !user.providerData.some(
+                  (p) => p.providerId === 'google.com' || p.providerId === 'facebook.com'
+                ) && (
+                  <Card className="mb-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+                            {t('settingsPage.emailVerification.notVerified')}
                           </p>
-                        )}
+                          <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
+                            {t('settingsPage.emailVerification.verifyToAccess')}
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-3"
+                            onClick={handleSendVerification}
+                            disabled={sendingVerification}
+                          >
+                            {sendingVerification ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                {t('common.button.sending')}
+                              </>
+                            ) : (
+                              <>
+                                <Mail className="w-4 h-4 mr-2" />
+                                {t('settingsPage.emailVerification.resendVerification')}
+                              </>
+                            )}
+                          </Button>
+                          {verificationMessage && (
+                            <p className="text-sm mt-2 text-yellow-700 dark:text-yellow-300">
+                              {verificationMessage}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                    </CardContent>
+                  </Card>
+                )}
 
               {/* Formulário de perfil */}
               <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700 mb-6">
