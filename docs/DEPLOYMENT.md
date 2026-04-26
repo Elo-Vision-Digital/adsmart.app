@@ -128,6 +128,58 @@ gcloud run services add-iam-policy-binding <function-name-lowercased> \
 
 The binding is permanent — subsequent redeploys preserve it. Repeat per project (`adsmart-web-dev`, `adsmart-web`).
 
+## Reconciling dev environment drift
+
+`adsmart-web-dev` is treated as ephemeral and CI auto-deploy only fires on push to `develop`. Long stretches of feature-branch work mean the dev project's deployed surface (Cloud Functions, Firestore indexes, `productPrices` collection) can lag the source tree. When the admin panel or any post-auth flow shows console errors on dev, the prime suspect is **drift**, not real CORS/code bugs.
+
+### 1. Diagnose
+
+```bash
+# List currently deployed callables — compare against exports in functions/src/index.ts
+bunx firebase-tools functions:list --project adsmart-web-dev
+
+# Probe a specific failing endpoint — 404 from this URL means the function is undeployed.
+# Cloud Functions returns plain HTML 404 with no Access-Control-Allow-Origin header,
+# which Chrome surfaces misleadingly as a CORS error in DevTools.
+curl -i -X POST "https://us-central1-adsmart-web-dev.cloudfunctions.net/<name>" \
+  -H "Content-Type: application/json" -d '{"data":{}}'
+```
+
+A `404` confirms drift; `401`/`403` mean the function exists and is rejecting unauthenticated calls (expected and correct).
+
+### 2. Reconcile
+
+```bash
+# Build the bundled deploy artifact (required by ADR-011 pipeline)
+cd functions && bun run build
+
+# Deploy rules + indexes first (index builds are async — give them a head start)
+bunx firebase-tools deploy --only firestore:rules,firestore:indexes --project adsmart-web-dev
+
+# Deploy all functions
+bunx firebase-tools deploy --only functions --project adsmart-web-dev
+```
+
+If the deploy step fails with `Secret environment variable overlaps non secret environment variable: <NAME>`, the cause is a leftover line in `functions/.env` that duplicates a `defineSecret(<NAME>)` declaration in [functions/src/config/index.ts](../functions/src/config/index.ts). Remove the line from `.env`, rebuild, and redeploy only the failing functions: `bunx firebase-tools deploy --only "functions:<name1>,functions:<name2>" --project adsmart-web-dev`. See the 2026-04-26 entry in [CHANGES.md](CHANGES.md) for the original incident.
+
+If the deploy reports `Task index 0 failed: timed out after 1500000ms` for one or more functions, **verify before retrying**: the polling timeout often fires after the Cloud Run service has actually been created. `bunx firebase-tools functions:list --project adsmart-web-dev` is authoritative.
+
+### 3. Seed `productPrices` (one-time per project)
+
+The admin "Configuração de Preços" tab queries the `productPrices` collection. On a fresh project the collection is empty and the tab renders nothing. Two options to seed:
+
+- **Via the deployed callable** (requires admin auth): from the admin panel, call `initializeDefaultPrices` (no UI button today; can be invoked from the browser DevTools console with `firebase.functions().httpsCallable('initializeDefaultPrices')()`).
+- **Via the Firebase MCP plugin or Admin SDK**: write the four documents (`google_lancamento`, `meta_lancamento`, `google_negocio_local`, `meta_negocio_local`) directly to `productPrices/{id}` using the schema in [priceManager.ts](../functions/src/priceManager.ts). Use this path when bootstrapping a brand-new project before any admin user has been created.
+
+### 4. Sanity-check production parity
+
+```bash
+diff <(bunx firebase-tools functions:list --project adsmart-web-dev | sort) \
+     <(bunx firebase-tools functions:list --project adsmart-web | sort)
+```
+
+Drift in either direction is a smell. Production drift is rarer (CI deploys on `main`) but happens when a function is renamed or removed without cleaning up the orphan — see ADR-010's renamed `bootstrapUserWallet → bootstrapUser` for an example pattern.
+
 ## Firestore rules and indexes
 
 Rules file: `firestore.rules`. Indexes: `firestore.indexes.json`.

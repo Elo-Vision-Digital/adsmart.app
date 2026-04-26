@@ -10,6 +10,25 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Dev environment reconciled (Subprojeto 0 of admin-panel overhaul)
+
+First step of the staged admin-panel overhaul (subprojects 0→5 documented in the conversation). Subprojeto 0 was scoped to **operational reconciliation only** — no front-end or function-source changes — to unblock testing of the four follow-up subprojects in dev.
+
+- **Drift confirmed.** `bunx firebase-tools functions:list --project adsmart-web-dev` showed only 3 of the 21 deployable callables in source: `bootstrapUser`, `getPublicProductPrices`, `reserveUserDocument`. Probe via `curl` returned HTTP 404 on `getSecurityStats`, `getProductPrices`, `addUserCredits` — Chrome was surfacing the missing-function 404s as CORS errors in DevTools, matching the pattern documented in the dev-environment-drift memory.
+- **`productPrices` seeded.** Four default documents (`google_lancamento` / `meta_lancamento` at R$10, `google_negocio_local` / `meta_negocio_local` at R$5) inserted via the Firebase MCP plugin against `adsmart-web-dev`'s Firestore. Schema matches [priceManager.ts](../functions/src/priceManager.ts) `DEFAULT_PRICES`.
+- **Functions deploy fix: `.env` ↔ `defineSecret` overlap.** First full functions deploy failed for the 8 OAuth callables with `Secret environment variable overlaps non secret environment variable: GOOGLE_ADS_CLIENT_SECRET / META_ADS_APP_SECRET` (Cloud Functions Gen2 rejects a name being declared as both a Secret Manager binding and a plain env var). Root cause: leftover lines in `functions/.env` that pre-dated the migration to `defineSecret`. Fix: removed the two duplicate `*_SECRET` lines from `functions/.env` (gitignored — never in version control). The non-secret OAuth IDs (`GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_DEVELOPER_TOKEN`, `META_ADS_APP_ID`, redirect URIs) stay in `.env` because the source reads them via `process.env`.
+- **Side benefit of the .env fix.** The two secret values are no longer baked into the deployed Cloud Function runtime environment — they're now **only** in Secret Manager (`defineSecret('GOOGLE_ADS_CLIENT_SECRET')` / `defineSecret('META_ADS_APP_SECRET')`), which is the ADR-011 invariant.
+- **Rules + indexes redeployed.** Both already in source; deploy command was needed because dev had drifted. No rule/index content change.
+- **Final state.** All 21 deployable callables listed by `firebase functions:list --project adsmart-web-dev` and reachable via `curl` (admin functions return 401 without auth, OAuth functions return 403, public ones 200 — all expected). No orphan `bootstrapUserWallet` (rename was already clean).
+- **Production not touched.** A read-only `diff` between dev and prod function lists was performed to surface any drift on prod side; reported separately to project owner — production deploy stays on the CI pipeline as designed.
+- **Doc updates.** [DEPLOYMENT.md](DEPLOYMENT.md) gains the "Reconciling dev environment drift" section (diagnose / reconcile / seed `productPrices` / sanity-check parity). The `dev_environment_drift` memory was updated to mark the reconciliation as complete on 2026-04-26 and reference the new procedure.
+
+Required follow-up (out of scope for Subprojeto 0, tracked for the upcoming subprojects):
+- Subprojeto 1: refactor the admin panel from 3 tabs to a sidebar + sub-routes (`/admin/dashboard`, `/admin/users`, `/admin/wallet`, `/admin/prices`, `/admin/security`).
+- Subprojeto 4: replace the orphan-prone "no UI button to seed prices" workflow with a one-click reseed in the new prices page.
+
+---
+
 ## [2026-04-26] — CPF/CNPJ uniqueness + immutability + OAuth-aware password UI (ADR-012)
 
 Three product requirements landed together: documents must be unique across users, documents must be immutable after first save, and OAuth-only accounts (Google/Facebook signups) must use a "create password" flow rather than "change password" until they have an email/password provider attached.
