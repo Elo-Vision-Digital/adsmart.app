@@ -9,6 +9,9 @@ pre-commit:
 pre-push:
   parallel: true
   commands:
+    typecheck-shared:
+      root: "packages/shared/"
+      run: bun run typecheck
     typecheck-web:
       run: bun run typecheck
     typecheck-functions:

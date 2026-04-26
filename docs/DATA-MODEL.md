@@ -62,7 +62,7 @@ Single document per user (doc ID is the literal `current`).
 }
 ```
 
-Source of truth: [src/schemas/userWallet.ts](../src/schemas/userWallet.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `UserWallet` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts`.
+Source of truth: [packages/shared/src/schemas/userWallet.ts](../packages/shared/src/schemas/userWallet.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `UserWallet` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts`.
 
 Client rule: `allow write: if false` (enforced by subcollection rule for `wallet`). Writes happen via the [useWallet hook](../src/hooks/useWallet.ts) (placeholder creation only — the doc bootstraps as `balance: 0` if it does not exist) and via Admin SDK in [adminWalletManager](../functions/src/adminWalletManager.ts) and the (deprecated) [suitpayWebhook](../functions/src/suitpayWebhook.ts).
 
@@ -99,7 +99,7 @@ Append-only ledger. Written only by Cloud Functions (client writes are blocked b
 }
 ```
 
-Source of truth: [src/schemas/transaction.ts](../src/schemas/transaction.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). `Transaction`, `TransactionType`, `TransactionStatus` types are derived via `z.infer` and reexported from `src/types/index.ts`.
+Source of truth: [packages/shared/src/schemas/transaction.ts](../packages/shared/src/schemas/transaction.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). `Transaction`, `TransactionType`, `TransactionStatus` types are derived via `z.infer` and reexported from `src/types/index.ts`.
 
 Note: ownership is encoded in the path; no `userId` field is stored on the doc.
 
@@ -140,7 +140,7 @@ One document per connected ad account. Platform prefix in document ID (e.g., `go
 }
 ```
 
-Source of truth: [src/schemas/adAccount.ts](../src/schemas/adAccount.ts). Ownership is encoded in the path (`users/{uid}/...`); no `userId` field is stored on the doc.
+Source of truth: [packages/shared/src/schemas/adAccount.ts](../packages/shared/src/schemas/adAccount.ts). Ownership is encoded in the path (`users/{uid}/...`); no `userId` field is stored on the doc.
 
 ---
 
@@ -165,7 +165,7 @@ Cache of campaigns synced from external Ads platforms. Document ID format: `{pla
 }
 ```
 
-Source of truth: [src/schemas/campaign.ts](../src/schemas/campaign.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `Campaign` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts` for backward-compatible imports.
+Source of truth: [packages/shared/src/schemas/campaign.ts](../packages/shared/src/schemas/campaign.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `Campaign` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts` for backward-compatible imports.
 
 Writes: Cloud Functions only (Admin SDK), via `getGoogleAdsCampaigns` / `getMetaAdsCampaigns` callable handlers, after fetching from the upstream platform API. Mock data for dev seeding lives in [src/utils/mockCampaigns.ts](../src/utils/mockCampaigns.ts).
 
@@ -215,7 +215,7 @@ Cleanup (rule + DATA-MODEL entry + backup config) is tracked as a follow-up to P
 }
 ```
 
-Source of truth: [src/schemas/report.ts](../src/schemas/report.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `Report` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts` for backward-compatible imports.
+Source of truth: [packages/shared/src/schemas/report.ts](../packages/shared/src/schemas/report.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `Report` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts` for backward-compatible imports.
 
 Rule: owner only. Delete blocked.
 

@@ -10,6 +10,20 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Refactor Phase E: tooling for continuous drift prevention
+
+Closes the entire REFACTOR-PLAN (Phases A–E). Locks in the schema-as-code contract with documentation, automation, and a published architectural decision.
+
+- **E1 — Docs drift audit.** [DATA-MODEL.md](DATA-MODEL.md) had 5 residual `src/schemas/...` source-of-truth links from before the Phase D move; all rewritten to `packages/shared/src/schemas/...`. [DOMAIN.md](DOMAIN.md) was already aligned (commit `5699aec`). Decision: keep DATA-MODEL.md hand-authored with explicit `.ts` schema links — generating it from Zod (Zod → JSON Schema → Markdown) would add disproportionate tooling for the 5 collections currently documented. Revisit if the schema set grows past ~15.
+- **E2 — pre-push validation.** [lefthook.yml](../lefthook.yml) gained a `typecheck-shared` step running `bun run typecheck` from `packages/shared/`, in parallel with the existing `typecheck-web` and `typecheck-functions` steps. Schema-only typecheck completes in ~1s; the cost of catching a broken schema before push is trivial.
+- **E3 — ADR published.** [docs/Decisions.md](Decisions.md) gained ADR-009: "Zod 4 + FirestoreDataConverter as the data contract." Documents (a) the symptoms of drift that motivated the refactor, (b) the canonical decision (Zod + `@adsmart/shared` + boundary validation), (c) 5 practical consequences for code authors including the `omit({ ... }).parse(...)` pattern for `serverTimestamp()` writes, (d) alternatives considered (plain TS interfaces, io-ts, Valibot, Firestore codegen), and (e) trade-offs (~12 KB gz, CJS↔ESM interop in Functions, multi-location-by-intent).
+- **E4 — Author guidance in CLAUDE.md.** Added an "Editing Firestore document shapes" section: edit `packages/shared/src/schemas/` first; the 4-step follow-up checklist (Vitest case → typecheck via Turbo → update DATA-MODEL → add CHANGES entry) is documented inline. Stack quick reference updated to mention `Zod 4 (@adsmart/shared)`.
+- **REFACTOR-PLAN.md** marked **Completed (Phases A–E)** at the header.
+
+This closes the full REFACTOR-PLAN. Total commits since the plan was authored: 11 (one per phase/sub-phase, all on the `migrate` branch). All workspaces typecheck and build green; web+shared 78/78 tests pass.
+
+---
+
 ## [2026-04-26] — Refactor Phase D6: Turbo task graph for `@adsmart/shared`
 
 Closes Phase D. Wires the Turborepo task graph so cache invalidation propagates correctly across the new shared package.

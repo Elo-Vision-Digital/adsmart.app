@@ -1,6 +1,6 @@
 # AdSmart — Plano de Padronização e Single Source of Truth
 
-Status: **Proposed** · Created: 2026-04-25 · Branch: `migrate`
+Status: **Completed (Phases A–E)** · Created: 2026-04-25 · Closed: 2026-04-26 · Branch: `migrate`
 
 ## Contexto
 
@@ -139,10 +139,10 @@ Quando os schemas estabilizarem na web, mover para package compartilhado e consu
 
 Garantir que o drift não volte.
 
-- [ ] **E1.** Rodar `docs-lint` (skill já disponível) e tratar drift entre `docs/DATA-MODEL.md` e schemas. Documentar como gerar o markdown a partir dos schemas (Zod → JSON Schema → Markdown table) ou aceitar que markdown é manual mas linkado ao código.
-- [ ] **E2.** Adicionar a `lefthook.yml` um pre-push step rodando `bun run typecheck` no `packages/shared` (rápido — só os schemas).
-- [ ] **E3.** Adicionar ADR em [docs/Decisions.md](Decisions.md): "ADR-NNN: Zod + FirestoreDataConverter como contrato de dados". Inclui contexto, alternativas consideradas (interfaces puras, io-ts, Valibot), decisão e consequências.
-- [ ] **E4.** Atualizar [CLAUDE.md](../CLAUDE.md) com nota: "Para mudanças de schema do Firestore, edite primeiro `packages/shared/src/schemas/`. Tipos em outros arquivos são derivados."
+- [x] **E1.** Auditoria de drift em `docs/`: `DATA-MODEL.md` tinha 5 referências stale a `src/schemas/...` (paths antigos pré-Fase D) — todas reescritas para `packages/shared/src/schemas/...`. `DOMAIN.md` já alinhado em commit `5699aec`. Decisão: markdown segue manual com link explícito ao schema (.ts) — caminho gerado (Zod→JSON Schema→Markdown) adicionaria infra desproporcional para 5 docs, fica como evolução opcional.
+- [x] **E2.** [lefthook.yml](../lefthook.yml) ganhou step `typecheck-shared` (`root: packages/shared/`, `bun run typecheck`) executando em paralelo com `typecheck-web` e `typecheck-functions` no pre-push. Schemas válidos antes de push é barato (~1s).
+- [x] **E3.** ADR-009 adicionado em [docs/Decisions.md](Decisions.md): "Zod 4 + FirestoreDataConverter as the data contract". Cobre contexto (sintomas de drift acumulados), decisão (Zod canônico + `@adsmart/shared` + validação no boundary), 5 consequências práticas para autores de código (incluindo o pattern `omit().parse()` para `serverTimestamp()`), alternativas consideradas (TS interfaces, io-ts, Valibot, codegen) e trade-offs (12 KB gz, CJS↔ESM interop em Functions, três localizações por intent).
+- [x] **E4.** [CLAUDE.md](../CLAUDE.md) ganhou seção "Editing Firestore document shapes": instrui editar `packages/shared/src/schemas/` primeiro, lista os 4 follow-up steps (Vitest case → typecheck via Turbo → DATA-MODEL → CHANGES), e linka para ADR-009. Stack quick reference atualizada com "Zod 4 (`@adsmart/shared`)".
 
 **Critério de aceite:** novo contributor consegue, sem perguntar, identificar onde adicionar/modificar um campo de domínio.
 

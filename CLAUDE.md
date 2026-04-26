@@ -6,7 +6,20 @@ Read [AGENTS.md](AGENTS.md) first. This file adds what's unique to Claude Code s
 
 ## Stack (quick reference)
 
-React 18 · TypeScript · Vite · Tailwind 3 · shadcn/ui · react-router-dom v6 · Firebase SDK 10 · framer-motion 12 · Biome · Vitest · Firebase Functions v2 (Node 22) · firebase-admin 12
+React 18 · TypeScript · Vite · Tailwind 3 · shadcn/ui · react-router-dom v6 · Firebase SDK 10 · framer-motion 12 · Biome · Vitest · Firebase Functions v2 (Node 22) · firebase-admin 12 · Zod 4 (`@adsmart/shared`)
+
+## Editing Firestore document shapes
+
+For any change to a Firestore document shape (adding a field, tightening a type, renaming, deprecating), edit **`packages/shared/src/schemas/`** first — it is the source of truth. Types in `src/types/index.ts` and inside Cloud Functions are derived (`z.infer`) and re-exported; do not hand-write a parallel interface.
+
+After changing a schema:
+
+1. Update or add a Vitest case in the matching `*.test.ts` (co-located with the schema file).
+2. Run `cd packages/shared && bun run test` and `bun run typecheck` from the root — Turbo will re-validate web and functions consumers.
+3. Update [docs/DATA-MODEL.md](docs/DATA-MODEL.md) — the schema is executable; the markdown is human-facing and must follow.
+4. Add a dated entry to [docs/CHANGES.md](docs/CHANGES.md) explaining the field-level drift you fixed (or introduced).
+
+The architectural rationale lives in [docs/Decisions.md](docs/Decisions.md) — ADR-009.
 
 ## Design system
 
