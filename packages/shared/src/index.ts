@@ -28,3 +28,11 @@ export {
   type TransactionStatus,
   type TransactionType,
 } from './schemas/transaction'
+
+export {
+  GetDashboardMetricsInputSchema,
+  GetDashboardMetricsOutputSchema,
+  DASHBOARD_METRICS_MAX_RANGE_DAYS,
+  type GetDashboardMetricsInput,
+  type GetDashboardMetricsOutput,
+} from './schemas/dashboardMetrics'
