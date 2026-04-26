@@ -4,7 +4,7 @@ import {
   sendEmailVerification,
   updatePassword,
 } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import {
   AlertCircle,
   Check,
@@ -116,13 +116,21 @@ export function SettingsPage() {
         )
       }
 
-      // Salvar no Firestore
+      // firestore.rules require createdAt == request.time on create and an
+      // unchanged createdAt on update — so we have to know which path we're
+      // on. Read-first; on first write we add a server-side createdAt, on
+      // subsequent writes we omit it so the merge preserves the stored value.
+      const userRef = doc(db, 'users', user.uid)
+      const existing = await getDoc(userRef)
+      const seedFields = existing.exists() ? {} : { createdAt: serverTimestamp() }
+
       await setDoc(
-        doc(db, 'users', user.uid),
+        userRef,
         {
           ...profile,
           email: user.email,
-          updatedAt: new Date(),
+          updatedAt: serverTimestamp(),
+          ...seedFields,
         },
         { merge: true }
       )
