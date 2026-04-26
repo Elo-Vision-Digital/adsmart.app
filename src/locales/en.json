@@ -314,11 +314,6 @@
       "completed": "Completed",
       "pending": "Pending",
       "failed": "Failed"
-    },
-    "stats": {
-      "totalCredits": "Total Credits",
-      "totalDebits": "Total Debits",
-      "transactions": "Transactions"
     }
   },
   "settingsPage": {
@@ -345,6 +340,78 @@
       "passwordsDoNotMatch": "Passwords do not match",
       "passwordTooShort": "Password must be at least 6 characters",
       "currentPasswordIncorrect": "Current password is incorrect"
+    }
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "welcomeBack": "Welcome, {name}",
+    "nav": {
+      "security": "Security Logs",
+      "prices": "Price Configuration",
+      "wallet": "Wallet Management"
+    },
+    "security": {
+      "title": "Security Logs",
+      "subtitle": "Security events from the last {days} days",
+      "totalEvents": "Total Events",
+      "criticalEvents": "Critical Events",
+      "byType": "Events by Type",
+      "bySeverity": "By Severity",
+      "noEvents": "Click \"Refresh\" to load statistics",
+      "refresh": "Refresh",
+      "loading": "Loading statistics...",
+      "lastDays": "{days} days"
+    },
+    "prices": {
+      "title": "Price Configuration",
+      "subtitle": "Manage dashboard prices",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "reload": "Reload",
+      "loading": "Loading prices...",
+      "priceLabel": "Price:",
+      "categoryLabel": "Category",
+      "typeLabel": "Type",
+      "updatedAtLabel": "Updated",
+      "category": { "google": "Google Ads", "meta": "Meta Ads" },
+      "type": { "lancamento": "Launch", "negocioLocal": "Local Business" },
+      "currency": "R$"
+    },
+    "wallet": {
+      "title": "Wallet Management",
+      "subtitle": "Add credits to a user's balance",
+      "addCreditsTitle": "Add Credits to User",
+      "targetEmail": "User Email",
+      "targetEmailPlaceholder": "user@example.com",
+      "amount": "Amount in BRL (R$)",
+      "amountPlaceholder": "0.00",
+      "amountHint": "Enter the amount in BRL. Ex: 10.50 for R$ 10.50 (Maximum: R$ 1,000.00)",
+      "reason": "Reason",
+      "reasonPlaceholder": "Describe the reason for adding credits (minimum 10 characters)",
+      "reasonCounter": "{count}/10 minimum characters",
+      "addCredits": "Add Credits",
+      "adding": "Adding...",
+      "limits": {
+        "title": "Warning - Security Controls",
+        "addsRealBalance": "This action adds real balance to the user",
+        "affectsProduction": "Balance added affects production",
+        "perTx": "Per-transaction limit: R$ 1,000.00",
+        "daily": "Daily admin limit: R$ 5,000.00",
+        "txCount": "Maximum 50 transactions per day",
+        "reasonRequired": "Reason required (minimum 10 characters)",
+        "loggedWithIp": "All actions are logged with IP and timestamp",
+        "useResponsibly": "Use responsibly"
+      }
+    },
+    "messages": {
+      "fillFields": "Please fill in all fields",
+      "invalidAmount": "Please enter a valid amount",
+      "reasonTooShort": "Reason must be at least 10 characters",
+      "loadError": "Error loading data",
+      "saveSuccess": "Changes saved successfully",
+      "pricesLoaded": "Prices loaded successfully!",
+      "pricesUpdated": "Prices updated successfully!",
+      "creditsAddedToUser": "Credits added successfully for {email}! Daily limits: R$ {used} / R$ {max}"
     }
   }
 }

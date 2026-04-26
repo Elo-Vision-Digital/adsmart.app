@@ -314,11 +314,6 @@
       "completed": "Completada",
       "pending": "Pendiente",
       "failed": "Falló"
-    },
-    "stats": {
-      "totalCredits": "Total de Créditos",
-      "totalDebits": "Total de Débitos",
-      "transactions": "Transacciones"
     }
   },
   "settingsPage": {
@@ -345,6 +340,78 @@
       "passwordsDoNotMatch": "Las contraseñas no coinciden",
       "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
       "currentPasswordIncorrect": "La contraseña actual es incorrecta"
+    }
+  },
+  "admin": {
+    "title": "Panel Administrativo",
+    "welcomeBack": "Bienvenido, {name}",
+    "nav": {
+      "security": "Registros de Seguridad",
+      "prices": "Configuración de Precios",
+      "wallet": "Gestión de Saldo"
+    },
+    "security": {
+      "title": "Registros de Seguridad",
+      "subtitle": "Eventos de seguridad de los últimos {days} días",
+      "totalEvents": "Eventos Totales",
+      "criticalEvents": "Eventos Críticos",
+      "byType": "Eventos por Tipo",
+      "bySeverity": "Por Severidad",
+      "noEvents": "Haga clic en \"Actualizar\" para cargar las estadísticas",
+      "refresh": "Actualizar",
+      "loading": "Cargando estadísticas...",
+      "lastDays": "{days} días"
+    },
+    "prices": {
+      "title": "Configuración de Precios",
+      "subtitle": "Gestiona los precios de los dashboards",
+      "save": "Guardar Cambios",
+      "saving": "Guardando...",
+      "reload": "Recargar",
+      "loading": "Cargando precios...",
+      "priceLabel": "Precio:",
+      "categoryLabel": "Categoría",
+      "typeLabel": "Tipo",
+      "updatedAtLabel": "Actualizado",
+      "category": { "google": "Google Ads", "meta": "Meta Ads" },
+      "type": { "lancamento": "Lanzamiento", "negocioLocal": "Negocio Local" },
+      "currency": "R$"
+    },
+    "wallet": {
+      "title": "Gestión de Saldo",
+      "subtitle": "Añadir créditos al saldo de un usuario",
+      "addCreditsTitle": "Añadir Créditos a Usuario",
+      "targetEmail": "Email del Usuario",
+      "targetEmailPlaceholder": "usuario@ejemplo.com",
+      "amount": "Valor en Reales (R$)",
+      "amountPlaceholder": "0,00",
+      "amountHint": "Ingrese el valor en reales. Ej: 10.50 para R$ 10,50 (Máximo: R$ 1.000,00)",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Describe el motivo para añadir créditos (mínimo 10 caracteres)",
+      "reasonCounter": "{count}/10 caracteres mínimos",
+      "addCredits": "Añadir Créditos",
+      "adding": "Añadiendo...",
+      "limits": {
+        "title": "Atención - Medidas de Seguridad",
+        "addsRealBalance": "Esta acción añade saldo real al usuario",
+        "affectsProduction": "El saldo añadido afecta el ambiente de producción",
+        "perTx": "Límite por transacción: R$ 1.000,00",
+        "daily": "Límite diario por admin: R$ 5.000,00",
+        "txCount": "Máximo 50 transacciones por día",
+        "reasonRequired": "Motivo obligatorio (mínimo 10 caracteres)",
+        "loggedWithIp": "Todas las acciones se registran con IP y marca de tiempo",
+        "useResponsibly": "Usar con responsabilidad"
+      }
+    },
+    "messages": {
+      "fillFields": "Por favor, complete todos los campos",
+      "invalidAmount": "Por favor, ingrese un valor válido",
+      "reasonTooShort": "El motivo debe tener al menos 10 caracteres",
+      "loadError": "Error al cargar datos",
+      "saveSuccess": "Cambios guardados con éxito",
+      "pricesLoaded": "¡Precios cargados con éxito!",
+      "pricesUpdated": "¡Precios actualizados con éxito!",
+      "creditsAddedToUser": "¡Créditos añadidos con éxito para {email}! Límites diarios: R$ {used} / R$ {max}"
     }
   }
 }

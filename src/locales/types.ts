@@ -340,11 +340,6 @@ export interface Translations {
       pending: string
       failed: string
     }
-    stats: {
-      totalCredits: string
-      totalDebits: string
-      transactions: string
-    }
   }
 
   // SettingsPage translations
@@ -372,6 +367,80 @@ export interface Translations {
       passwordsDoNotMatch: string
       passwordTooShort: string
       currentPasswordIncorrect: string
+    }
+  }
+
+  // Admin panel translations (Subprojeto 1)
+  admin: {
+    title: string
+    welcomeBack: string
+    nav: {
+      security: string
+      prices: string
+      wallet: string
+    }
+    security: {
+      title: string
+      subtitle: string
+      totalEvents: string
+      criticalEvents: string
+      byType: string
+      bySeverity: string
+      noEvents: string
+      refresh: string
+      loading: string
+      lastDays: string
+    }
+    prices: {
+      title: string
+      subtitle: string
+      save: string
+      saving: string
+      reload: string
+      loading: string
+      priceLabel: string
+      categoryLabel: string
+      typeLabel: string
+      updatedAtLabel: string
+      category: { google: string; meta: string }
+      type: { lancamento: string; negocioLocal: string }
+      currency: string
+    }
+    wallet: {
+      title: string
+      subtitle: string
+      addCreditsTitle: string
+      targetEmail: string
+      targetEmailPlaceholder: string
+      amount: string
+      amountPlaceholder: string
+      amountHint: string
+      reason: string
+      reasonPlaceholder: string
+      reasonCounter: string
+      addCredits: string
+      adding: string
+      limits: {
+        title: string
+        addsRealBalance: string
+        affectsProduction: string
+        perTx: string
+        daily: string
+        txCount: string
+        reasonRequired: string
+        loggedWithIp: string
+        useResponsibly: string
+      }
+    }
+    messages: {
+      fillFields: string
+      invalidAmount: string
+      reasonTooShort: string
+      loadError: string
+      saveSuccess: string
+      pricesLoaded: string
+      pricesUpdated: string
+      creditsAddedToUser: string
     }
   }
 }
