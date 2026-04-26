@@ -62,8 +62,10 @@
     ]
   },
   "functions": {
-    "source": "functions",
-    "predeploy": ["cd functions && bun run build"]
+    "source": "functions/deploy",
+    "predeploy": [
+      "bunx turbo run build --filter=@adsmart/functions..."
+    ]
   },
   "firestore": {
     "rules": "firestore.rules",

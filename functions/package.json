@@ -4,7 +4,9 @@
   "scripts": {
     "lint": "eslint .",
     "clean": "rm -rf lib tsconfig.tsbuildinfo",
-    "build": "tsc",
+    "build": "tsc && bun run bundle && bun run prepare-deploy",
+    "bundle": "bun build lib/index.js --target=node --format=cjs --outfile=lib/bundle.js --external firebase-admin --external 'firebase-admin/*' --external firebase-functions --external 'firebase-functions/*' --external googleapis --external google-auth-library --external axios --external qrcode.react --external express",
+    "prepare-deploy": "node scripts/prepare-deploy.mjs",
     "typecheck": "tsc --noEmit",
     "rebuild": "bun run clean && bun run build",
     "build:watch": "tsc --watch",
@@ -20,9 +22,8 @@
   "engines": {
     "node": "22"
   },
-  "main": "lib/index.js",
+  "main": "lib/bundle.js",
   "dependencies": {
-    "@adsmart/shared": "workspace:*",
     "axios": "1.10.0",
     "firebase-admin": "12.7.0",
     "firebase-functions": "6.4.0",
@@ -32,6 +33,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@adsmart/shared": "workspace:*",
     "@firebase/rules-unit-testing": "5.0.0",
     "@types/qrcode.react": "1.0.5",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
