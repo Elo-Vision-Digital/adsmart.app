@@ -84,26 +84,49 @@ firebase deploy --only hosting
 
 Region: `us-central1`. All functions use Firebase Functions v2 (`firebase-functions/v2/https`).
 
+Functions are deployed as a **bundled artifact** under `functions/deploy/` rather than the raw `functions/` source tree. The bundle inlines `@adsmart/shared` so Cloud Build's `npm install` never sees the workspace protocol. See [ADR-011](Decisions.md#adr-011-functions-deploy-via-bundled-functionsdeploy-directory) for the full rationale.
+
 Build before deploy:
 ```bash
 cd functions
-bun run build  # outputs to functions/lib/
+bun run build
+# Runs three steps in sequence:
+#   tsc                            -> functions/lib/*.js
+#   bun build (CJS, externals)     -> functions/lib/bundle.js
+#   prepare-deploy.mjs             -> functions/deploy/{index.js,package.json}
 ```
 
 Deploy:
 ```bash
-firebase deploy --only functions
+firebase deploy --only functions --project <target>
 # or from functions/ directory:
 bun run deploy
 ```
 
+`firebase.json.functions` declares `source: "functions/deploy"` and `predeploy: ["bunx turbo run build --filter=@adsmart/functions..."]`, so the predeploy step rebuilds `@adsmart/shared` (CJS dist) and the functions bundle in topological order.
+
 ### Adding a new function
 
 1. Create `functions/src/myFunction.ts`.
-2. Export the function from `functions/src/index.ts`.
+2. Export the function from `functions/src/index.ts` (the bundler discovers exports there).
 3. If the function uses secrets, declare them: `onCall({ secrets: [mySecret] }, ...)`.
-4. If the secret is new, create it: `firebase functions:secrets:set mySecret`.
+4. If the secret is new, create it: `firebase functions:secrets:set mySecret --project <target>`.
 5. Add the secret handle to `functions/src/config/index.ts`.
+6. **If the function should be callable anonymously** (e.g. a public price catalog), pass `invoker: 'public'` in the `onCall` options. v2 callables default to private invoker; without this, anonymous browser calls return `403 Forbidden`. See [ADR-011](Decisions.md#adr-011-functions-deploy-via-bundled-functionsdeploy-directory) — note the one-time `gcloud run services add-iam-policy-binding` required after the first successful deploy of each public callable on a new project.
+
+### Public callable IAM grant (one-time, per project per public function)
+
+Firebase CLI 14.x does not always propagate the `invoker: 'public'` option on `onCall` updates. After the first deploy of any new public v2 callable on a project, run once:
+
+```bash
+gcloud run services add-iam-policy-binding <function-name-lowercased> \
+  --region=us-central1 \
+  --member='allUsers' \
+  --role='roles/run.invoker' \
+  --project=<firebase-project-id>
+```
+
+The binding is permanent — subsequent redeploys preserve it. Repeat per project (`adsmart-web-dev`, `adsmart-web`).
 
 ## Firestore rules and indexes
 

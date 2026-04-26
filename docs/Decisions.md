@@ -236,3 +236,64 @@ Authentication blocking triggers are synchronous: the user account is not finali
 - [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) — virtual-wallet read path.
 - [firestore.rules:39-46](../firestore.rules) — Phase 3 wallet write block.
 - Firebase docs: Identity Platform blocking functions (validated via Context7 2026-04-26).
+
+---
+
+## ADR-011: Functions deploy via bundled `functions/deploy/` directory
+
+**Date:** 2026-04-26
+**Status:** Accepted
+
+**Context:**
+
+When attempting the first end-to-end deploy of `@adsmart/functions` after `@adsmart/shared` was introduced (ADR-009, commits `98be1a7` → `3ab593d`), `firebase deploy --only functions` failed at two distinct layers:
+
+1. **Local analysis layer.** Firebase CLI's source analyzer runs Node directly against `functions/lib/index.js`. Node's ESM resolver hit `@adsmart/shared`'s `package.json`, found `"type": "module"` plus `exports."." → "./src/index.ts"`, and threw `ERR_MODULE_NOT_FOUND` because Node cannot natively load `.ts`.
+2. **Cloud Build layer.** Even after the local analyzer worked, Cloud Build's `npm install` rejected `"@adsmart/shared": "workspace:*"` with `EUNSUPPORTEDPROTOCOL` — the workspace protocol is Bun/Yarn/PNPM-only and unknown to npm.
+
+ADR-009 itself flagged this as "paper-thin": `Works under Bun isolated linker but is a paper-thin dependency on the resolution path.` This ADR closes that gap.
+
+A third symptom surfaced post-deploy: v2 callable functions on Cloud Functions Gen 2 default to private invoker on first deploy unless `invoker: 'public'` is set on the `onCall` options — `getPublicProductPrices` was deployed but every anonymous request returned `403 Forbidden` until `invoker: 'public'` was added (and an explicit `gcloud run services add-iam-policy-binding` was performed once because Firebase CLI 14.x does not always propagate the invoker option on update).
+
+**Decision:**
+
+1. **`@adsmart/shared` emits compiled CJS.** Added `tsconfig.build.json` (`module: commonjs`, `outDir: ./dist`, `declaration: true`). Removed `"type": "module"`. `package.json.exports` now points at `./dist/index.js` (default condition) with `./dist/index.d.ts` for types. Vite bundles the compiled JS without complaint; Functions' Node CJS require resolves it natively.
+2. **Functions bundle into a single CJS file via Bun.** New `bundle` script: `bun build lib/index.js --target=node --format=cjs --outfile=lib/bundle.js --external firebase-admin --external 'firebase-admin/*' --external firebase-functions --external 'firebase-functions/*' --external googleapis --external google-auth-library --external axios --external qrcode.react --external express`. Externals are anything provided by the Cloud Functions runtime; everything else (including `@adsmart/shared`) is inlined. Output: ~760 KB single file.
+3. **`functions/deploy/` is the upload artifact.** A new `prepare-deploy.mjs` script materializes a self-contained directory containing only `index.js` (the bundle), a clean `package.json` (workspace deps stripped, `main: "index.js"`), and `.env`. `firebase.json` is changed to `functions.source: "functions/deploy"`, so Cloud Build's `npm install` sees only standard semver deps.
+4. **`@adsmart/functions` keeps `@adsmart/shared` in `devDependencies`.** Required at typecheck/build/bundle time only — never at runtime, so absence in the deploy artifact is correct.
+5. **v2 callables that need anonymous invocation declare `invoker: 'public'`.** Currently `getPublicProductPrices` is the only such function; new public callables must do the same. Authenticated callables (`addUserCredits`, `checkRateLimit`, etc.) leave invoker default.
+
+**Trade-offs:**
+
+- **Bundle adds a build step.** Predeploy now runs three serial commands (`turbo run build` → `bun build` → `prepare-deploy`). Wall-clock cost: ~150ms total on a warm cache.
+- **Stack traces in production point at `bundle.js` line numbers**, not original sources, unless we ship source maps. Today we don't — debug-time we can rebuild and inspect `lib/index.js` directly.
+- **The deploy artifact is `gitignore`'d** (`functions/deploy/`, `packages/*/dist/`). CI must always run the build before invoking firebase deploy. `firebase.json.functions.predeploy` enforces this.
+- **`functions:list` only sees what's in the bundle.** Adding a new function file requires re-running `bun run build` — the prepare-deploy script does NOT detect new TS files on its own.
+- **Source field change is a one-way door for the firebase emulator.** `firebase emulators:start --only functions` now serves from `functions/deploy/`. The `serve` script in `functions/package.json` already chains `bun run build` first, so this is invisible to dev — but custom emulator workflows must rebuild before starting.
+
+**Alternatives considered:**
+
+- **Vendor `@adsmart/shared` as a `npm pack` tarball** in `functions/vendor/` and reference via `file:` spec. Works but pollutes the source tree with a binary blob, requires its own predeploy step, and Cloud Build still extracts a tarball on every deploy. Bundling is cleaner.
+- **Use `nx-firebase` or another monorepo-aware Firebase plugin.** Adds a heavy dependency for a problem we can solve in 50 lines of bundle config.
+- **Ship `@adsmart/shared` to a private npm registry.** Overkill for a private workspace package; introduces release coordination and auth.
+- **Drop the workspace and copy schema files into `functions/src/`.** Re-introduces the drift that ADR-009 was created to eliminate.
+- **Set `--source functions` and write a postinstall hook in `functions/package.json` that swaps workspace for file: spec.** Cloud Build runs `npm install` BEFORE postinstall fires — the install fails first.
+
+**Pre-existing IAM grant (one-time, per project):**
+
+For each public v2 callable, after the first successful deploy of that function name on a project, run once:
+```bash
+gcloud run services add-iam-policy-binding <function-name-lowercased> \
+  --region=us-central1 \
+  --member=allUsers \
+  --role=roles/run.invoker \
+  --project=<firebase-project-id>
+```
+This is a permanent IAM binding; subsequent redeploys preserve it. `getPublicProductPrices` was granted on `adsmart-web-dev` on 2026-04-26.
+
+**References:**
+- [functions/scripts/prepare-deploy.mjs](../functions/scripts/prepare-deploy.mjs) — deploy artifact generator.
+- [functions/package.json](../functions/package.json) — bundle script and clean dep separation.
+- [packages/shared/tsconfig.build.json](../packages/shared/tsconfig.build.json) — CJS build config.
+- [firebase.json](../firebase.json) — `functions.source` and `predeploy` updates.
+- [DEPLOYMENT.md → Cloud Functions](DEPLOYMENT.md) — operator-facing runbook.

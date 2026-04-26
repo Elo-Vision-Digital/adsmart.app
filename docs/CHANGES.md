@@ -10,6 +10,22 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Functions deploy unblocked: bundled artifact + clean dep separation (ADR-011)
+
+Closing the gap that ADR-009 itself flagged as "paper-thin." First end-to-end functions deploy after `@adsmart/shared` was introduced (commits `98be1a7` → `3ab593d` in early April) failed at three layers; resolution required a small architectural change to how functions are packaged for Cloud Build.
+
+- **`@adsmart/shared` now emits CJS to `dist/`.** Added [packages/shared/tsconfig.build.json](../packages/shared/tsconfig.build.json) (`module: commonjs`, `outDir: ./dist`, `declaration: true`). Removed `"type": "module"`. Updated `package.json.exports` to point at `./dist/index.js` (default condition) with `./dist/index.d.ts` for types. Vite still bundles fine; Functions' Node CJS require resolves natively.
+- **Functions bundle into a single CJS file via Bun.** New `bundle` script in [functions/package.json](../functions/package.json): `bun build lib/index.js --target=node --format=cjs --outfile=lib/bundle.js --external firebase-admin --external 'firebase-admin/*' --external firebase-functions --external 'firebase-functions/*' --external googleapis --external google-auth-library --external axios --external qrcode.react --external express`. Output: 760 KB single file with `@adsmart/shared` inlined.
+- **`functions/deploy/` is the upload artifact.** New [functions/scripts/prepare-deploy.mjs](../functions/scripts/prepare-deploy.mjs) materializes a self-contained deploy directory (only `index.js`, a clean `package.json` with workspace deps stripped, `.env`). [firebase.json](../firebase.json) updated to `functions.source: "functions/deploy"` so Cloud Build's `npm install` only sees standard semver deps. Predeploy now runs via `bunx turbo run build --filter=@adsmart/functions...` for topological build ordering.
+- **`@adsmart/functions` keeps `@adsmart/shared` in `devDependencies`.** Required at typecheck/build/bundle time, never at runtime.
+- **`getPublicProductPrices` migrated from v1 import to v2 `onCall` with `invoker: 'public'`.** v2 callables default to private invoker, so the first deployed revision returned `403 Forbidden` on every anonymous request. The `invoker: 'public'` option grants `roles/run.invoker` to `allUsers` at deploy time. Firebase CLI 14.x does not always propagate this on update — a one-time `gcloud run services add-iam-policy-binding` is documented in [DEPLOYMENT.md](DEPLOYMENT.md#public-callable-iam-grant-one-time-per-project-per-public-function).
+- **`bootstrapUserWallet` deployed as `beforeUserCreated` v2 trigger.** Identity Platform was enabled on `adsmart-web-dev` (one-time prereq for blocking triggers). New signups now seed `users/{uid}/wallet/current` with `balance: 0` server-side via Admin SDK.
+- **Doc / convention updates.** Added [ADR-011](Decisions.md#adr-011-functions-deploy-via-bundled-functionsdeploy-directory) covering the bundle rationale, externals list, IAM grant runbook, and alternatives considered. [DEPLOYMENT.md](DEPLOYMENT.md) Cloud Functions section now documents the bundle pipeline + the new "Adding a new function" step about `invoker: 'public'`. Added `packages/*/dist` and `functions/deploy/` to `.gitignore`.
+
+Verified: `bun run build` (web), `bun run typecheck` (turbo, all 3 packages), `bun run test` (web 38/38, shared 40/40). `bunx firebase functions:list --project adsmart-web-dev` now shows both deployed functions.
+
+---
+
 ## [2026-04-26] — Login console errors fixed: undeployed callable, missing index, client wallet bootstrap
 
 Three independent post-login console errors on `adsmart-web-dev` traced to one common root: the dev project had drifted from the source tree (no functions deployed, indexes empty, Phase 3 rules vs. legacy client write).
