@@ -54,26 +54,9 @@ export interface Campaign {
   lastSyncAt: Date
 }
 
-export interface Report {
-  id: string
-  userId: string
-  type: 'google_ads' | 'meta_ads'
-  templateId: string
-  name: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  campaignIds?: string[] // IDs das campanhas selecionadas
-  allCampaigns: boolean // Se true, pega todas as campanhas
-  dateRange: {
-    startDate: string
-    endDate: string
-  }
-  lookerStudioUrl?: string // URL do relatório gerado
-  cost: number // Custo em centavos (500 = R$ 5,00)
-  paidAt?: Date
-  createdAt: Date
-  completedAt?: Date
-  error?: string
-}
+// Source of truth: src/schemas/report.ts (Zod schema). Reexported here so
+// existing `import type { Report } from '@/types'` callers continue working.
+export type { Report } from '@/schemas/report'
 
 export interface ReportTemplate {
   id: string

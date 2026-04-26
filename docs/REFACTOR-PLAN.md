@@ -60,8 +60,8 @@ Eliminar a normalização defensiva no `useReports()` deixando o schema 100% can
 
 Schemas começam dentro de `src/schemas/` para validar ASAP, antes mesmo do monorepo `packages/shared`. Escopo inicial: collection `reports` (a mais crítica).
 
-- [ ] **C1.** `bun add zod@^4` (web).
-- [ ] **C2.** Criar `src/schemas/report.ts`:
+- [x] **C1.** `bun add zod` (instalou `zod@4.3.6`).
+- [x] **C2.** Criado [src/schemas/report.ts](../src/schemas/report.ts) com `ReportTypeSchema`, `ReportStatusSchema`, `DateRangeSchema`, `ReportSchema` (e tipos derivados via `z.infer`). Exemplo da estrutura:
   ```ts
   import { z } from 'zod'
 
@@ -93,8 +93,8 @@ Schemas começam dentro de `src/schemas/` para validar ASAP, antes mesmo do mono
 
   export type Report = z.infer<typeof ReportSchema>
   ```
-- [ ] **C3.** Remover `Report` interface de [src/types/index.ts:57-76](../src/types/index.ts#L57-L76); reexportar do schema (`export type { Report } from '@/schemas/report'`).
-- [ ] **C4.** Criar `src/schemas/firestore-converter.ts` — helper genérico que recebe um `ZodSchema` e retorna `FirestoreDataConverter`:
+- [x] **C3.** Interface `Report` removida de [src/types/index.ts](../src/types/index.ts); o arquivo agora reexporta o tipo derivado do schema (`export type { Report } from '@/schemas/report'`).
+- [x] **C4.** Criado [src/schemas/firestore-converter.ts](../src/schemas/firestore-converter.ts) com helpers genéricos `zodConverter<T>(schema, label)` e `zTimestamp()`. Estrutura:
   ```ts
   export function zodConverter<T>(schema: z.ZodType<T>): FirestoreDataConverter<T> {
     return {
@@ -107,7 +107,7 @@ Schemas começam dentro de `src/schemas/` para validar ASAP, antes mesmo do mono
   }
   ```
   - `normalizeTimestamps` converte `Timestamp → Date` (lógica que hoje vive duplicada).
-- [ ] **C5.** Refatorar [src/hooks/useReports.ts](../src/hooks/useReports.ts) para usar `.withConverter(zodConverter(ReportSchema))` no lugar do `mapReport` manual.
+- [x] **C5.** [src/hooks/useReports.ts](../src/hooks/useReports.ts) refatorado: `mapReport` manual removido; collection `reports` usa `.withConverter(zodConverter(ReportSchema, 'Report'))` e `snapshot.docs.map((doc) => doc.data())` retorna `Report` tipado e validado.
 - [ ] **C6.** Replicar para outros schemas críticos: `AdAccount`, `Campaign`, `Wallet`, `Transaction`, `ReportTemplate`. Um por commit.
 - [ ] **C7.** Adicionar testes Vitest em `src/schemas/__tests__/` cobrindo: schema válido, schema com campo faltando, schema com tipo errado, normalização de Timestamp.
 

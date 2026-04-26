@@ -10,6 +10,24 @@ Format conventions:
 
 ---
 
+## [2026-04-25] — Refactor Phase C (pilot): Zod 4 + FirestoreDataConverter for `reports`
+
+First commit of Phase C from [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Establishes the schema-as-code foundation; the `Report` collection is the pilot. Remaining schemas (AdAccount, Campaign, Wallet, Transaction, ReportTemplate) ship in subsequent C6 commits.
+
+- **Dependency:** `bun add zod` → `zod@4.3.6` (web only). Zod 4 confirmed via Context7 as the current stable; ~12 KB gzipped.
+- **New module:** [src/schemas/firestore-converter.ts](../src/schemas/firestore-converter.ts).
+  - `zTimestamp()` — Zod schema fragment that pre-processes Firestore `Timestamp` to native `Date`.
+  - `zodConverter(schema, label)` — generic builder for `FirestoreDataConverter<T>` (validated current API via Context7 against `firebase-js-sdk`). Read path uses `safeParse` + structured `console.error` and best-effort cast on mismatch (REFACTOR-PLAN risk mitigation: graceful first week). Write path uses strict `parse` so the SDK never persists invalid data.
+- **New module:** [src/schemas/report.ts](../src/schemas/report.ts) — `ReportTypeSchema`, `ReportStatusSchema`, `DateRangeSchema`, `ReportSchema`, plus `z.infer` derived types.
+- **`src/types/index.ts`:** the hand-written `Report` interface was removed; the file now reexports the schema-derived type so existing `import type { Report } from '@/types'` callers continue to work.
+- **`src/hooks/useReports.ts`:** the manual `mapReport` (and the pre-Phase-B `normalizeType`) is gone. The `reports` collection is built once with `.withConverter(zodConverter(ReportSchema, 'Report'))`; `snapshot.docs.map((doc) => doc.data())` now returns validated `Report[]`.
+
+Acceptance check: a malformed Firestore doc no longer silently propagates malformed data to the UI — it logs a structured Zod issue array with the offending doc path.
+
+Verification: `bun run typecheck` ✓, `bun run build` ✓ (1.19 MB bundle, +66 KB vs pre-Zod), `bun run test` ✓ (31/31), Biome ✓.
+
+---
+
 ## [2026-04-25] — Refactor Phase B: legacy `facebook_ads` removed
 
 Closes Phase B of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). The defensive `normalizeType` helper added when standardizing the `meta_ads` key (commit `32b5f39`) is no longer necessary.

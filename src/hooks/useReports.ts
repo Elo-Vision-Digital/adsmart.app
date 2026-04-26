@@ -1,46 +1,14 @@
-import {
-  collection,
-  type DocumentData,
-  onSnapshot,
-  orderBy,
-  type QueryDocumentSnapshot,
-  query,
-  Timestamp,
-  where,
-} from 'firebase/firestore'
+import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { db } from '@/firebase/config'
+import { zodConverter } from '@/schemas/firestore-converter'
+import { ReportSchema } from '@/schemas/report'
 import type { Report } from '@/types'
 
-const toDate = (value: unknown): Date | undefined => {
-  if (!value) return undefined
-  if (value instanceof Timestamp) return value.toDate()
-  if (value instanceof Date) return value
-  if (typeof value === 'string' || typeof value === 'number') return new Date(value)
-  return undefined
-}
-
-const mapReport = (snapshot: QueryDocumentSnapshot<DocumentData>): Report => {
-  const data = snapshot.data()
-  return {
-    id: snapshot.id,
-    userId: data.userId,
-    type: data.type as Report['type'],
-    templateId: data.templateId,
-    name: data.name,
-    status: data.status,
-    campaignIds: data.campaignIds,
-    allCampaigns: data.allCampaigns ?? false,
-    dateRange: data.dateRange ?? { startDate: '', endDate: '' },
-    lookerStudioUrl: data.lookerStudioUrl,
-    cost: data.cost ?? 0,
-    paidAt: toDate(data.paidAt),
-    createdAt: toDate(data.createdAt) ?? new Date(0),
-    completedAt: toDate(data.completedAt),
-    error: data.error,
-  }
-}
+const reportsCollection = collection(db, 'reports').withConverter(
+  zodConverter(ReportSchema, 'Report')
+)
 
 export function useReports() {
   const { user } = useAuth()
@@ -56,13 +24,16 @@ export function useReports() {
     }
 
     setLoading(true)
-    const reportsRef = collection(db, 'reports')
-    const q = query(reportsRef, where('userId', '==', user.uid), orderBy('createdAt', 'desc'))
+    const q = query(
+      reportsCollection,
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    )
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        setReports(snapshot.docs.map(mapReport))
+        setReports(snapshot.docs.map((doc) => doc.data()))
         setLoading(false)
       },
       (err) => {
