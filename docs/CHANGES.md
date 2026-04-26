@@ -10,6 +10,18 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Production reconciled partially (Subprojeto 0.5 of admin-panel overhaul)
+
+Sanity diff at end of Subprojeto 0 surfaced that `adsmart-web` (production) was missing two functions present in source: `bootstrapUser` (the ADR-010 auth blocking trigger) and `reserveUserDocument` (the ADR-012 CPF/CNPJ uniqueness callable). Neither had ever been deployed to prod, meaning two security/correctness invariants documented in source were not actually in force in production.
+
+- **`reserveUserDocument` — fully deployed.** v2 callable, reachable at `https://us-central1-adsmart-web.cloudfunctions.net/reserveUserDocument`, returns HTTP 401 to anonymous probes (function exists, requires auth — expected). New CPF/CNPJ reservations on prod now go through the atomic uniqueness check + per-user immutability rule.
+- **`bootstrapUser` — half-deployed, dormant.** The Cloud Function was created on `adsmart-web` and shows up in `firebase functions:list`, but the deploy step that wires it into Identity Platform as a `beforeUserCreated` blocking trigger failed: `OPERATION_NOT_ALLOWED : Blocking Functions may only be configured for GCIP projects`. Identity Platform (GCIP) was never enabled on the prod Firebase project — only on dev (per the ADR-011 entry). The function exists but no signup currently invokes it. Until Identity Platform is enabled and the deploy is re-run, ADR-010's server-side `users/{uid}` + `wallet/current` seeding is **not in force in production**.
+- **Required follow-up to finish Subprojeto 0.5.** Project owner action required, no CLI path: Firebase Console → `adsmart-web` → Authentication → Settings → "User actions" tab → enable Identity Platform (may prompt for Blaze tier upgrade — already on Blaze). Then re-run `bunx firebase-tools deploy --only functions:bootstrapUser --project adsmart-web`. Procedure is documented in [DEPLOYMENT.md → Auth blocking triggers](DEPLOYMENT.md#auth-blocking-triggers-identity-platform).
+- **Known gap NOT addressed in Subprojeto 0.5: `userDocuments` backfill.** Production has legacy users whose `users/{uid}` doc has `documentNumber` set but who never went through the new reservation callable, so the `userDocuments/{normalizedDoc}` index is empty for those CPF/CNPJs. Result: a brand-new prod signup could successfully reserve a CPF that's already in use by a legacy user — the new function would not detect the conflict because there's no index entry to collide with. Backfill is a separate one-shot data migration: scan `users` where `documentNumber != null`, write the corresponding `userDocuments/{cpf}` entry. Tracked as a pending decision before any prod-wide CPF correctness can be claimed.
+- **No data was modified in production.** Only the two function deploys above. Existing users, transactions, wallets are untouched.
+
+---
+
 ## [2026-04-26] — Dev environment reconciled (Subprojeto 0 of admin-panel overhaul)
 
 First step of the staged admin-panel overhaul (subprojects 0→5 documented in the conversation). Subprojeto 0 was scoped to **operational reconciliation only** — no front-end or function-source changes — to unblock testing of the four follow-up subprojects in dev.
