@@ -29,6 +29,13 @@ src/
   components/
     AdminRoute.test.tsx     # AdminRoute component
     ...
+  schemas/
+    report.test.ts          # Zod schema tests, one per schema
+    adAccount.test.ts
+    campaign.test.ts
+    userWallet.test.ts
+    transaction.test.ts
+    firestore-converter.test.ts
 functions/
   test/
     securityLogger.test.ts
@@ -41,7 +48,7 @@ functions/
       firestore.ts          # getAdmin(), clearCollection() helpers
 ```
 
-Frontend tests co-locate with source files (`*.test.tsx` next to `*.tsx`).
+Frontend tests co-locate with source files (`*.test.tsx` next to `*.tsx`). Zod schemas in `src/schemas/` follow the same convention — tests live alongside the schema they cover (e.g., `report.test.ts` next to `report.ts`), not in a `__tests__/` subfolder.
 
 Functions tests live in `functions/test/` because they require emulator setup.
 

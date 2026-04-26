@@ -10,6 +10,26 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Refactor Phase C7: Vitest tests for all Zod schemas
+
+Closes Phase C of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Six new test files in `src/schemas/` exercise every schema introduced during C2–C6 plus the converter helper.
+
+- **Convention decision:** tests are **co-located** alongside the schema they cover (`src/schemas/report.test.ts`, etc.), matching the existing project convention documented in [docs/TESTING.md](TESTING.md) — *not* in a `src/schemas/__tests__/` subfolder as the original REFACTOR-PLAN draft suggested. The plan was updated to reflect the resolved convention.
+- **New files:**
+  - [src/schemas/firestore-converter.test.ts](../src/schemas/firestore-converter.test.ts) — `zTimestamp()` (Timestamp/Date round-trip, rejection of arbitrary values), `zodConverter.fromFirestore` (valid parse, structured `console.error` + best-effort cast on mismatch), `zodConverter.toFirestore` (strict `parse`, `id` stripping).
+  - [src/schemas/report.test.ts](../src/schemas/report.test.ts) — happy path, defaults for `cost` and `allCampaigns`, missing-field rejection (`userId`), invalid platform literal (`tiktok_ads`), non-integer cost rejection, Timestamp normalization. `ReportTypeSchema` regression test: rejects the legacy `facebook_ads` value (paranoia after the Phase B migration).
+  - [src/schemas/adAccount.test.ts](../src/schemas/adAccount.test.ts) — happy path, optional fields (`email/timezone/lastSyncAt`), missing-`currency` regression test (was added in C6.1), invalid platform, Timestamp normalization on multiple date fields.
+  - [src/schemas/campaign.test.ts](../src/schemas/campaign.test.ts) — Google + Meta variants (covering the optional `objective` field), permissive status string accepting upstream values (`enabled/paused/removed/archived/with_issues`), all-optional metric fields, negative-metric rejection.
+  - [src/schemas/userWallet.test.ts](../src/schemas/userWallet.test.ts) — non-integer / negative-balance rejection, non-`BRL` currency rejection (literal enforcement), Timestamp normalization.
+  - [src/schemas/transaction.test.ts](../src/schemas/transaction.test.ts) — minimal valid transaction, admin-credit variant (admin metadata), SuitPay PIX variant (payer metadata + `completedAt`), debit with `reportId`, all required-field and enum validations.
+- **Test counts:** 78 total (was 31), all passing. Run with `bun run test`.
+
+Verification: `bun run test` ✓ (78/78), `bun run typecheck` ✓, `bun run build` ✓.
+
+This closes Phase C entirely. Phase D (move schemas to `packages/shared`) and Phase E (tooling — `docs-lint`, ADR, lefthook step) remain.
+
+---
+
 ## [2026-04-26] — Refactor Phase C6.5: `ReportTemplate` is dead code
 
 Sixth and final commit of Phase C6. Mapping revealed that the `reportTemplates/{id}` Firestore collection — referenced in [firestore.rules:88-91](../firestore.rules), [DATA-MODEL.md](DATA-MODEL.md), and the `ReportTemplate` interface in [src/types/index.ts](../src/types/index.ts) — has **zero readers and zero writers across the entire codebase**. Templates are served from a hardcoded array (`availableTemplates`) in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts), with a wholly different shape (`TemplateData` — `id, platform, category, type, imageUrl, features`; no `name/description/lookerStudioTemplateId/isActive/createdAt`).
