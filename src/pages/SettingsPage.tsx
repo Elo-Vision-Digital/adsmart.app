@@ -4,7 +4,7 @@ import {
   sendEmailVerification,
   updatePassword,
 } from 'firebase/auth'
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import {
   AlertCircle,
   Check,
@@ -116,24 +116,13 @@ export function SettingsPage() {
         )
       }
 
-      // firestore.rules require createdAt == request.time on create and an
-      // unchanged createdAt on update — so we have to know which path we're
-      // on. Read-first; on first write we add a server-side createdAt, on
-      // subsequent writes we omit it so the merge preserves the stored value.
-      const userRef = doc(db, 'users', user.uid)
-      const existing = await getDoc(userRef)
-      const seedFields = existing.exists() ? {} : { createdAt: serverTimestamp() }
-
-      await setDoc(
-        userRef,
-        {
-          ...profile,
-          email: user.email,
-          updatedAt: serverTimestamp(),
-          ...seedFields,
-        },
-        { merge: true }
-      )
+      // The doc is always seeded by the bootstrapUser Auth blocking trigger
+      // (see ADR-010) — updateDoc preserves email/createdAt as required by
+      // firestore.rules /users/{userId}.
+      await updateDoc(doc(db, 'users', user.uid), {
+        ...profile,
+        updatedAt: serverTimestamp(),
+      })
 
       setSaveMessage(t('settingsPage.messages.profileUpdated'))
       setTimeout(() => setSaveMessage(''), 3000)

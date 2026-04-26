@@ -58,8 +58,9 @@ export { deleteUserData } from './deleteUserData'
 // ✅ NOVO: Exportar função de gestão de saldo para admins
 export { addUserCredits } from './adminWalletManager'
 
-// Auth blocking trigger that seeds users/{uid}/wallet/current with balance:0
-// at signup time (Phase 3 rules forbid client-side wallet writes).
-export { bootstrapUserWallet } from './bootstrapUserWallet'
+// Auth blocking trigger that seeds users/{uid} (profile) and
+// users/{uid}/wallet/current (balance: 0) at signup time. Phase 3
+// firestore.rules forbid client-side writes to either path.
+export { bootstrapUser } from './bootstrapUser'
 
 console.log('🚀 Funções exportadas do index.ts')
