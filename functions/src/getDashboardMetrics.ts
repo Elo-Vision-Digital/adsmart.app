@@ -35,18 +35,23 @@ function dayKey(date: Date): string {
 }
 
 function enumerateDays(startISO: string, endISO: string): string[] {
-  const start = new Date(startISO)
-  const end = new Date(endISO)
+  const startKey = dayKey(new Date(startISO))
+  const endKey = dayKey(new Date(endISO))
   const days: string[] = []
-  const cursor = new Date(start)
-  while (cursor.getTime() <= end.getTime()) {
-    days.push(dayKey(cursor))
-    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  let cursor = startKey
+  let safety = 0
+  while (cursor <= endKey && safety < 400) {
+    days.push(cursor)
+    // Advance one calendar day in BRT-key space.
+    const [y, m, d] = cursor.split('-').map((s) => Number.parseInt(s, 10))
+    const next = new Date(Date.UTC(y, m - 1, d + 1, 12, 0, 0))
+    cursor = dayKey(next)
+    safety += 1
   }
-  return Array.from(new Set(days))
+  return days
 }
 
-export const getDashboardMetrics = onCall(async (request) => {
+export const getDashboardMetrics = onCall({ memory: '512MiB' }, async (request) => {
   assertAdmin(request.auth)
 
   const parsed = GetDashboardMetricsInputSchema.safeParse(request.data)
@@ -58,38 +63,85 @@ export const getDashboardMetrics = onCall(async (request) => {
   const endTs = admin.firestore.Timestamp.fromDate(new Date(endDate))
   const db = admin.firestore()
 
-  // 1. Total credits (real + granted) — single aggregate
-  const allCreditsTotal = await db
-    .collectionGroup('transactions')
-    .where('type', '==', 'credit')
-    .where('status', '==', 'completed')
-    .where('createdAt', '>=', startTs)
-    .where('createdAt', '<=', endTs)
-    .aggregate({ totalCents: admin.firestore.AggregateField.sum('amount') })
-    .get()
-  const totalCents = allCreditsTotal.data().totalCents ?? 0
+  // Run the 7 independent reads in parallel. Aggregates and materialized snapshots
+  // are not transactional with each other; in-flight writes can introduce a small
+  // drift (≤ ε) between card totals (aggregates) and sparkline sums (materialized).
+  // The Math.max(0, ...) floors guard against transient negative residuals.
+  const [
+    allCreditsTotal,
+    grantedTotal,
+    txSnap,
+    usersInRangeSnap,
+    totalUsersAgg,
+    activeTxSnap,
+    adAccountsSnap,
+  ] = await Promise.all([
+    // 1. Total credits (real + granted) — single aggregate
+    db
+      .collectionGroup('transactions')
+      .where('type', '==', 'credit')
+      .where('status', '==', 'completed')
+      .where('createdAt', '>=', startTs)
+      .where('createdAt', '<=', endTs)
+      .aggregate({ totalCents: admin.firestore.AggregateField.sum('amount') })
+      .get(),
+    // 2. Granted credits aggregate (adminAction == true)
+    db
+      .collectionGroup('transactions')
+      .where('type', '==', 'credit')
+      .where('status', '==', 'completed')
+      .where('adminAction', '==', true)
+      .where('createdAt', '>=', startTs)
+      .where('createdAt', '<=', endTs)
+      .aggregate({ creditsCents: admin.firestore.AggregateField.sum('amount') })
+      .get(),
+    // 3. Materialized read of credits-in-range for sparkline split (real vs credits per day).
+    //    Project only the fields needed; drop description/payerName/payerCpf/etc.
+    db
+      .collectionGroup('transactions')
+      .where('type', '==', 'credit')
+      .where('status', '==', 'completed')
+      .where('createdAt', '>=', startTs)
+      .where('createdAt', '<=', endTs)
+      .select('amount', 'adminAction', 'createdAt', 'type', 'status')
+      .get(),
+    // 4. Users created in range — full snapshot drives both newCount + sparkline
+    db
+      .collection('users')
+      .where('createdAt', '>=', startTs)
+      .where('createdAt', '<=', endTs)
+      .select('createdAt')
+      .get(),
+    // 5. Total users (snapshot)
+    db
+      .collection('users')
+      .aggregate({ totalCount: admin.firestore.AggregateField.count() })
+      .get(),
+    // 6. Active users — distinct uid in transactions in range (only need parent ref)
+    db
+      .collectionGroup('transactions')
+      .where('createdAt', '>=', startTs)
+      .where('createdAt', '<=', endTs)
+      .select('amount', 'adminAction', 'createdAt', 'type', 'status')
+      .get(),
+    // 7. Integrations — distinct active users per platform (snapshot, range-independent)
+    db
+      .collectionGroup('adAccounts')
+      .where('isActive', '==', true)
+      .select('platform', 'isActive')
+      .get(),
+  ])
 
-  // 2. Granted credits aggregate (adminAction == true)
-  const grantedTotal = await db
-    .collectionGroup('transactions')
-    .where('type', '==', 'credit')
-    .where('status', '==', 'completed')
-    .where('adminAction', '==', true)
-    .where('createdAt', '>=', startTs)
-    .where('createdAt', '<=', endTs)
-    .aggregate({ creditsCents: admin.firestore.AggregateField.sum('amount') })
-    .get()
+  // Revenue totals.
+  // `adminAction` is set ONLY when an admin manually credits a wallet via
+  // adminWalletManager. Default credit flows (PIX, Asaas, etc) omit the field,
+  // so totalCents - grantedCents == realCents (revenue). A Math.max(0, ...) floor
+  // protects against the rare race where the granted aggregate observed a write
+  // the totals aggregate did not (or vice-versa).
+  const totalCents = allCreditsTotal.data().totalCents ?? 0
   const creditsCents = grantedTotal.data().creditsCents ?? 0
   const realCents = Math.max(0, totalCents - creditsCents)
 
-  // 3. Materialized read of credits-in-range for sparkline split (real vs credits per day)
-  const txSnap = await db
-    .collectionGroup('transactions')
-    .where('type', '==', 'credit')
-    .where('status', '==', 'completed')
-    .where('createdAt', '>=', startTs)
-    .where('createdAt', '<=', endTs)
-    .get()
   const revenueByDay = new Map<string, { realCents: number; creditsCents: number }>()
   for (const doc of txSnap.docs) {
     const d = doc.data() as {
@@ -105,12 +157,7 @@ export const getDashboardMetrics = onCall(async (request) => {
     revenueByDay.set(key, bucket)
   }
 
-  // 4. Users — newCount aggregate + sparkline
-  const usersInRangeSnap = await db
-    .collection('users')
-    .where('createdAt', '>=', startTs)
-    .where('createdAt', '<=', endTs)
-    .get()
+  // Users — newCount + per-day sparkline
   const newCount = usersInRangeSnap.size
   const newByDay = new Map<string, number>()
   for (const doc of usersInRangeSnap.docs) {
@@ -120,31 +167,17 @@ export const getDashboardMetrics = onCall(async (request) => {
     newByDay.set(key, (newByDay.get(key) ?? 0) + 1)
   }
 
-  // 5. Total users (snapshot)
-  const totalUsersAgg = await db
-    .collection('users')
-    .aggregate({ totalCount: admin.firestore.AggregateField.count() })
-    .get()
   const totalCount = totalUsersAgg.data().totalCount ?? 0
 
-  // 6. Active users (distinct uid in transactions in range)
+  // Active users (distinct uid in transactions in range)
   const activeUids = new Set<string>()
-  const activeTxSnap = await db
-    .collectionGroup('transactions')
-    .where('createdAt', '>=', startTs)
-    .where('createdAt', '<=', endTs)
-    .get()
   for (const doc of activeTxSnap.docs) {
     const uid = doc.ref.parent.parent?.id
     if (uid) activeUids.add(uid)
   }
   const activeCount = activeUids.size
 
-  // 7. Integrations — distinct active users per platform (snapshot, range-independent)
-  const adAccountsSnap = await db
-    .collectionGroup('adAccounts')
-    .where('isActive', '==', true)
-    .get()
+  // Integrations
   const platformUserSets = new Map<'google_ads' | 'meta_ads', Set<string>>()
   for (const doc of adAccountsSnap.docs) {
     const d = doc.data() as { platform?: 'google_ads' | 'meta_ads' }
@@ -169,9 +202,9 @@ export const getDashboardMetrics = onCall(async (request) => {
   })
   const usersSparkline = allDays.map((date) => ({ date, newCount: newByDay.get(date) ?? 0 }))
 
-  const days = Math.round(
-    (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000
-  )
+  // Derive `days` from the sparkline length so the card count is always
+  // consistent with the chart (n days inclusive ⇒ n-1 day deltas).
+  const days = Math.max(0, allDays.length - 1)
 
   const out: GetDashboardMetricsOutput = {
     range: { startDate, endDate, days },

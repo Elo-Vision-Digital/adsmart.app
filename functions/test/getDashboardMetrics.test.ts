@@ -1,11 +1,12 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import functionsTest from 'firebase-functions-test'
 
-const testEnv = functionsTest()
+// Hoisted to module scope so it is set BEFORE functionsTest() initializes its
+// internal Firebase app — initializing without a project ID can leave the test
+// env unable to wrap callables consistently.
+process.env.GCLOUD_PROJECT = 'adsmart-test'
 
-beforeAll(() => {
-  process.env.GCLOUD_PROJECT = 'adsmart-test'
-})
+const testEnv = functionsTest()
 
 const validInput = {
   startDate: '2026-04-01T00:00:00.000Z',
