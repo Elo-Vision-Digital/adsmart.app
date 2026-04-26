@@ -10,6 +10,28 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Refactor Phase D5: Functions validate writes via `@adsmart/shared`
+
+Second slice of Phase D — wires Cloud Functions to the shared schemas and validates write payloads at the Firestore boundary.
+
+- **Dependencies:** [functions/package.json](../functions/package.json) gains `@adsmart/shared: workspace:*` and `zod: ^4.3.6`. The symlink resolved cleanly at `functions/node_modules/@adsmart/shared`.
+- **CJS ↔ ESM interop confirmed.** Functions builds with `module: "commonjs"` and `target: "es2017"`; `@adsmart/shared` is `type: "module"` exporting TS source. The CJS `require()` of an ESM workspace package works under the `bun install` resolution path because TS sees the source files directly through the symlink (`module: "esnext"` + `moduleResolution: "node"` resolves the index types). Build + typecheck both green.
+- **`Schema.omit(...).parse(...)` pattern adopted** at all server-side write sites where a schema exists. The `omit` is necessary because `admin.firestore.FieldValue.serverTimestamp()` is a sentinel — not a Date or Timestamp — and the schema's `zTimestamp()` would reject it. The pattern: omit the temporal fields from the parse, then spread the validated payload into the final `set()` together with the sentinels.
+- **Hardened sites:**
+  - [functions/src/adminWalletManager.ts](../functions/src/adminWalletManager.ts) — `TransactionSchema` (admin-credit ledger entry) + `UserWalletSchema` (balance update). Local `interface Transaction` removed (became unused).
+  - [functions/src/googleAdsOAuth.ts](../functions/src/googleAdsOAuth.ts) — `CampaignSchema` (Google Ads campaign cache after OAuth fetch).
+  - [functions/src/metaAdsOAuth.ts](../functions/src/metaAdsOAuth.ts) — `CampaignSchema` (Meta Ads campaign cache, with the optional `objective` field).
+  - [functions/src/googleAdsOAuthV2.ts](../functions/src/googleAdsOAuthV2.ts) — `AdAccountSchema` (account selection callback).
+  - [functions/src/metaAdsOAuthV2.ts](../functions/src/metaAdsOAuthV2.ts) — `AdAccountSchema` (account selection callback).
+- **Reports skipped: no Function-side write exists.** Reports are currently created from the browser via [GenerateReportPage.tsx](../src/pages/GenerateReportPage.tsx); the planned server-side report-generation pipeline isn't built yet. When it lands, the parse pattern slots in directly.
+- **SuitPay skipped intentionally.** [memory/suitpay_deprecated.md](../.claude/projects/-Users-eduardorodrigues-Downloads-Meus-Projetos-adsmart-app/memory/suitpay_deprecated.md) — Asaas migration is on the roadmap; hardening these flows is work that will be discarded. The two SuitPay files ([suitpayWebhook.ts](../functions/src/suitpayWebhook.ts), [suitpayPayment.ts](../functions/src/suitpayPayment.ts)) remain as-is.
+
+Verification: `cd functions && bun run typecheck` ✓, `bun run build` ✓; `bun run test` (web) ✓ (38/38), `cd packages/shared && bun run test` ✓ (40/40). Functions test suite has pre-existing failures unrelated to this change (Firestore emulator not running) — confirmed by stashing this change and re-running: same 22-failed/6-passed/16-skipped baseline as before D5.
+
+D6 (Turbo task graph) remains, then Phase D closes.
+
+---
+
 ## [2026-04-26] — Refactor Phase D1–D4: schemas moved to `@adsmart/shared`
 
 First slice of Phase D from [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Establishes the shared workspace package and migrates web consumers; functions integration (D5) and Turbo wiring (D6) ship in subsequent commits.

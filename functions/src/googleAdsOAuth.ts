@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
+import { CampaignSchema } from '@adsmart/shared'
 import { googleAdsClientSecret } from './config'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
@@ -212,7 +213,7 @@ export const getGoogleAdsCampaigns = onCall({ secrets: [googleAdsClientSecret] }
         .collection('campaigns')
         .doc(`google_ads_${campaign.id}`)
 
-      batch.set(campaignRef, {
+      const validated = CampaignSchema.omit({ id: true, lastSyncAt: true }).parse({
         accountId,
         platform: 'google_ads',
         campaignId: campaign.id.toString(),
@@ -222,7 +223,11 @@ export const getGoogleAdsCampaigns = onCall({ secrets: [googleAdsClientSecret] }
         spend: campaign.spend || 0,
         impressions: campaign.impressions || 0,
         clicks: campaign.clicks || 0,
-        lastSyncAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+
+      batch.set(campaignRef, {
+        ...validated,
+        lastSyncAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true })
     }
 

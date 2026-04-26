@@ -55,12 +55,14 @@
     "functions": {
       "name": "@adsmart/functions",
       "dependencies": {
+        "@adsmart/shared": "workspace:*",
         "axios": "1.10.0",
         "firebase-admin": "12.7.0",
         "firebase-functions": "6.4.0",
         "google-auth-library": "^9.14.2",
         "googleapis": "^118.0.0",
         "qrcode.react": "4.2.0",
+        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@firebase/rules-unit-testing": "5.0.0",

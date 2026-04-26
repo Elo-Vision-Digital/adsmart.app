@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
+import { TransactionSchema, UserWalletSchema } from '@adsmart/shared'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -22,22 +23,9 @@ const SECURITY_CONFIG = {
   MIN_REASON_LENGTH: 10
 }
 
-// Interface para transação
-interface Transaction {
-  type: 'credit' | 'debit'
-  amount: number // em centavos
-  description: string
-  status: 'pending' | 'completed' | 'failed'
-  createdAt: admin.firestore.Timestamp
-  adminAction?: boolean
-  adminEmail?: string
-  adminReason?: string
-  adminIP?: string
-}
-
-// Interface para wallet
+// Local Wallet type (read shape) — written shape now validated via UserWalletSchema.
 interface Wallet {
-  balance: number // em centavos
+  balance: number
   currency: 'BRL'
   updatedAt: admin.firestore.Timestamp
 }
@@ -261,8 +249,8 @@ export const addUserCredits = onCall(async (request) => {
       // Calcular novo saldo
       const newBalance = currentBalance + amount
 
-      // Criar nova transação de crédito
-      const newTransaction: Transaction = {
+      // Criar nova transação de crédito (validada via @adsmart/shared)
+      const newTransaction = TransactionSchema.omit({ id: true }).parse({
         type: 'credit',
         amount: amount,
         description: `Créditos adicionados pelo administrador ${adminEmail}. Motivo: ${reason}`,
@@ -272,16 +260,15 @@ export const addUserCredits = onCall(async (request) => {
         adminEmail: adminEmail,
         adminReason: reason,
         adminIP: request.rawRequest.ip
-      }
+      })
 
-      // Atualizar wallet
-      const updatedWallet: Wallet = {
+      // Atualizar wallet (validada via @adsmart/shared)
+      const updatedWallet = UserWalletSchema.omit({ id: true }).parse({
         balance: newBalance,
         currency: 'BRL',
         updatedAt: timestamp
-      }
+      })
 
-      // Executar operações
       transaction.set(walletRef, updatedWallet, { merge: true })
       transaction.set(transactionsRef.doc(), newTransaction)
     })

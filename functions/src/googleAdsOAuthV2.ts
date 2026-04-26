@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
+import { AdAccountSchema } from '@adsmart/shared'
 import { googleAdsClientSecret } from './config'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
@@ -369,7 +370,12 @@ export const confirmGoogleAdsAccountSelection = onCall({ secrets: [googleAdsClie
         .collection('adAccounts')
         .doc(`google_ads_${account.customerId}`)
 
-      batch.set(accountRef, {
+      const validated = AdAccountSchema.omit({
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        lastSyncAt: true,
+      }).parse({
         platform: 'google_ads',
         accountId: account.customerId,
         accountName: account.descriptiveName,
@@ -377,6 +383,10 @@ export const confirmGoogleAdsAccountSelection = onCall({ secrets: [googleAdsClie
         currency: account.currencyCode,
         timezone: account.timeZone,
         isActive: true,
+      })
+
+      batch.set(accountRef, {
+        ...validated,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         lastSyncAt: admin.firestore.FieldValue.serverTimestamp()
