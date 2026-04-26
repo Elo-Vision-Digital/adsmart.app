@@ -15,13 +15,19 @@ import { useAuth } from '@/contexts/AuthContext'
 import { db } from '@/firebase/config'
 import { zodConverter } from '@/schemas/firestore-converter'
 
+const EMPTY_WALLET: UserWallet = {
+  id: 'current',
+  balance: 0,
+  currency: 'BRL',
+  updatedAt: new Date(0),
+}
+
 export function useWallet() {
   const { user } = useAuth()
   const [wallet, setWallet] = useState<UserWallet | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Observar saldo da carteira
   useEffect(() => {
     if (!user) {
       setWallet(null)
@@ -33,19 +39,11 @@ export function useWallet() {
       zodConverter(UserWalletSchema, 'UserWallet')
     )
 
-    const unsubscribe = onSnapshot(walletRef, async (snap) => {
-      if (snap.exists()) {
-        setWallet(snap.data())
-      } else {
-        const newWallet: UserWallet = {
-          id: 'current',
-          balance: 0,
-          currency: 'BRL',
-          updatedAt: new Date(),
-        }
-        await setDoc(walletRef, newWallet)
-        setWallet(newWallet)
-      }
+    const unsubscribe = onSnapshot(walletRef, (snap) => {
+      // Doc is seeded server-side by the bootstrapUserWallet Auth trigger.
+      // Until it materializes (or for legacy users who pre-date the trigger),
+      // surface a virtual balance:0 wallet — never write from the client.
+      setWallet(snap.exists() ? snap.data() : EMPTY_WALLET)
       setLoading(false)
     })
 
