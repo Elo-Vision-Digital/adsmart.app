@@ -10,6 +10,22 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Admin panel IA refactor (Subprojeto 1)
+
+Single-page tabbed `AdminPanel.tsx` (569 lines) replaced by nested routes under a shared `AdminLayout`. Same Cloud Function calls, same UI behavior — IA prep for the four follow-up admin features (dashboard, users, wallet ops, logs UX).
+
+- **`/admin` → nested routes.** [src/App.tsx](../src/App.tsx) declares a parent `<Route path="/admin">` guarded by `AdminRoute` once at the parent level. Children: `index → Navigate to="security"`, `security`, `prices`, `wallet`. Bookmarks at `/admin` keep working via the redirect.
+- **Per-page extraction.** New [src/pages/admin/AdminLayout.tsx](../src/pages/admin/AdminLayout.tsx) owns the page title, the `NavLink`-based sub-nav, and `<Outlet />`. New [SecurityLogsPage](../src/pages/admin/SecurityLogsPage.tsx), [PricesConfigPage](../src/pages/admin/PricesConfigPage.tsx), [WalletAdminPage](../src/pages/admin/WalletAdminPage.tsx) each own their own state + Firebase callable. Old `AdminPanel.tsx` deleted (`grep` confirmed zero remaining importers).
+- **i18n `admin.*` namespace landed in pt-BR/en/es** with a typed [src/locales/types.ts](../src/locales/types.ts) `Admin` interface. Ten sub-page keys + nav + per-page sub-namespaces + shared messages.
+- **Cleanup.** The "Debug Info" block (email/UID/provider/displayName) and verbose `console.log('🔍 === DEBUG SECURITY STATS ===')` lines that were diagnostic for Subprojeto 0's CORS/404 incident are removed. `console.error` in catch handlers stays — that's the project convention for failed callables.
+- **Test coverage.** New `src/pages/admin/AdminLayout.test.tsx` (3 cases) covers the NavLink hrefs, the `<Outlet />` rendering, and the active `aria-current="page"` attribute. Behaviour-preserving extracts (`SecurityLogsPage`, `PricesConfigPage`, `WalletAdminPage`) are not unit-tested — the underlying functions weren't tested before either, and typecheck plus manual smoke covers the regression surface.
+- **Known follow-up.** Biome flags two `useExhaustiveDependencies` warnings on the new pages' `useEffect(() => { void load() }, [])` patterns. Same pattern existed in the old `AdminPanel.tsx`. Suppression comments via `// biome-ignore` aren't being honoured by Biome 2.x in that position; the warnings are non-blocking and will be addressed by a small refactor (move `load` body inline into the effect, or `useCallback` it) in a follow-up commit.
+- **No new dependencies, no functions changes, no DB changes.**
+
+Commits: `fbea827` (i18n foundation), `da61594` (AdminLayout), `e264aec` (SecurityLogsPage), `1551a64` (PricesConfigPage + WalletAdminPage), `8980070` (route surgery + delete AdminPanel.tsx).
+
+---
+
 ## [2026-04-26] — Production reconciled (Subprojeto 0.5 of admin-panel overhaul)
 
 Sanity diff at end of Subprojeto 0 surfaced that `adsmart-web` (production) was missing two functions present in source: `bootstrapUser` (the ADR-010 auth blocking trigger) and `reserveUserDocument` (the ADR-012 CPF/CNPJ uniqueness callable). Neither had ever been deployed to prod, meaning two security/correctness invariants documented in source were not actually in force in production. Reconciliation landed in two passes.
