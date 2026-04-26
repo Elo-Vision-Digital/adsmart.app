@@ -15,7 +15,7 @@ Firestore database for project `adsmart-app`. All monetary values are in **BRL c
 | `campaigns/{id}` | _Dead code_ — see note below | n/a |
 | `reports/{id}` | Generated report records | Owner only |
 | `productPrices/{id}` | Product pricing config | Authenticated read; Function write |
-| `reportTemplates/{id}` | Looker Studio template configs | Authenticated read; Admin SDK write |
+| `reportTemplates/{id}` | _Dead code_ — see note below | n/a |
 | `systemConfig/{id}` | Global system settings | Authenticated read; Admin SDK write |
 | `activityLogs/{id}` | Immutable audit trail | Owner read; Owner create only |
 | `rateLimits/{userId}` | Rate-limit counters | Owner read; Admin SDK write only |
@@ -200,7 +200,7 @@ Cleanup (rule + DATA-MODEL entry + backup config) is tracked as a follow-up to P
 {
   userId: string,
   type: "google_ads" | "meta_ads",
-  templateId: string,                 // FK → reportTemplates/{id}
+  templateId: string,                 // FK → templateData.ts (hardcoded array, NOT Firestore)
   name: string,
   status: "pending" | "processing" | "completed" | "failed",
   campaignIds?: string[],
@@ -242,6 +242,14 @@ Managed by `priceManager` functions. Document ID matches product type.
 ```
 
 Known IDs: `google_lancamento`, `google_negocio_local`, `meta_lancamento`, `meta_negocio_local`.
+
+---
+
+## reportTemplates/{id} _(dead code — pending removal)_
+
+A `reportTemplates/{id}` collection is defined in [firestore.rules:88-91](../firestore.rules) (authenticated read, Admin SDK write) and was originally intended to hold Looker Studio template configs. **No application code reads or writes this collection** — templates are served from a hardcoded array (`availableTemplates`) in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts), with a wholly different shape (`TemplateData` — `id, platform, category, type, imageUrl, features`; no `name/description/lookerStudioTemplateId/isActive/createdAt`).
+
+The unused `ReportTemplate` TypeScript interface was removed from `src/types/index.ts` in C6.5 (zero consumers). Cleanup of the firestore.rules entry is grouped with the top-level `campaigns/{id}` cleanup as a follow-up to Phase D, pending production-data verification via `gcloud firestore`.
 
 ---
 

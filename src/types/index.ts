@@ -21,14 +21,7 @@ export type { Transaction } from '@/schemas/transaction'
 // Source of truth: src/schemas/userWallet.ts (Zod schema).
 export type { UserWallet } from '@/schemas/userWallet'
 
-export interface ReportTemplate {
-  id: string
-  name: string
-  platform: 'google_ads' | 'meta_ads'
-  lookerStudioTemplateId: string
-  description: string
-  previewImageUrl?: string
-  features: string[] // Lista de features do template
-  isActive: boolean
-  createdAt: Date
-}
+// `ReportTemplate` interface removed in C6.5 — the `reportTemplates/{id}`
+// Firestore collection had zero readers/writers in app code; templates are
+// served from a hardcoded array in src/components/templates/templateData.ts.
+// See docs/DATA-MODEL.md for the dead-code note and the post-Phase-D cleanup task.

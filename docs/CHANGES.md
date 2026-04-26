@@ -10,6 +10,25 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Refactor Phase C6.5: `ReportTemplate` is dead code
+
+Sixth and final commit of Phase C6. Mapping revealed that the `reportTemplates/{id}` Firestore collection — referenced in [firestore.rules:88-91](../firestore.rules), [DATA-MODEL.md](DATA-MODEL.md), and the `ReportTemplate` interface in [src/types/index.ts](../src/types/index.ts) — has **zero readers and zero writers across the entire codebase**. Templates are served from a hardcoded array (`availableTemplates`) in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts), with a wholly different shape (`TemplateData` — `id, platform, category, type, imageUrl, features`; no `name/description/lookerStudioTemplateId/isActive/createdAt`).
+
+Same dead-code class as the top-level `campaigns/{id}` collection identified in C6.2: a feature planned but never built, with the design pivoting to a hardcoded list. No Zod schema is being created (a schema validates live data; an empty collection with no consumers would rot immediately).
+
+- **[src/types/index.ts](../src/types/index.ts):** the unused `interface ReportTemplate` has been removed entirely (zero consumers). A short comment replaces it pointing to this CHANGES entry and the dead-code note in DATA-MODEL.
+- **[docs/DATA-MODEL.md](DATA-MODEL.md):**
+  - Collection index entry for `reportTemplates/{id}` retitled to `_Dead code_ — see note below`.
+  - Schema section rewritten as a `_(dead code — pending removal)_` block, mirroring the format used for top-level `campaigns/{id}`.
+  - In the `reports/{reportId}` section, the FK comment for `templateId` was corrected: it points to the hardcoded `templateData.ts` array, **not** to a Firestore collection.
+- **firestore.rules and backupScheduler:** intentionally untouched. Cleanup of all dead-code collections (`campaigns/{id}` from C6.2 + `reportTemplates/{id}` from C6.5) is grouped as a single follow-up task post-Phase D, pending production-data verification via `gcloud firestore`.
+
+Verification: `bun run typecheck` ✓, `bun run build` ✓ (no regression — the removed interface had no consumers).
+
+This closes Phase C6. Phase C7 (Vitest tests for the schemas) and Phase D (move schemas to `packages/shared`) are next.
+
+---
+
 ## [2026-04-26] — Refactor Phase C6.4: Zod schema for `transactions`
 
 Fifth commit of Phase C6. Migrates the `users/{uid}/transactions/{id}` subcollection (the prepaid-wallet ledger) to the Zod-driven `FirestoreDataConverter` foundation.
