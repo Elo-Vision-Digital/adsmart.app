@@ -72,21 +72,36 @@ Note: ownership is encoded in the path (`users/{uid}/...`); no `userId` field is
 
 ## users/{uid}/transactions/{txId}
 
-Append-only ledger. Written only by Cloud Functions.
+Append-only ledger. Written only by Cloud Functions (client writes are blocked by [firestore.rules](../firestore.rules) — the subcollection rule excludes `transactions`).
 
 ```
 {
   type: "credit" | "debit",
-  amount: number,           // BRL centavos, positive
+  amount: number,           // BRL centavos, integer >= 0
   description: string,
   status: "pending" | "completed" | "failed",
   createdAt: Timestamp,
+  completedAt?: Timestamp,  // set by SuitPay flows when status flips to 'completed'
+
+  // Cross-references (optional; mutually exclusive in practice but not enforced)
+  reportId?: string,        // debit for a generated report
+  paymentId?: string,       // PIX credit (deprecated SuitPay)
+
+  // Admin metadata — set only by adminWalletManager.addUserCredits
   adminAction?: boolean,
   adminEmail?: string,
   adminReason?: string,
-  adminIP?: string
+  adminIP?: string,
+
+  // SuitPay PIX payer metadata — deprecated, removed when Asaas migration lands
+  payerName?: string,
+  payerCpf?: string         // CPF is masked: first 3 digits + "***"
 }
 ```
+
+Source of truth: [src/schemas/transaction.ts](../src/schemas/transaction.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). `Transaction`, `TransactionType`, `TransactionStatus` types are derived via `z.infer` and reexported from `src/types/index.ts`.
+
+Note: ownership is encoded in the path; no `userId` field is stored on the doc.
 
 ---
 

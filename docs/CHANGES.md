@@ -10,6 +10,30 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Refactor Phase C6.4: Zod schema for `transactions`
+
+Fifth commit of Phase C6. Migrates the `users/{uid}/transactions/{id}` subcollection (the prepaid-wallet ledger) to the Zod-driven `FirestoreDataConverter` foundation.
+
+- **New module:** [src/schemas/transaction.ts](../src/schemas/transaction.ts) — `TransactionSchema`, `TransactionTypeSchema` (`'credit' | 'debit'`), `TransactionStatusSchema` (`'pending' | 'completed' | 'failed'`), plus `z.infer`-derived types.
+- **Schema vs prior interface — drift corrected:**
+  - `userId` **dropped**. Path encodes ownership; none of the four writers ever set it. Same drift class as `AdAccount` (C6.1) and `UserWallet` (C6.3).
+  - `reference?` (a generic optional cross-ref) **dropped — never written**. Replaced with two semantic optionals: `reportId?` (set by [useWallet.debitAmount](../src/hooks/useWallet.ts) when a debit pays for a generated report) and `paymentId?` (set by [suitpayWebhook.ts](../functions/src/suitpayWebhook.ts) and [suitpayPayment.ts](../functions/src/suitpayPayment.ts) for PIX credits).
+  - `amount` **tightened to `z.number().int().nonnegative()`** (DATA-MODEL declared "BRL centavos integer >= 0"; the prior interface accepted floats and negatives).
+  - `createdAt` **migrated to `zTimestamp()`**. The four writers use a mix of `new Date()`, `admin.firestore.Timestamp.now()`, and `serverTimestamp()`; reads always come back as `Timestamp` and are normalized to `Date`.
+  - `completedAt` **added** as `zTimestamp().optional()` — written by both SuitPay flows when a `pending` transaction flips to `completed`.
+  - **Admin metadata added** as optionals: `adminAction`, `adminEmail`, `adminReason`, `adminIP` — written by [adminWalletManager.ts](../functions/src/adminWalletManager.ts) when an admin manually credits a user.
+  - **SuitPay payer metadata added** as optionals: `payerName`, `payerCpf` (CPF is partially masked at the source — first 3 digits + `***`). Deprecated; will be removed when Asaas replaces SuitPay.
+- **`src/types/index.ts`:** the hand-written `Transaction` interface is gone; the file reexports the schema-derived type.
+- **Consumer refactored** to use `.withConverter(zodConverter(TransactionSchema, 'Transaction'))`:
+  - [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) — local `interface Transaction` removed; the real-time observer at line 64 wrapped with the converter.
+- **Dead client-write paths flagged** but not removed: [useWallet.addCredits](../src/hooks/useWallet.ts) and [useWallet.debitAmount](../src/hooks/useWallet.ts) write transactions via the client SDK, but [firestore.rules:39-45](../firestore.rules) (Phase 3 baseline) blocks client writes to the `transactions` subcollection. Both `addDoc` calls are now annotated with `Omit<Transaction, 'id'>` for type safety and tagged with a `NOTE` comment. Migrating these flows to a callable function is tracked as a follow-up — out of scope for the schema commit.
+- **Deferred UI cleanup:** [TransactionsPage.tsx:107-153](../src/pages/TransactionsPage.tsx) has defensive `createdAt` parsing (`Date | Timestamp | { seconds }`) that can be simplified to a single `.toLocaleString()` call now that the converter normalizes to `Date`. Left untouched in this commit to keep the diff focused; tracked as a TODO in REFACTOR-PLAN.
+- **DATA-MODEL.md:** entry rewritten to reflect the full schema (cross-refs, admin metadata, SuitPay payer metadata) and to call out that client writes are blocked by Firestore rules.
+
+Verification: `bun run typecheck` ✓, `bun run build` ✓ (1.19 MB JS / 320 KB gz — no regression vs C6.3).
+
+---
+
 ## [2026-04-26] — Refactor Phase C6.3: Zod schema for `userWallet`
 
 Fourth commit of Phase C6. Migrates the `users/{uid}/wallet/current` single-document subcollection to the Zod-driven `FirestoreDataConverter` foundation.

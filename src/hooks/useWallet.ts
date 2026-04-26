@@ -12,17 +12,10 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { db } from '@/firebase/config'
 import { zodConverter } from '@/schemas/firestore-converter'
+import type { Transaction } from '@/schemas/transaction'
+import { TransactionSchema } from '@/schemas/transaction'
 import type { UserWallet } from '@/schemas/userWallet'
 import { UserWalletSchema } from '@/schemas/userWallet'
-
-interface Transaction {
-  id?: string
-  type: 'credit' | 'debit'
-  amount: number // em centavos
-  description: string
-  status: 'pending' | 'completed' | 'failed'
-  createdAt: Date
-}
 
 export function useWallet() {
   const { user } = useAuth()
@@ -65,30 +58,23 @@ export function useWallet() {
   useEffect(() => {
     if (!user) return
 
-    const transactionsRef = collection(db, 'users', user.uid, 'transactions')
+    const transactionsRef = collection(db, 'users', user.uid, 'transactions').withConverter(
+      zodConverter(TransactionSchema, 'Transaction')
+    )
     const q = query(transactionsRef, orderBy('createdAt', 'desc'), limit(50))
 
-    // Usar onSnapshot para atualizações em tempo real
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const trans = snapshot.docs.map(
-        (doc) =>
-          ({
-            id: doc.id,
-            ...doc.data(),
-          }) as Transaction
-      )
-
-      setTransactions(trans)
+      setTransactions(snapshot.docs.map((doc) => doc.data()))
     })
 
     return () => unsubscribe()
-  }, [user]) // Removido wallet das dependências
+  }, [user])
 
   // Adicionar créditos
   const addCredits = async (amount: number) => {
     if (!user) throw new Error('Usuário não autenticado')
 
-    const transaction: Transaction = {
+    const transaction: Omit<Transaction, 'id'> = {
       type: 'credit',
       amount,
       description: 'Adição de créditos',
@@ -96,7 +82,8 @@ export function useWallet() {
       createdAt: new Date(),
     }
 
-    // Adicionar transação
+    // NOTE: blocked by firestore.rules (Phase 3 — client write to `transactions`
+    // is rejected). Kept until this flow moves to a callable function.
     await addDoc(collection(db, 'users', user.uid, 'transactions'), transaction)
 
     // Atualizar saldo
@@ -122,20 +109,17 @@ export function useWallet() {
     if (!user) throw new Error('Usuário não autenticado')
     if (!wallet || wallet.balance < amount) throw new Error('Saldo insuficiente')
 
-    const transaction: any = {
+    const transaction: Omit<Transaction, 'id'> = {
       type: 'debit',
       amount,
       description,
       status: 'completed',
       createdAt: new Date(),
+      ...(reportId ? { reportId } : {}),
     }
 
-    // Só adicionar reportId se for fornecido
-    if (reportId) {
-      transaction.reportId = reportId
-    }
-
-    // Adicionar transação
+    // NOTE: blocked by firestore.rules (Phase 3 — client write to `transactions`
+    // is rejected). Kept until this flow moves to a callable function.
     await addDoc(collection(db, 'users', user.uid, 'transactions'), transaction)
 
     // Atualizar saldo
