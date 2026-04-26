@@ -1,10 +1,12 @@
 import {
   EmailAuthProvider,
+  linkWithCredential,
   reauthenticateWithCredential,
   sendEmailVerification,
   updatePassword,
 } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { httpsCallable } from 'firebase/functions'
 import {
   AlertCircle,
   Check,
@@ -23,7 +25,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { db } from '@/firebase/config'
+import { db, functions } from '@/firebase/config'
 
 interface UserProfile {
   name: string
@@ -34,7 +36,7 @@ interface UserProfile {
 }
 
 export function SettingsPage() {
-  const { user } = useAuth()
+  const { user, hasPasswordProvider } = useAuth()
   const { t, language, setLanguage } = useLanguage()
 
   // Estados do formulário de perfil
@@ -44,6 +46,10 @@ export function SettingsPage() {
     documentType: 'cpf',
     documentNumber: '',
   })
+  // True once the user has saved a CPF/CNPJ — both type and number are then
+  // immutable (enforced both client-side via disabled inputs and server-side
+  // via firestore.rules + the reserveUserDocument transaction). See ADR-012.
+  const [documentLocked, setDocumentLocked] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
@@ -78,12 +84,14 @@ export function SettingsPage() {
 
       if (docSnap.exists()) {
         const data = docSnap.data()
+        const docNumber: string = data.documentNumber || ''
         setProfile({
           name: data.name || user.displayName || '',
           phone: data.phone || '',
           documentType: data.documentType || 'cpf',
-          documentNumber: data.documentNumber || '',
+          documentNumber: docNumber ? formatDocument(docNumber, data.documentType || 'cpf') : '',
         })
+        setDocumentLocked(docNumber.trim() !== '')
       } else {
         // Se não existe, usar dados do auth
         setProfile({
@@ -92,6 +100,7 @@ export function SettingsPage() {
           documentType: 'cpf',
           documentNumber: '',
         })
+        setDocumentLocked(false)
       }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error)
@@ -109,31 +118,60 @@ export function SettingsPage() {
     try {
       if (!user) throw new Error('Usuário não autenticado')
 
-      // Validar documento
-      if (!validateDocument(profile.documentNumber, profile.documentType)) {
+      // Validar documento (apenas se ainda não locked — caso contrário o input
+      // está desabilitado e o callable nem é chamado).
+      if (!documentLocked && !validateDocument(profile.documentNumber, profile.documentType)) {
         throw new Error(
           t('common.validation.invalidDocument', { type: profile.documentType.toUpperCase() })
         )
       }
 
-      // The doc is always seeded by the bootstrapUser Auth blocking trigger
-      // (see ADR-010) — updateDoc preserves email/createdAt as required by
-      // firestore.rules /users/{userId}.
+      // CPF/CNPJ é reservado atomicamente (uniqueness + first-write) via
+      // callable. Server escreve documentType/documentNumber e firestore.rules
+      // bloqueiam alterações posteriores nesses campos (ADR-012).
+      if (!documentLocked) {
+        const reserve = httpsCallable<
+          { documentType: 'cpf' | 'cnpj'; documentNumber: string },
+          { success: true; documentNumber: string; documentType: 'cpf' | 'cnpj' }
+        >(functions, 'reserveUserDocument')
+        await reserve({
+          documentType: profile.documentType,
+          documentNumber: profile.documentNumber,
+        })
+      }
+
+      // Demais campos do perfil — doc seedado pelo bootstrapUser trigger,
+      // updateDoc preserva email/createdAt/documentType/documentNumber.
       await updateDoc(doc(db, 'users', user.uid), {
-        ...profile,
+        name: profile.name,
+        phone: profile.phone,
         updatedAt: serverTimestamp(),
       })
 
+      setDocumentLocked(true)
       setSaveMessage(t('settingsPage.messages.profileUpdated'))
       setTimeout(() => setSaveMessage(''), 3000)
     } catch (error: any) {
-      setSaveMessage(error.message || t('common.error.saveProfile'))
+      // Erros do callable chegam com .code preservado pelo HttpsError.
+      const code = error?.code as string | undefined
+      if (code === 'functions/already-exists') {
+        setSaveMessage('Este CPF/CNPJ já está cadastrado em outra conta')
+      } else if (code === 'functions/failed-precondition') {
+        setSaveMessage('Documento já cadastrado e não pode ser alterado')
+      } else if (code === 'functions/invalid-argument') {
+        setSaveMessage(error.message || 'Documento inválido')
+      } else {
+        setSaveMessage(error.message || t('common.error.saveProfile'))
+      }
     } finally {
       setSaving(false)
     }
   }
 
-  // Alterar senha
+  // Criar ou alterar senha. Para contas OAuth-only (Google/Facebook), o user
+  // ainda não tem provider 'password' anexado — usamos linkWithCredential e
+  // pulamos o currentPassword. Após o link, hasPasswordProvider vira true e
+  // o fluxo padrão de updatePassword (com reauth) passa a se aplicar.
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setPasswordLoading(true)
@@ -141,23 +179,25 @@ export function SettingsPage() {
     setPasswordError('')
 
     try {
-      if (!user || !user.email) throw new Error('Usuário não autenticado')
+      if (!user?.email) throw new Error('Usuário não autenticado')
 
-      // Validar senhas
       if (passwordForm.newPassword !== passwordForm.confirmPassword) {
         throw new Error(t('settingsPage.messages.passwordsDoNotMatch'))
       }
-
       if (passwordForm.newPassword.length < 6) {
         throw new Error(t('settingsPage.messages.passwordTooShort'))
       }
 
-      // Reautenticar usuário
-      const credential = EmailAuthProvider.credential(user.email, passwordForm.currentPassword)
-      await reauthenticateWithCredential(user, credential)
-
-      // Atualizar senha
-      await updatePassword(user, passwordForm.newPassword)
+      if (hasPasswordProvider) {
+        // Fluxo de alteração: reauth com a senha atual e atualiza.
+        const credential = EmailAuthProvider.credential(user.email, passwordForm.currentPassword)
+        await reauthenticateWithCredential(user, credential)
+        await updatePassword(user, passwordForm.newPassword)
+      } else {
+        // Fluxo de criação inicial para contas OAuth-only.
+        const credential = EmailAuthProvider.credential(user.email, passwordForm.newPassword)
+        await linkWithCredential(user, credential)
+      }
 
       setPasswordMessage(t('settingsPage.messages.passwordChanged'))
       setPasswordForm({
@@ -170,6 +210,10 @@ export function SettingsPage() {
     } catch (error: any) {
       if (error.code === 'auth/wrong-password') {
         setPasswordError(t('settingsPage.messages.currentPasswordIncorrect'))
+      } else if (error.code === 'auth/provider-already-linked') {
+        setPasswordError('Esta conta já tem senha cadastrada')
+      } else if (error.code === 'auth/credential-already-in-use') {
+        setPasswordError('Email já vinculado a outra conta')
       } else {
         setPasswordError(error.message || t('common.error.changePassword'))
       }
@@ -456,6 +500,7 @@ export function SettingsPage() {
                               setProfile({ ...profile, documentType: 'cpf', documentNumber: '' })
                             }
                             className="mr-2"
+                            disabled={documentLocked}
                           />
                           <span className="text-sm text-gray-700 dark:text-gray-300">CPF</span>
                         </label>
@@ -469,6 +514,7 @@ export function SettingsPage() {
                               setProfile({ ...profile, documentType: 'cnpj', documentNumber: '' })
                             }
                             className="mr-2"
+                            disabled={documentLocked}
                           />
                           <span className="text-sm text-gray-700 dark:text-gray-300">CNPJ</span>
                         </label>
@@ -490,14 +536,22 @@ export function SettingsPage() {
                               documentNumber: formatDocument(e.target.value, profile.documentType),
                             })
                           }
-                          className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
+                          className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary disabled:opacity-60 disabled:cursor-not-allowed"
                           placeholder={
                             profile.documentType === 'cpf' ? '000.000.000-00' : '00.000.000/0000-00'
                           }
                           maxLength={profile.documentType === 'cpf' ? 14 : 18}
                           required
+                          disabled={documentLocked}
+                          readOnly={documentLocked}
+                          aria-readonly={documentLocked}
                         />
                       </div>
+                      {documentLocked && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          O documento não pode ser alterado após o cadastro.
+                        </p>
+                      )}
                     </div>
 
                     {saveMessage && (
@@ -531,33 +585,37 @@ export function SettingsPage() {
                 </CardContent>
               </Card>
 
-              {/* Formulário de senha */}
+              {/* Formulário de senha — alterar (account email/password) ou criar (OAuth-only) */}
               <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Lock className="w-5 h-5" />
-                    {t('settingsPage.changePassword.title')}
+                    {hasPasswordProvider ? t('settingsPage.changePassword.title') : 'Criar senha'}
                   </CardTitle>
                   <CardDescription className="text-gray-600 dark:text-gray-400">
-                    {t('settingsPage.changePassword.subtitle')}
+                    {hasPasswordProvider
+                      ? t('settingsPage.changePassword.subtitle')
+                      : 'Sua conta foi criada via Google ou Facebook. Você pode adicionar uma senha para também conseguir fazer login com email.'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleChangePassword} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {t('common.form.currentPassword')}
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordForm.currentPassword}
-                        onChange={(e) =>
-                          setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
-                        }
-                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
-                        required
-                      />
-                    </div>
+                    {hasPasswordProvider && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {t('common.form.currentPassword')}
+                        </label>
+                        <input
+                          type="password"
+                          value={passwordForm.currentPassword}
+                          onChange={(e) =>
+                            setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
+                          }
+                          className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
+                          required
+                        />
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -610,8 +668,10 @@ export function SettingsPage() {
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           {t('common.general.changing')}
                         </>
-                      ) : (
+                      ) : hasPasswordProvider ? (
                         t('settingsPage.changePassword.title')
+                      ) : (
+                        'Criar senha'
                       )}
                     </Button>
                   </form>

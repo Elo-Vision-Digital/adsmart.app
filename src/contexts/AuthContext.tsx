@@ -16,6 +16,7 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   isAdmin: boolean
+  hasPasswordProvider: boolean
   signIn: (email: string, password: string) => Promise<void>
   signInWithEmail: (email: string, password: string, recaptchaToken?: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
@@ -168,10 +169,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await firebaseSignOut(auth)
   }
 
+  // True when the user can change a password via updatePassword(). False for
+  // OAuth-only accounts (Google/Facebook) — those must call linkWithCredential
+  // first to attach an email/password provider, after which this flips true.
+  const hasPasswordProvider = !!user?.providerData.some((p) => p.providerId === 'password')
+
   const value = {
     user,
     loading,
     isAdmin,
+    hasPasswordProvider,
     signIn,
     signInWithEmail,
     signUp,
