@@ -10,6 +10,21 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Refactor Phase D6: Turbo task graph for `@adsmart/shared`
+
+Closes Phase D. Wires the Turborepo task graph so cache invalidation propagates correctly across the new shared package.
+
+- **[turbo.json](../turbo.json) updates:**
+  - `typecheck` now declares `dependsOn: ['^typecheck']` — shared types are checked before consumers' typecheck.
+  - `test` now declares `dependsOn: ['^typecheck']` — runtime tests in web/functions wait for shared types to validate.
+  - `build` now also declares `^typecheck` alongside `^build` — keeps build hermetic when a schema change should propagate.
+- **No `^build` dependency added for shared.** `@adsmart/shared` has no build step (exports TS source directly via the `exports` field). Adding `^build` would create an empty circular invalidation; the typecheck dependency already covers the cache invalidation case.
+- **Verification:** `bunx turbo run typecheck` orchestrates all 3 packages successfully. `bunx turbo run test` runs web (38/38) and shared (40/40) green; functions has the pre-existing emulator-dependent failures and is unrelated to this change.
+
+This closes Phase D entirely. Phase E (tooling — `docs-lint`, ADR, lefthook step) remains.
+
+---
+
 ## [2026-04-26] — Refactor Phase D5: Functions validate writes via `@adsmart/shared`
 
 Second slice of Phase D — wires Cloud Functions to the shared schemas and validates write payloads at the Firestore boundary.
