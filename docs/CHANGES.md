@@ -10,6 +10,22 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — CPF/CNPJ uniqueness + immutability + OAuth-aware password UI (ADR-012)
+
+Three product requirements landed together: documents must be unique across users, documents must be immutable after first save, and OAuth-only accounts (Google/Facebook signups) must use a "create password" flow rather than "change password" until they have an email/password provider attached.
+
+- **Reservation callable.** New [functions/src/reserveUserDocument.ts](../functions/src/reserveUserDocument.ts) — auth-required v2 callable. Validates CPF/CNPJ check digits server-side, then runs a Firestore transaction over `userDocuments/{normalizedDoc}` + `users/{uid}`. Throws `already-exists` (different uid owns the doc), `failed-precondition` (caller already has a different doc), or `invalid-argument` (bad format). Idempotent for repeated reservations of the same number by the same caller.
+- **Uniqueness index.** New collection `userDocuments/{normalizedDoc}` where the doc ID is the digits-only normalization of the CPF/CNPJ — write conflicts on the path itself. [firestore.rules](../firestore.rules) `read: if owner via userId field` + `write: if false`. Documented in [DATA-MODEL.md](DATA-MODEL.md) as a top-level collection.
+- **Immutability rule.** [firestore.rules](../firestore.rules) `users/{userId}` update rule grew a `documentLocked()` helper that rejects any write attempting to change `documentType` or `documentNumber` after they were set to non-empty values. Defense in depth — even bypassing the callable can't mutate the user doc.
+- **SettingsPage UX.** [src/pages/SettingsPage.tsx](../src/pages/SettingsPage.tsx) tracks `documentLocked` from the Firestore snapshot. Locked state disables the CPF/CNPJ radios and the text input (`disabled + readOnly`), shows a hint line "O documento não pode ser alterado após o cadastro." `handleSaveProfile` invokes the callable only on first save; subsequent saves only update `name`/`phone`. Friendly toast mapping for `functions/already-exists` etc.
+- **AuthContext exposes `hasPasswordProvider`.** Derived from `user.providerData.some(p => p.providerId === 'password')`. Stays reactive across signups and provider links.
+- **Password section becomes create-vs-change.** When `!hasPasswordProvider`, the form drops the `currentPassword` field, the title flips to "Criar senha", the description explains the OAuth context, and `handleChangePassword` uses `linkWithCredential(user, EmailAuthProvider.credential(email, newPassword))`. After successful link the provider data refreshes and the same form auto-converts to the "alterar senha" flow on next render.
+- **Doc updates.** New [ADR-012](Decisions.md#adr-012-cpfcnpj-uniqueness--immutability-via-callable--uniqueness-index) covers the reservation pattern + alternatives considered. [DATA-MODEL.md](DATA-MODEL.md) adds the `userDocuments` section + the `documentType`/`documentNumber` immutability paragraph in `users/{uid}`. [CLAUDE.md](../CLAUDE.md) gains "CPF/CNPJ uniqueness + immutability" and "Password vs OAuth providers" sections so future agents don't reintroduce client-side document writes or single-form password handling.
+
+Required deploys: `firebase deploy --only firestore:rules,functions:reserveUserDocument --project adsmart-web-dev`. The callable is auth-only — no `gcloud run services add-iam-policy-binding` needed (private invoker is correct, the Firebase CallableContext propagates the auth token).
+
+---
+
 ## [2026-04-26] — bootstrapUserWallet → bootstrapUser: also seed users/{uid}
 
 Same-day extension of [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) after surfacing a parallel "Missing or insufficient permissions" symptom in [SettingsPage](../src/pages/SettingsPage.tsx) — root cause: `AuthContext.signUp` only created the Firebase Auth user, never the `users/{uid}` doc, so the first profile save fell into the `create` rule path which requires `createdAt == request.time`.

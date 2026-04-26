@@ -14,6 +14,7 @@ Firestore database for project `adsmart-app`. All monetary values are in **BRL c
 | `users/{uid}/campaigns/{id}` | Ads-platform-synced campaigns (cache) | Owner read; Function write (Admin SDK) |
 | `campaigns/{id}` | _Dead code_ — see note below | n/a |
 | `reports/{id}` | Generated report records | Owner only |
+| `userDocuments/{normalizedDoc}` | CPF/CNPJ uniqueness index (ADR-012) | Owner read (by userId); Admin SDK write |
 | `productPrices/{id}` | Product pricing config | Authenticated read; Function write |
 | `reportTemplates/{id}` | _Dead code_ — see note below | n/a |
 | `systemConfig/{id}` | Global system settings | Authenticated read; Admin SDK write |
@@ -53,7 +54,27 @@ Profile document seeded server-side at signup time by the [bootstrapUser](../fun
 
 Rules: owner read/create/update. `email` and `createdAt` cannot be changed after creation. The client never hits the `create` rule path under normal use because the doc is already seeded by the trigger when the user first signs in. Delete blocked (only Cloud Function can delete via Admin SDK).
 
-See [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for the full rationale of seeding both this doc and `users/{uid}/wallet/current` from a single batched trigger write.
+`documentType` and `documentNumber` are immutable once written — the rule's `documentLocked()` helper rejects any update that attempts to change them after they were set to non-empty. They're written exclusively by the [reserveUserDocument](../functions/src/reserveUserDocument.ts) callable (ADR-012), which validates the format server-side and reserves the document atomically against the `userDocuments` uniqueness index.
+
+See [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for the full rationale of seeding both this doc and `users/{uid}/wallet/current` from a single batched trigger write, and [ADR-012](Decisions.md#adr-012-cpfcnpj-uniqueness--immutability-via-callable--uniqueness-index) for the document reservation flow.
+
+---
+
+## userDocuments/{normalizedDoc}
+
+Uniqueness index for CPF/CNPJ across all users (ADR-012). The doc ID is the digits-only normalization of the document (`cpf.replace(/\D/g, '')` — e.g. `"12345678901"` for a CPF), so two writes for the same number collide on the path itself. Created exclusively by [reserveUserDocument](../functions/src/reserveUserDocument.ts) inside a Firestore transaction.
+
+```
+{
+  userId: string,         // owner uid
+  documentType: 'cpf' | 'cnpj',
+  createdAt: Timestamp
+}
+```
+
+Rules: `read: if isAuthenticated() && resource.data.userId == request.auth.uid` — only the owner can read their reservation, and only if they already know the document number (the rule needs the doc ID to be known up front). `write: if false` — only the callable can write, via Admin SDK.
+
+This collection is intentionally simple — the doc number itself is encoded in the path, so no `documentNumber` field is stored. The reservation is permanent (never deleted from this collection); user account deletion via Cloud Function should also clean the matching `userDocuments/{n}` entry.
 
 ---
 

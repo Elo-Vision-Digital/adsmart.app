@@ -149,6 +149,22 @@ Client code that reads either path can assume it exists and use `updateDoc` dire
 
 `useWallet` keeps a defensive virtual `EMPTY_WALLET` for the snapshot-missing case (e.g. dev/test scenarios where the trigger didn't fire), but in production every signup arrives with a real doc. See [ADR-010](docs/Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for the full rationale.
 
+## CPF/CNPJ uniqueness + immutability (ADR-012)
+
+`documentType` and `documentNumber` on `users/{uid}` are **immutable after first write** and the value must be unique across all users. The mechanism:
+
+- Reservation goes through the [`reserveUserDocument`](functions/src/reserveUserDocument.ts) callable. It validates the format (CPF/CNPJ check digits) and runs a Firestore transaction over `userDocuments/{normalizedDoc}` + `users/{uid}` — atomic uniqueness guarantee.
+- Direct client writes to `users/{uid}` that touch those two fields after they were set are rejected by [firestore.rules](firestore.rules) via the `documentLocked()` helper. Updates to `name`/`phone`/`updatedAt` continue to work via plain `updateDoc`.
+- The `userDocuments/{normalizedDoc}` collection is the uniqueness index — write-only via Admin SDK. The doc ID is `cpf.replace(/\D/g, '')` so two callers cannot both win the path.
+
+Client UX in [SettingsPage](src/pages/SettingsPage.tsx) flips a `documentLocked` boolean from `loadUserProfile`. When locked, the radio buttons + the document text input are `disabled + readOnly` and `handleSaveProfile` skips the callable entirely (only `name`/`phone` go through `updateDoc`). Friendly mapping for `functions/already-exists` ("CPF/CNPJ já cadastrado em outra conta") and `functions/failed-precondition`.
+
+## Password vs OAuth providers
+
+`AuthContext` exposes `hasPasswordProvider` derived from `user.providerData.some(p => p.providerId === 'password')`. Use it to branch UI between "alterar senha" (existing password account — needs `currentPassword` + `reauthenticateWithCredential` + `updatePassword`) and "criar senha" (OAuth-only account, e.g. signed in with Google or Facebook — uses `linkWithCredential(user, EmailAuthProvider.credential(email, newPassword))` and only requires `newPassword` + `confirm`).
+
+After a successful link, `providerData` includes both providers and `hasPasswordProvider` flips true on the next snapshot — the same form then defaults to the "alterar senha" flow.
+
 ## Adding Firestore queries
 
 Any new query that combines `where(...)` with `orderBy(...)` (or two range filters on different fields) needs a composite index in [firestore.indexes.json](firestore.indexes.json). The Firebase SDK throws `FirebaseError: The query requires an index. You can create it here: ...` with the auto-create link, but committing the index in source is required so dev/prod stay in sync. After editing the file, run `firebase deploy --only firestore:indexes --project <target>` for each environment — index builds are async (1–3 min) so the query stays red until status flips to `Enabled`. See [DEPLOYMENT.md → Firestore rules and indexes](docs/DEPLOYMENT.md).

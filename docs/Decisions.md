@@ -308,3 +308,56 @@ This is a permanent IAM binding; subsequent redeploys preserve it. `getPublicPro
 - [packages/shared/tsconfig.build.json](../packages/shared/tsconfig.build.json) — CJS build config.
 - [firebase.json](../firebase.json) — `functions.source` and `predeploy` updates.
 - [DEPLOYMENT.md → Cloud Functions](DEPLOYMENT.md) — operator-facing runbook.
+
+---
+
+## ADR-012: CPF/CNPJ uniqueness + immutability via callable + uniqueness index
+
+**Date:** 2026-04-26
+**Status:** Accepted
+
+**Context:**
+
+The product requires that:
+
+1. **Each user document (CPF or CNPJ) is unique across the user base** — no two accounts can register the same CPF, and no two accounts can register the same CNPJ.
+2. **Once a user has saved their document it cannot be changed** — both the type (`cpf` vs `cnpj`) and the number become immutable.
+
+Firestore rules can express the immutability constraint (`request.resource.data.documentNumber == resource.data.documentNumber` for non-empty stored values), but they **cannot atomically check uniqueness across documents** — rules can only inspect the document being written, not run cross-collection lookups. A "best-effort" client-side query is racy: two clients querying for the same CPF concurrently would both find no match and both succeed. Storing the document on `users/{uid}` and indexing it doesn't help either, because the rule for one user can't read another user's doc.
+
+**Decision:**
+
+1. **Uniqueness index collection.** A separate `userDocuments/{normalizedDoc}` collection where the doc ID is the digits-only normalization of the CPF/CNPJ (`cpf.replace(/\D/g, '')`). Each entry holds `{ userId, documentType, createdAt }`. The doc ID itself is the uniqueness key — Firestore rejects two writes to the same path.
+2. **Reservation callable.** A `reserveUserDocument` callable ([functions/src/reserveUserDocument.ts](../functions/src/reserveUserDocument.ts)) wraps the reservation in `db.runTransaction`. The transaction reads `userDocuments/{normalized}` and `users/{uid}` atomically and either:
+   - claims the document for the caller (writes both `userDocuments/{n}` and `users/{uid}.{documentType,documentNumber}`),
+   - returns no-op if the same caller already owns this exact document (idempotent),
+   - throws `already-exists` if a different uid holds the doc, or
+   - throws `failed-precondition` if the caller already has a different document on file (immutability backstop).
+   Format validation (CPF/CNPJ check digits) runs server-side before the transaction so invalid input never touches Firestore.
+3. **Rules enforce immutability + write-block on the index collection.** [firestore.rules](../firestore.rules) `userDocuments/{documentId}` allows `read: isOwner via userId field` and `write: false` (only the callable, via Admin SDK, can write). `users/{userId}` update rule rejects any write where `documentNumber` was already set and the new write attempts to change it (defense in depth — even if the callable is bypassed, the user doc itself can't be mutated post-reservation).
+4. **Client UX.** [SettingsPage](../src/pages/SettingsPage.tsx) tracks a `documentLocked` boolean derived from `loadUserProfile`. When `true`, the radio buttons (CPF/CNPJ) and the document text input are `disabled + readOnly`, with a hint line explaining the immutability. `handleSaveProfile` only invokes the callable when `!documentLocked` — subsequent saves only touch `name`/`phone`/`updatedAt` via `updateDoc`. Friendly error mapping for `functions/already-exists`, `functions/failed-precondition`, `functions/invalid-argument`.
+
+**Why a callable + transaction (not pure rules)?**
+
+Firestore security rules cannot read another user's document during evaluation — they're scoped to the request and the document being written. Cross-document uniqueness is therefore not expressible in rules alone. A transaction over `userDocuments/{n}` + `users/{uid}` is the canonical pattern: the transaction's snapshot isolation guarantees that two concurrent writers cannot both observe the doc as missing and both proceed.
+
+**Trade-offs:**
+
+- **Two writes per reservation** (the index entry + the user doc). Acceptable — reservation runs once per user lifetime.
+- **The index doc IDs leak document numbers** to anyone who can list the collection. Mitigated by `read: if isOwner` (lookup only succeeds when the caller already knows the number AND owns it) and by `list` operations being implicitly disallowed (rules don't grant `list`). Listing the entire collection from the client returns "Missing or insufficient permissions."
+- **Re-typing the same CPF as CNPJ (or vice versa) is blocked** by the `documentLocked` rule — even though they normalize differently, the immutability check kicks in before the type switch. Intentional: a user who registered CPF can't switch to CNPJ later.
+
+**Alternatives considered:**
+
+- **Client-side query first, then write.** Racy under concurrent signups. Rejected.
+- **Encode uniqueness via a hash field on `users/{uid}` plus a Firestore index.** Same race problem — rules still can't check across docs.
+- **A periodic batch job that detects + rejects duplicates.** Surfaces the failure asynchronously, often after the user has moved on. Bad UX and weaker than synchronous rejection.
+
+**Operations:**
+
+- **Per project, after first deploy:** the same `gcloud run services add-iam-policy-binding` call from ADR-011 is **not** required for this callable — it's gated by `request.auth` (only authenticated users can invoke), so the default (private) Cloud Run invoker is correct. Firebase Auth tokens flow through the callable wrapper automatically.
+
+**References:**
+- [functions/src/reserveUserDocument.ts](../functions/src/reserveUserDocument.ts) — implementation.
+- [firestore.rules](../firestore.rules) — `userDocuments` collection rule + `users/{uid}` `documentLocked()` helper.
+- [src/pages/SettingsPage.tsx](../src/pages/SettingsPage.tsx) — client UX (disabled inputs, callable invocation, error mapping).
