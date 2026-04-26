@@ -27,18 +27,8 @@ export interface Transaction {
   createdAt: Date
 }
 
-export interface AdAccount {
-  id: string
-  userId: string
-  platform: 'google_ads' | 'meta_ads'
-  accountId: string
-  accountName: string
-  email?: string // Email associado à conta
-  isActive: boolean
-  lastSyncAt?: Date
-  createdAt: Date
-  updatedAt: Date
-}
+// Source of truth: src/schemas/adAccount.ts (Zod schema).
+export type { AdAccount } from '@/schemas/adAccount'
 
 export interface Campaign {
   id: string

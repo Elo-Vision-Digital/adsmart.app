@@ -109,6 +109,7 @@ Schemas começam dentro de `src/schemas/` para validar ASAP, antes mesmo do mono
   - `normalizeTimestamps` converte `Timestamp → Date` (lógica que hoje vive duplicada).
 - [x] **C5.** [src/hooks/useReports.ts](../src/hooks/useReports.ts) refatorado: `mapReport` manual removido; collection `reports` usa `.withConverter(zodConverter(ReportSchema, 'Report'))` e `snapshot.docs.map((doc) => doc.data())` retorna `Report` tipado e validado.
 - [ ] **C6.** Replicar para outros schemas críticos: `AdAccount`, `Campaign`, `Wallet`, `Transaction`, `ReportTemplate`. Um por commit.
+  - [x] **C6.1.** [src/schemas/adAccount.ts](../src/schemas/adAccount.ts). Drift corrigido vs interface anterior: `userId` removido (redundante com path), `currency` (required) e `timezone` (optional) adicionados (eram escritos pelas Functions mas ausentes na interface). Consumers refatorados: [AccountsPage](../src/pages/AccountsPage.tsx), [Dashboard](../src/pages/Dashboard.tsx), [GenerateReportPage](../src/pages/GenerateReportPage.tsx). [mockAccounts.ts](../src/utils/mockAccounts.ts) atualizado para satisfazer schema (incluí `currency: 'BRL'`, dropei `userId`).
 - [ ] **C7.** Adicionar testes Vitest em `src/schemas/__tests__/` cobrindo: schema válido, schema com campo faltando, schema com tipo errado, normalização de Timestamp.
 
 **Critério de aceite:** todo `useState<any>` ou cast manual em hooks de Firestore foi substituído por `.withConverter()` + Zod. Documento mal-formado falha em desenvolvimento com erro claro.

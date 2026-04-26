@@ -15,6 +15,8 @@ import { Toast, useToast } from '@/components/ui/toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { db, functions } from '@/firebase/config'
+import { AdAccountSchema } from '@/schemas/adAccount'
+import { zodConverter } from '@/schemas/firestore-converter'
 import { oauthService } from '@/services/oauthServices'
 import type { AdAccount } from '@/types'
 import { addMockAccounts } from '@/utils/mockAccounts'
@@ -90,19 +92,13 @@ export function AccountsPage() {
   useEffect(() => {
     if (!user) return
 
-    const accountsRef = collection(db, 'users', user.uid, 'adAccounts')
+    const accountsRef = collection(db, 'users', user.uid, 'adAccounts').withConverter(
+      zodConverter(AdAccountSchema, 'AdAccount')
+    )
     const q = query(accountsRef, where('isActive', '==', true))
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const accountsData = snapshot.docs.map(
-        (doc) =>
-          ({
-            id: doc.id,
-            ...doc.data(),
-          }) as AdAccount
-      )
-
-      setAccounts(accountsData)
+      setAccounts(snapshot.docs.map((doc) => doc.data()))
       setLoading(false)
     })
 

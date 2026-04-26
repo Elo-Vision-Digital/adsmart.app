@@ -13,6 +13,8 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import { db } from '@/firebase/config'
 import { useProductPrices } from '@/hooks/useProductPrices'
 import { useWallet } from '@/hooks/useWallet'
+import { AdAccountSchema } from '@/schemas/adAccount'
+import { zodConverter } from '@/schemas/firestore-converter'
 import type { AdAccount, Campaign } from '@/types'
 
 export function GenerateReportPage() {
@@ -63,20 +65,16 @@ export function GenerateReportPage() {
     if (!user || !template) return
 
     const fetchAccounts = async () => {
-      const accountsRef = collection(db, 'users', user.uid, 'adAccounts')
+      const accountsRef = collection(db, 'users', user.uid, 'adAccounts').withConverter(
+        zodConverter(AdAccountSchema, 'AdAccount')
+      )
       const q = query(
         accountsRef,
         where('platform', '==', template.platform),
         where('isActive', '==', true)
       )
       const snapshot = await getDocs(q)
-      const accountsData = snapshot.docs.map(
-        (doc) =>
-          ({
-            id: doc.id,
-            ...doc.data(),
-          }) as AdAccount
-      )
+      const accountsData = snapshot.docs.map((doc) => doc.data())
 
       setAccounts(accountsData)
       if (accountsData.length === 1) {

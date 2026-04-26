@@ -19,6 +19,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { db } from '@/firebase/config'
 import { useReports } from '@/hooks/useReports'
+import { AdAccountSchema } from '@/schemas/adAccount'
+import { zodConverter } from '@/schemas/firestore-converter'
 import type { AdAccount } from '@/types'
 
 // Componente para ícone do Google Ads
@@ -79,19 +81,13 @@ export function Dashboard() {
   useEffect(() => {
     if (!user) return
 
-    const accountsRef = collection(db, 'users', user.uid, 'adAccounts')
+    const accountsRef = collection(db, 'users', user.uid, 'adAccounts').withConverter(
+      zodConverter(AdAccountSchema, 'AdAccount')
+    )
     const q = query(accountsRef, where('isActive', '==', true))
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const accountsData = snapshot.docs.map(
-        (doc) =>
-          ({
-            id: doc.id,
-            ...doc.data(),
-          }) as AdAccount
-      )
-
-      setConnections(accountsData)
+      setConnections(snapshot.docs.map((doc) => doc.data()))
       setConnectionsLoading(false)
     })
 

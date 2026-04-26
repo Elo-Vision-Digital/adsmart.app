@@ -10,6 +10,27 @@ Format conventions:
 
 ---
 
+## [2026-04-25] — Refactor Phase C6.1: Zod schema for `adAccounts`
+
+Second commit of Phase C6 (one schema per commit). Migrates the `adAccounts` subcollection to the Zod-driven `FirestoreDataConverter` foundation introduced in commit `365c44e`.
+
+- **New module:** [src/schemas/adAccount.ts](../src/schemas/adAccount.ts) — `AdPlatformSchema`, `AdAccountSchema`, plus `z.infer`-derived types.
+- **Schema vs prior interface — drift corrected:**
+  - `userId` **dropped**. The Firestore path (`users/{uid}/adAccounts/{id}`) already encodes ownership; the redundant field was a fiction added by `as AdAccount` casts at call sites. Functions writes never set it.
+  - `currency` **added (required)** — Functions always write it ([metaAdsOAuthV2.ts](../functions/src/metaAdsOAuthV2.ts), [googleAdsOAuthV2.ts](../functions/src/googleAdsOAuthV2.ts)) but the prior interface omitted it.
+  - `timezone` **added (optional)** — same reason; written when the platform exposes it.
+- **`src/types/index.ts`:** the hand-written `AdAccount` interface is gone; the file reexports the schema-derived type.
+- **Consumers refactored** to use `.withConverter(zodConverter(AdAccountSchema, 'AdAccount'))`:
+  - [src/pages/AccountsPage.tsx](../src/pages/AccountsPage.tsx)
+  - [src/pages/Dashboard.tsx](../src/pages/Dashboard.tsx)
+  - [src/pages/GenerateReportPage.tsx](../src/pages/GenerateReportPage.tsx)
+- **`src/utils/mockAccounts.ts`:** seed objects now satisfy the new schema (`currency: 'BRL'` added; redundant `userId` field dropped from inserts).
+- **DATA-MODEL.md:** no edits — the doc was already aligned with the new schema (it had `currency` and `timezone` documented; the TS interface was the side that drifted).
+
+Verification: `bun run typecheck` ✓, `bun run build` ✓, `bun run test` ✓ (31/31), Biome ✓ (only pre-existing a11y warnings remain).
+
+---
+
 ## [2026-04-25] — Refactor Phase C (pilot): Zod 4 + FirestoreDataConverter for `reports`
 
 First commit of Phase C from [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Establishes the schema-as-code foundation; the `Report` collection is the pilot. Remaining schemas (AdAccount, Campaign, Wallet, Transaction, ReportTemplate) ship in subsequent C6 commits.
