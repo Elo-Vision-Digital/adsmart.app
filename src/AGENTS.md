@@ -33,6 +33,10 @@ src/
     es.json
     types.ts            # Language + Translations types
   pages/                # One file per route
+  schemas/              # Zod schemas + FirestoreDataConverter helpers
+    firestore-converter.ts  # zodConverter, zTimestamp
+    report.ts
+    adAccount.ts        # (more land in Phase C6 of docs/REFACTOR-PLAN.md)
   services/
     oauthServices.ts    # httpsCallable wrappers for OAuth functions
     paymentService.ts   # httpsCallable wrappers for payment functions

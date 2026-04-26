@@ -110,15 +110,17 @@ One document per connected ad account. Platform prefix in document ID (e.g., `go
   platform: "google_ads" | "meta_ads",
   accountId: string,
   accountName: string,
-  email: string,
+  email?: string,
   currency: string,
   timezone?: string,
   isActive: boolean,
   createdAt: Timestamp,
   updatedAt: Timestamp,
-  lastSyncAt: Timestamp
+  lastSyncAt?: Timestamp
 }
 ```
+
+Source of truth: [src/schemas/adAccount.ts](../src/schemas/adAccount.ts). Ownership is encoded in the path (`users/{uid}/...`); no `userId` field is stored on the doc.
 
 ---
 
@@ -159,7 +161,7 @@ Rule: owner only. Created with `status: "draft"`. Only owner can delete when `st
 }
 ```
 
-Source of truth: [src/types/index.ts](../src/types/index.ts) `Report` interface (to be replaced by Zod schema in Phase C of REFACTOR-PLAN.md).
+Source of truth: [src/schemas/report.ts](../src/schemas/report.ts) (Zod schema, validated at the Firestore boundary via `FirestoreDataConverter`). The `Report` TypeScript type is derived via `z.infer` and reexported from `src/types/index.ts` for backward-compatible imports.
 
 Rule: owner only. Delete blocked.
 

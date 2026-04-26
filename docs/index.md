@@ -56,6 +56,7 @@ Single map of every documentation file. Organized by category. Update this file 
 
 | Path | Purpose |
 |---|---|
+| [REFACTOR-PLAN.md](REFACTOR-PLAN.md) | Schema standardization plan (Zod + FirestoreDataConverter) — phases A→E |
 | [superpowers/plans/](superpowers/plans/) | Implementation plans (one file per multi-step initiative) |
 
 ## Conventions
