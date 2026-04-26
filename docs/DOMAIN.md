@@ -24,7 +24,7 @@ A user's wallet lives at `users/{uid}/wallet/current`. It is a single document w
 
 ## Reports
 
-Reports are generated via Looker Studio template links stored in `reportTemplates`. Generating a report:
+Reports are generated via Looker Studio template links served from a hardcoded `availableTemplates` array in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts). (A `reportTemplates/{id}` Firestore collection was originally planned but never built — see the dead-code note in [DATA-MODEL.md](DATA-MODEL.md).) Generating a report:
 
 1. User selects a template and an ad account.
 2. The report function deducts the price (centavos) from `users/{uid}/wallet/current`.
@@ -35,10 +35,13 @@ Reports cannot be deleted (immutable after creation).
 
 ## Campaigns
 
-- Campaigns start with `status: "draft"`.
-- Only `draft` campaigns can be deleted.
-- `userId` and `createdAt` are immutable — they cannot be changed after creation.
-- `budget` is in BRL centavos.
+Live campaigns are cached at `users/{uid}/campaigns/{platform_externalId}` after sync from the upstream Ads platform (Google Ads, Meta Ads). They are read-only from the user's perspective — sync is triggered server-side by `getGoogleAdsCampaigns` / `getMetaAdsCampaigns` callable Functions after OAuth.
+
+- `campaignName`, `budget`, `spend`, `impressions`, `clicks` mirror the upstream platform's values.
+- `status` is the lowercased value from the upstream API (Google: `enabled/paused/removed/...`; Meta: `active/paused/archived/with_issues/...`).
+- `lastSyncAt` records the most recent server-side sync.
+
+A separate top-level `campaigns/{id}` collection is defined in [firestore.rules](../firestore.rules) but **is not used** — see the dead-code note in [DATA-MODEL.md](DATA-MODEL.md).
 
 ## Admin access
 
