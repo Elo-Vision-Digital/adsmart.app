@@ -10,6 +10,34 @@ Format conventions:
 
 ---
 
+## [2026-04-26] — Admin dashboard server + foundations landed (Subprojeto 2 — WIP)
+
+**Status:** Tasks 1-7 of 20 complete. The server side and shared contracts are in place; UI, routing, i18n, and deploy are pending. **`getDashboardMetrics` is exported in `functions/src/index.ts` but NOT yet invoked from the client and NOT yet deployed.** Final docs sweep + AGENTS.md/CLAUDE.md/QA-CHECKLIST.md/DATA-MODEL.md/DEPLOYMENT.md updates land at Task 19 once the feature ships end-to-end.
+
+What's committed so far on `develop`:
+
+- **Deps.** `recharts@^3.8.1`, `react-day-picker@^9.14.0`, `@radix-ui/react-popover@^1.1.15` added to root [package.json](../package.json) (commit `75fbc25`).
+- **Shared Zod contracts.** [packages/shared/src/schemas/dashboardMetrics.ts](../packages/shared/src/schemas/dashboardMetrics.ts) defines `GetDashboardMetricsInputSchema` (ISO datetime range, refines: `endDate >= startDate`, ≤ 365 days) and `GetDashboardMetricsOutputSchema` (revenue real/credits + sparkline; users new/active/total + sparkline; integrations.byPlatform `google_ads | meta_ads`). Sparkline `date` fields enforce `YYYY-MM-DD`. Constant `DASHBOARD_METRICS_MAX_RANGE_DAYS = 365` exported. 9 tests (commits `73f96e1`, `198623e`).
+- **Pure helpers.** [src/pages/admin/dashboard/getDateRangeFromPreset.ts](../src/pages/admin/dashboard/getDateRangeFromPreset.ts) maps `'today'|'7d'|'30d'|'60d'|'90d'|'180d'|'365d'` to ISO ranges. [formatBRL.ts](../src/pages/admin/dashboard/formatBRL.ts) formats integer cents → `R$ 1.234,56` with `Intl.NumberFormat('pt-BR', { currency: 'BRL' })`. Both fully tested. (commits `1286845`, `5d937cb`).
+- **Firestore composite indexes.** Five new entries in [firestore.indexes.json](../firestore.indexes.json) for collectionGroup `transactions` (3 variants — type+status+createdAt, type+status+adminAction+createdAt, createdAt only), collectionGroup `adAccounts` (isActive+platform), and collection `users` (createdAt). **Not yet deployed** — Task 18 deploys to dev then prod (commit `5dad3aa`).
+- **Cloud Function `getDashboardMetrics`.** [functions/src/getDashboardMetrics.ts](../functions/src/getDashboardMetrics.ts) — admin-only callable (custom claim OR allowlist). Auth typed via `CallableRequest['auth']`. `onCall({ memory: '512MiB' }, …)`. All 7 reads run via `Promise.all`. Materialized snapshots use `.select(...)` projections. Sparklines bucketed by `America/Sao_Paulo` day-string via a BRT-anchored `enumerateDays` (fix in `7dbc5f2` resolved a UTC/BRT cusp bug that dropped the last day of a UTC-midnight-bounded range). `realCents = max(0, totalCents - grantedCents)` derives real revenue from total minus admin-issued credits — bypasses Firestore's lack of `!=` aggregation operator. 6 tests passing locally (5 auth/validation + 1 emulator-gated payload-shape skip when emulator absent). Exported in [functions/src/index.ts](../functions/src/index.ts) (commits `ae2b494`, `198623e`, `7dbc5f2`).
+
+What's still missing before this entry can graduate to "shipped":
+
+- shadcn `<Popover>` + `<Calendar>` ui wrappers (Task 8).
+- `DateRangeFilter` component (Task 9).
+- Three cards: `RevenueCard`, `UsersCard`, `IntegrationsCard` (Tasks 10-12).
+- `AdminDashboardPage` + skeleton (Task 13).
+- `AdminLayout` adds Dashboard tab + `App.tsx` redirect change `/admin → /admin/dashboard` (Tasks 14-15).
+- i18n `admin.dashboard.*` keys in pt-BR/en/es (Task 16).
+- Deploy callable + indexes to dev then prod (Task 18).
+- Final docs sweep and memory update (Tasks 19-20).
+
+Plan: [docs/superpowers/plans/2026-04-26-admin-dashboard-plan.md](superpowers/plans/2026-04-26-admin-dashboard-plan.md).
+Spec: [docs/superpowers/specs/2026-04-26-admin-dashboard-design.md](superpowers/specs/2026-04-26-admin-dashboard-design.md).
+
+---
+
 ## [2026-04-26] — Admin panel IA refactor (Subprojeto 1)
 
 Single-page tabbed `AdminPanel.tsx` (569 lines) replaced by nested routes under a shared `AdminLayout`. Same Cloud Function calls, same UI behavior — IA prep for the four follow-up admin features (dashboard, users, wallet ops, logs UX).
