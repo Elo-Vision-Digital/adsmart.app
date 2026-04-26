@@ -39,7 +39,7 @@ Add a read-only admin dashboard at `/admin/dashboard` that surfaces three operat
 | R12 | i18n: extend `admin.dashboard.*` in `pt-BR`, `en`, `es`. | Q12 recommended |
 | R13 | Tests: Vitest on web (page + filter + 3 cards) and functions (`getDashboardMetrics`). | Q13 recommended |
 | R14 | Indexes declared in `firestore.indexes.json` and deployed to both targets. | Q14 recommended |
-| R15 | Range cap: 400 days (defensive bound for materialized day-grouping). | Spec self-review |
+| R15 | Range cap: **365 days** (1 year, hard cap). Enforced both client-side (Custom dialog refuses Submit) and server-side (Zod refine in callable input). | User decision |
 
 ## 4. Architecture
 
@@ -86,11 +86,11 @@ export const GetDashboardMetricsInputSchema = z.object({
   message: 'endDate must be ≥ startDate',
 }).refine((v) => {
   const days = (new Date(v.endDate).getTime() - new Date(v.startDate).getTime()) / 86_400_000;
-  return days <= 400;
-}, { message: 'range exceeds 400 days' });
+  return days <= 365;
+}, { message: 'range exceeds 365 days' });
 ```
 
-Co-located Vitest covers happy path + invalid-range + > 400 days.
+Co-located Vitest covers happy path + invalid-range + > 365 days.
 
 ### 5.2 Output schema
 
@@ -147,7 +147,7 @@ GetDashboardMetricsOutputSchema = z.object({
 
 7. **Integrations** — collectionGroup `adAccounts.where('isActive','==',true)`. For each doc, `(platform, parent.parent.id)`. Build `Map<platform, Set<uid>>`, return sizes. Materialized read; snapshot, range-independent.
 
-**Cost analysis:** dominated by materialized reads (sparklines + active users + integrations). Linear in volume × range (capped at 400 days). At current scale this is negligible. If we hit performance pain later, Subprojeto 4 introduces cron infra that we can reuse for pre-aggregation buckets — out of scope here.
+**Cost analysis:** dominated by materialized reads (sparklines + active users + integrations). Linear in volume × range (capped at 365 days). At current scale this is negligible. If we hit performance pain later, Subprojeto 4 introduces cron infra that we can reuse for pre-aggregation buckets — out of scope here.
 
 **Timezone:** all day-grouping uses `America/Sao_Paulo` to match Brazilian operations. Implementation via `Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })` to get `YYYY-MM-DD` string buckets.
 
@@ -184,7 +184,7 @@ GetDashboardMetricsOutputSchema = z.object({
 ### 6.3 Error handling
 
 - Per-card error: callable failure shows inline message in each card with `Tentar novamente` button. Error does not blow up sibling cards.
-- Filter validation: Custom dialog Submit refuses `endDate < startDate` and renders `admin.dashboard.errors.invalidRange`.
+- Filter validation (client-side, before callable): Custom dialog Submit refuses `endDate < startDate` (`errors.invalidRange`) AND `range > 365 days` (`errors.rangeTooLong`). Server still re-validates with the same Zod schema as a defense-in-depth boundary.
 - Server returns Zod-validated payload; client re-validates on receipt with the same shared schema. Mismatch → top-level error banner.
 
 ### 6.4 Identidade visual
@@ -244,7 +244,8 @@ Extend the `admin` namespace in `src/locales/pt-BR.json`, `en.json`, `es.json`:
     },
     "errors": { "loadFailed": "Falha ao carregar métricas",
                 "retry": "Tentar novamente",
-                "invalidRange": "Data inicial deve ser anterior à final" },
+                "invalidRange": "Data inicial deve ser anterior à final",
+                "rangeTooLong": "Período não pode exceder 365 dias" },
     "skeleton": { "loading": "Carregando..." }
   }
 }
@@ -303,7 +304,7 @@ Index builds are async (1–3 min). Verify before testing live; queries fail wit
 | File | Scope |
 |---|---|
 | `src/pages/admin/AdminDashboardPage.test.tsx` | Renders with mock callable; cards visible; range change re-fetches; error → retry path |
-| `src/pages/admin/dashboard/DateRangeFilter.test.tsx` | Each preset emits correct `{startDate, endDate}`; Custom dialog opens; validates `start ≤ end` |
+| `src/pages/admin/dashboard/DateRangeFilter.test.tsx` | Each preset emits correct `{startDate, endDate}`; Custom dialog opens; validates `start ≤ end` AND range ≤ 365 days |
 | `src/pages/admin/dashboard/RevenueCard.test.tsx` | Render with zero data + with data; BRL formatted strings present |
 | `src/pages/admin/dashboard/UsersCard.test.tsx` | Three numbers visible; sparkline renders |
 | `src/pages/admin/dashboard/IntegrationsCard.test.tsx` | Empty state; bar chart with 1+ rows |
@@ -313,13 +314,13 @@ Index builds are async (1–3 min). Verify before testing live; queries fail wit
 
 | File | Scope |
 |---|---|
-| `functions/test/getDashboardMetrics.test.ts` | Auth (no auth → unauthenticated; non-admin → permission-denied); range validation (invalid; > 400d); shape of payload; revenue split (real vs credits via `adminAction`); empty-period returns zeros |
+| `functions/test/getDashboardMetrics.test.ts` | Auth (no auth → unauthenticated; non-admin → permission-denied); range validation (invalid; > 365d); shape of payload; revenue split (real vs credits via `adminAction`); empty-period returns zeros |
 
 ### 10.3 Shared schemas
 
 | File | Scope |
 |---|---|
-| `packages/shared/src/schemas/dashboardMetrics.test.ts` | Input schema rejects bad ISO; rejects inverted range; rejects > 400d. Output schema accepts shapes from server. |
+| `packages/shared/src/schemas/dashboardMetrics.test.ts` | Input schema rejects bad ISO; rejects inverted range; rejects > 365d. Output schema accepts shapes from server. |
 
 ## 11. Files touched
 
