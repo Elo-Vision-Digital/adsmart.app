@@ -30,6 +30,7 @@ const renderAt = (path: string) =>
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<div>dashboard child</div>} />
           <Route path="security" element={<div>security child</div>} />
           <Route path="prices" element={<div>prices child</div>} />
           <Route path="wallet" element={<div>wallet child</div>} />
@@ -39,11 +40,11 @@ const renderAt = (path: string) =>
   )
 
 describe('AdminLayout', () => {
-  it('renders three sub-nav links pointing at the admin sub-routes', () => {
-    renderAt('/admin/security')
-
+  it('renders four sub-nav links pointing at the admin sub-routes', () => {
+    renderAt('/admin/dashboard')
     const links = screen.getAllByRole('link')
     const hrefs = links.map((a) => a.getAttribute('href'))
+    expect(hrefs).toContain('/admin/dashboard')
     expect(hrefs).toContain('/admin/security')
     expect(hrefs).toContain('/admin/prices')
     expect(hrefs).toContain('/admin/wallet')
@@ -55,11 +56,11 @@ describe('AdminLayout', () => {
   })
 
   it('marks the active sub-nav link with aria-current="page"', () => {
-    renderAt('/admin/wallet')
-    const walletLink = screen
+    renderAt('/admin/dashboard')
+    const link = screen
       .getAllByRole('link')
-      .find((a) => a.getAttribute('href') === '/admin/wallet')
-    expect(walletLink).toBeDefined()
-    expect(walletLink).toHaveAttribute('aria-current', 'page')
+      .find((a) => a.getAttribute('href') === '/admin/dashboard')
+    expect(link).toBeDefined()
+    expect(link).toHaveAttribute('aria-current', 'page')
   })
 })

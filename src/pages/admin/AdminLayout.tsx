@@ -1,10 +1,11 @@
-import { DollarSign, Shield, Wallet } from 'lucide-react'
+import { BarChart3, DollarSign, Shield, Wallet } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 
 const tabs = [
+  { to: 'dashboard', icon: BarChart3, key: 'dashboard' as const },
   { to: 'security', icon: Shield, key: 'security' as const },
   { to: 'prices', icon: DollarSign, key: 'prices' as const },
   { to: 'wallet', icon: Wallet, key: 'wallet' as const },
