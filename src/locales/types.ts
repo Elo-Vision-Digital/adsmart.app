@@ -375,9 +375,48 @@ export interface Translations {
     title: string
     welcomeBack: string
     nav: {
+      dashboard: string
       security: string
       prices: string
       wallet: string
+    }
+    dashboard: {
+      title: string
+      ranges: {
+        today: string
+        '7d': string
+        '30d': string
+        '60d': string
+        '90d': string
+        '180d': string
+        '365d': string
+        custom: string
+      }
+      revenue: {
+        title: string
+        real: string
+        credits: string
+      }
+      users: {
+        title: string
+        new: string
+        active: string
+        total: string
+      }
+      integrations: {
+        title: string
+        empty: string
+        platforms: {
+          google_ads: string
+          meta_ads: string
+        }
+      }
+      errors: {
+        loadFailed: string
+        retry: string
+        invalidRange: string
+        rangeTooLong: string
+      }
     }
     security: {
       title: string

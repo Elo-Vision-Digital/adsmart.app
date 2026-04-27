@@ -346,9 +346,48 @@
     "title": "Admin Panel",
     "welcomeBack": "Welcome, {name}",
     "nav": {
+      "dashboard": "Dashboard",
       "security": "Security Logs",
       "prices": "Price Configuration",
       "wallet": "Wallet Management"
+    },
+    "dashboard": {
+      "title": "Overview dashboard",
+      "ranges": {
+        "today": "Today",
+        "7d": "7 days",
+        "30d": "30 days",
+        "60d": "60 days",
+        "90d": "90 days",
+        "180d": "180 days",
+        "365d": "365 days",
+        "custom": "Custom"
+      },
+      "revenue": {
+        "title": "Generated revenue",
+        "real": "Real revenue",
+        "credits": "Granted credits"
+      },
+      "users": {
+        "title": "Users",
+        "new": "New",
+        "active": "Active",
+        "total": "All-time"
+      },
+      "integrations": {
+        "title": "Top integrations",
+        "empty": "No active integrations",
+        "platforms": {
+          "google_ads": "Google Ads",
+          "meta_ads": "Meta Ads"
+        }
+      },
+      "errors": {
+        "loadFailed": "Failed to load metrics",
+        "retry": "Try again",
+        "invalidRange": "Start date must be before end date",
+        "rangeTooLong": "Range cannot exceed 365 days"
+      }
     },
     "security": {
       "title": "Security Logs",

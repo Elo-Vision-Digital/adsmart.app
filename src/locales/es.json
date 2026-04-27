@@ -346,9 +346,48 @@
     "title": "Panel Administrativo",
     "welcomeBack": "Bienvenido, {name}",
     "nav": {
+      "dashboard": "Panel",
       "security": "Registros de Seguridad",
       "prices": "Configuración de Precios",
       "wallet": "Gestión de Saldo"
+    },
+    "dashboard": {
+      "title": "Panel general",
+      "ranges": {
+        "today": "Hoy",
+        "7d": "7 días",
+        "30d": "30 días",
+        "60d": "60 días",
+        "90d": "90 días",
+        "180d": "180 días",
+        "365d": "365 días",
+        "custom": "Personalizado"
+      },
+      "revenue": {
+        "title": "Ingresos generados",
+        "real": "Ingresos reales",
+        "credits": "Créditos otorgados"
+      },
+      "users": {
+        "title": "Usuarios",
+        "new": "Nuevos",
+        "active": "Activos",
+        "total": "Total general"
+      },
+      "integrations": {
+        "title": "Integraciones top",
+        "empty": "Sin integraciones activas",
+        "platforms": {
+          "google_ads": "Google Ads",
+          "meta_ads": "Meta Ads"
+        }
+      },
+      "errors": {
+        "loadFailed": "Error al cargar métricas",
+        "retry": "Intentar de nuevo",
+        "invalidRange": "La fecha inicial debe ser anterior a la final",
+        "rangeTooLong": "El rango no puede superar 365 días"
+      }
     },
     "security": {
       "title": "Registros de Seguridad",

@@ -346,9 +346,48 @@
     "title": "Painel Administrativo",
     "welcomeBack": "Bem-vindo, {name}",
     "nav": {
+      "dashboard": "Dashboard",
       "security": "Logs de Segurança",
       "prices": "Configuração de Preços",
       "wallet": "Gestão de Saldo"
+    },
+    "dashboard": {
+      "title": "Dashboard geral",
+      "ranges": {
+        "today": "Hoje",
+        "7d": "7 dias",
+        "30d": "30 dias",
+        "60d": "60 dias",
+        "90d": "90 dias",
+        "180d": "180 dias",
+        "365d": "365 dias",
+        "custom": "Personalizado"
+      },
+      "revenue": {
+        "title": "Receita gerada",
+        "real": "Receita real",
+        "credits": "Créditos concedidos"
+      },
+      "users": {
+        "title": "Usuários",
+        "new": "Novos",
+        "active": "Ativos",
+        "total": "Total geral"
+      },
+      "integrations": {
+        "title": "Top integrações",
+        "empty": "Nenhuma integração ativa",
+        "platforms": {
+          "google_ads": "Google Ads",
+          "meta_ads": "Meta Ads"
+        }
+      },
+      "errors": {
+        "loadFailed": "Falha ao carregar métricas",
+        "retry": "Tentar novamente",
+        "invalidRange": "Data inicial deve ser anterior à final",
+        "rangeTooLong": "Período não pode exceder 365 dias"
+      }
     },
     "security": {
       "title": "Logs de Segurança",
