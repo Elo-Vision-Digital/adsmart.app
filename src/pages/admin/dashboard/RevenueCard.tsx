@@ -36,8 +36,8 @@ export function RevenueCard({ data }: Props) {
               </linearGradient>
             </defs>
             <Tooltip
-              formatter={(value: number) => formatBRL(value)}
-              labelFormatter={(label: string) => label}
+              formatter={(value) => formatBRL(typeof value === 'number' ? value : 0)}
+              labelFormatter={(label) => String(label ?? '')}
             />
             <Area
               type="monotone"
