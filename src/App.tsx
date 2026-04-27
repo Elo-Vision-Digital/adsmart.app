@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AdminRoute } from '@/components/AdminRoute'
 import { PrivateRoute } from '@/components/PrivateRoute'
@@ -24,6 +25,10 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { TemplatesPage } from '@/pages/TemplatesPage'
 import { TermsOfServicePage } from '@/pages/TermsOfServicePage'
 import { TransactionsPage } from '@/pages/TransactionsPage'
+
+const AdminDashboardPage = lazy(() =>
+  import('@/pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage }))
+)
 
 function App() {
   return (
@@ -132,7 +137,15 @@ function App() {
                   </AdminRoute>
                 }
               >
-                <Route index element={<Navigate to="security" replace />} />
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route
+                  path="dashboard"
+                  element={
+                    <Suspense fallback={null}>
+                      <AdminDashboardPage />
+                    </Suspense>
+                  }
+                />
                 <Route path="security" element={<SecurityLogsPage />} />
                 <Route path="prices" element={<PricesConfigPage />} />
                 <Route path="wallet" element={<WalletAdminPage />} />
