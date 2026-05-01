@@ -10,6 +10,93 @@ Format conventions:
 
 ---
 
+## [2026-05-01] — Subprojeto 2 Task 18 closed: `getDashboardMetrics` 500 INTERNAL resolved (dev + prod deployed)
+
+**Status:** Resolves the "Task 18 Step 3 — outstanding" blocker from the [2026-04-26] WIP entry below. The admin dashboard callable now returns 200 consistently. Function and indexes deployed to **both** `adsmart-web-dev` and `adsmart-web`. UI smoke green in dev (Cowork agent, 5/5 calls 200). UI smoke in prod is **deferred** until the next hosting deploy (see "Prod UI smoke deferred" below — the served prod bundle predates the dashboard route).
+
+**Root cause confirmed**
+
+Two-pronged: (1) `Promise.all` over the 7 reads in [functions/src/getDashboardMetrics.ts](../functions/src/getDashboardMetrics.ts) collapsed all rejections into a single opaque `INTERNAL` — making it impossible to know *which* of Q1–Q7 was failing from Cloud Logging (`details:''` on most rows). (2) The collectionGroup query `adAccounts.where('isActive','==',true)` (Q7) lacked a single-field exemption for `isActive` covering both COLLECTION and COLLECTION_GROUP scopes; the four prior Task 18 deploys (`064476f`, `936c9d1`, `04c3b37`, plus the initial 5-entry deploy) added composite orderings for `transactions` aggregates but missed this one. The instrumentation patch surfaced the real culprit on the next dev smoke.
+
+**Commits this session (on `develop`)**
+
+- `fb2595e` `feat(getDashboardMetrics): label all 7 reads via Promise.allSettled to surface per-query FAILED_PRECONDITION` — replaces `Promise.all` with `Promise.allSettled` over labelled queries Q1_allCreditsTotal_agg, Q2_grantedTotal_agg, Q3_txSnap, Q4_usersInRangeSnap, Q5_totalUsers_agg, Q6_activeTxSnap, Q7_adAccountsSnap. On any rejection, logs `[dashboard:fail:Q<n>]` with `error.code`/`message`/`details`/`stackHead` and throws `HttpsError('internal', 'Dashboard query failures: Q<n>[, Q<m>...]')` so the client message names the failing label(s) directly. Post-processing (revenue/users/integrations/sparklines) reorganized to consume the fulfilled tuple in the same order.
+- `6bf62ec` `fix(firestore): add adAccounts.isActive fieldOverride for COLLECTION + COLLECTION_GROUP scopes` — single field-override entry covering ASC/DESC at COLLECTION scope and ASC at COLLECTION_GROUP. Resolves Q7's missing-index FAILED_PRECONDITION.
+
+**Validation evidence**
+
+- `cd functions && bun run typecheck` clean.
+- `cd functions && bunx vitest run test/getDashboardMetrics.test.ts` 6/6 green.
+- `cd functions && bun run build` produces a 0.78 MB bundle in `functions/deploy/`.
+- Dev deploy (`adsmart-web-dev`): both `firestore:indexes` and `functions:getDashboardMetrics` succeeded; `Successful update operation.` for the function.
+- Cowork dev smoke at `localhost:5173/admin/dashboard` (admin-logged): **5/5 calls 200** across ranges (load, 30d preset, 7d preset, 7d custom, 365d preset), durations 535–586 ms; response shape matches `GetDashboardMetricsOutputSchema` (revenue.realCents/creditsCents/sparkline, users.newCount/activeCount/totalCount/sparkline, integrations.byPlatform, range.days, generatedAt); console clean of `error|fail|dashboard|Q[1-7]|FAILED_PRECONDITION|HttpsError|internal` (only react-router future-flag warnings); custom-range UI works; `> 365` days client guard surfaces "Período não pode exceder 365 dias" inline in the modal AND the server-side guard in [`GetDashboardMetricsInputSchema.refine(...days <= MAX_RANGE_DAYS)`](../packages/shared/src/schemas/dashboardMetrics.ts#L14) is intact (defense-in-depth).
+- Prod deploy (`adsmart-web`): both `firestore:indexes` and `functions:getDashboardMetrics` succeeded; **`Successful create operation.`** for the function (it had never existed in prod before — first time landed). Index propagation observed for ~90 s before declaring done.
+
+**Prod UI smoke deferred**
+
+The hosting bundle currently served at `adsmart-web.web.app` / `adsmart-web.firebaseapp.com` is `bc11f3` from **2025-08-03**. `origin/main` is at `f63daec` "limpeza" from `2026-03-03`. `develop` is **169 commits ahead of `main`**, and the entire admin dashboard refactor (Subprojeto 1+2) lives on `develop`. The `/admin/dashboard` route does not exist in the served bundle, so a UI smoke against either of the prod default URLs would 404. The custom domain `adsmart.app` was unmapped while site work is ongoing. The function and indexes ARE in prod and ready; the UI smoke will happen naturally when `develop` is merged to `main` and CI redeploys hosting (per [docs/DEPLOYMENT.md](DEPLOYMENT.md)). Until then, prod readiness is implied transitively by the dev smoke (same compiled bundle in `functions/deploy/`, same `firestore.indexes.json`).
+
+**What is NOT shipped this session**
+
+- `Promise.allSettled` instrumentation revert. The original plan called for a dedicated `chore(getDashboardMetrics): revert to Promise.all after Q-failures resolved` commit on Task 19. Holding off — the labelled-error pattern is a strict improvement over the silent-collapse anti-pattern of `Promise.all`, and the cost is ~60 lines of bookkeeping. Recommend keeping it. If the user still wants the revert, it lands in a follow-up commit.
+- Frontend changes. UI was already complete on `develop` (Tasks 1–17). Only the server-side reads were re-shaped.
+- Push to `origin/develop`. The two commits + this CHANGES.md update are local; user-controlled push.
+
+**Cross-references**
+
+- Live blocker entry that this resolves: `[2026-04-26] — Admin dashboard server + foundations landed (Subprojeto 2 — WIP)`, "Task 18 Step 3 — outstanding".
+- Adjacent known issue not addressed: `[2026-05-01] — Known issue: verifyRecaptcha returns 500 on fresh login in dev` (out of scope; pre-existing).
+
+---
+
+## [2026-05-01] — Known issue: `verifyRecaptcha` returns 500 on fresh login in dev (out of scope, deferred)
+
+**Status:** Discovered while running the Subprojeto 2 Task 18 dashboard smoke test in a profile-zerado Chrome (no persisted Firebase session). Pre-existing — not introduced by any commit in this session. Tracked here so it gets attacked separately. **No code change shipped for this bug.**
+
+**Symptom**
+
+- Login form (password flow) on `localhost:5173/login` against `adsmart-web-dev`.
+- UI banner: "Falha na verificação de segurança".
+- Network: `POST .../verifyRecaptcha` → `500 INTERNAL`.
+- Console: `FirebaseError: Erro ao verificar ReCAPTCHA` originating at [src/contexts/AuthContext.tsx:93](../src/contexts/AuthContext.tsx#L93).
+- Reproducible only on a **fresh** login (no Firebase session cookie). Existing logged-in browsers never hit `verifyRecaptcha` — their session token is reused — so the bug is silent in normal day-to-day use of dev.
+
+**Call chain**
+
+```
+LoginPage.handleSubmit               src/pages/LoginPage.tsx:66
+  → AuthContext.signInWithEmail      src/contexts/AuthContext.tsx:113
+    → AuthContext.verifyRecaptchaToken  src/contexts/AuthContext.tsx:87
+      → httpsCallable('verifyRecaptcha')  ← 500 here
+        → functions/src/recaptcha.ts:16  (server)
+```
+
+Server flow: validate token → `checkRateLimit('anonymous','recaptcha_verify',10,5)` (writes `rateLimits/anonymous_recaptcha_verify` via Admin SDK) → `axios.post('https://www.google.com/recaptcha/api/siteverify', { secret: recaptchaSecretKey.value(), response: token })` → if `success===false` throws `failed-precondition` → `securityLogger.logEvent(RECAPTCHA_SUCCESS, ...)` → return.
+
+**Why the client sees a generic message**
+
+The catch-all in [functions/src/recaptcha.ts:64-84](../functions/src/recaptcha.ts#L64-L84) wraps every non-rate-limit error as `HttpsError('internal', 'Erro ao verificar ReCAPTCHA')`. Same anti-pattern as the dashboard's pre-`fb2595e` `Promise.all` catch-all — silently collapses the real cause. Server `console.error('Erro ao verificar ReCAPTCHA:', error)` carries the truth but it's only visible in Cloud Logging.
+
+**Hypotheses ranked**
+
+1. **(most likely) `RECAPTCHA_SECRET_KEY` secret missing or invalid in `adsmart-web-dev`** — `recaptchaSecretKey.value()` returns wrong/empty value, Google API replies `{success:false, "error-codes":["missing-input-secret"|"invalid-input-secret"]}`, `failed-precondition` is rethrown as `internal`. Defined via `defineSecret` in [functions/src/config/index.ts:23](../functions/src/config/index.ts#L23). The function has been redeployed several times in dev recently (5 rounds during Task 18) — secret must be versioned in Secret Manager and explicitly bound to `verifyRecaptcha`.
+2. **`checkRateLimit` Firestore op fails** on `rateLimits/anonymous_recaptcha_verify` (every anonymous login fans into the same doc — contention point).
+3. **`axios.post` to `google.com/recaptcha/api/siteverify` times out / network errors** on cold start.
+4. **`securityLogger.logEvent(RECAPTCHA_FAILED, ...)` throws inside the catch** — least likely (the logger has internal try/catch at [functions/src/securityLogger.ts:111-115](../functions/src/securityLogger.ts#L111-L115)), and even if it threw, the symptom would be unchanged.
+
+**To resolve (when picked up)**
+
+1. Confirm hypothesis #1: `gcloud secrets versions list RECAPTCHA_SECRET_KEY --project=adsmart-web-dev` (or Firebase Console → Functions → `verifyRecaptcha` → Secrets tab). If missing/empty: `firebase functions:secrets:set RECAPTCHA_SECRET_KEY --project adsmart-web-dev`, then redeploy `verifyRecaptcha`.
+2. Repeat the secret check on `adsmart-web` (prod) defensively — no end-user has reported broken login, so prod is probably fine, but worth a 1-min audit.
+3. Pull `bunx firebase-tools functions:log --only verifyRecaptcha --project adsmart-web-dev` to read the real `console.error` and confirm hypothesis before changing anything. If the log says `missing-input-secret` / `invalid-input-secret` → hypothesis #1 confirmed. If it says `ECONNRESET` / `ETIMEDOUT` → hypothesis #3. If it's a Firestore error on `rateLimits` → hypothesis #2.
+4. **Add labelled-catch instrumentation** to `recaptcha.ts:64-84` in the same shape as the dashboard's `[dashboard:fail:Q<n>]` pattern (commit `fb2595e`): log `error.code` + `error.message` distinctly before re-throwing as `internal`. Same hygiene improvement — never lose visibility on opaque server errors again.
+
+**Out of scope for this session**
+
+This session is Subprojeto 2 Task 18 — dashboard fix only. The `verifyRecaptcha` bug pre-existed (commits `fb2595e` and `6bf62ec` from this session do not touch `recaptcha.ts`, `rateLimiter.ts`, `securityLogger.ts`, `AuthContext.tsx`, `LoginPage.tsx`, nor any Secret Manager binding).
+
+---
+
 ## [2026-04-26] — Admin dashboard server + foundations landed (Subprojeto 2 — WIP)
 
 **Status:** Tasks 1-17 of 20 complete + Task 18 (deploy) PARTIAL — dev deploy of indexes and callable landed but smoke test FAILS. The dashboard at localhost → adsmart-web-dev callable returns `INTERNAL` (Cloud Logging shows `9 FAILED_PRECONDITION` with empty `details`). Browser-side investigation via the Cowork agent decoded `create_composite=` URLs from the few errors that DID carry full `details` and identified two missing index orderings; those were also deployed (commit `04c3b37`). User reported the dashboard STILL fails after that deploy. As of session-end 2026-04-27, the issue is unresolved — see "Task 18 Step 3 — outstanding" below for the full state. No prod deploy attempted yet. No docs graduated to "shipped".
