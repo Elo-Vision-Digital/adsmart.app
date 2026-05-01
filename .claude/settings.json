@@ -60,5 +60,72 @@
     "superpowers@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "stripe@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(functions/src/**/*.ts)|Write(functions/src/**/*.ts)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/firebase/check-no-process-env-secret.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(src/**/*.ts)|Write(src/**/*.ts)|Edit(src/**/*.tsx)|Write(src/**/*.tsx)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/firebase/check-no-client-wallet-write.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(*firestore:rules*)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/firebase/check-rules-tested.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(firestore.rules)|Write(firestore.rules)",
+            "command": "echo 'firestore.rules editada. Próximos passos: /firestore-rules-test → firestore-rules-reviewer agent → /firebase-deploy.'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(packages/shared/src/schemas/**)|Write(packages/shared/src/schemas/**)",
+            "command": "echo 'Schema editado. CLAUDE.md exige: teste co-located + DATA-MODEL.md + entry em CHANGES.md. ADR-009.'"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/firebase/inject-firebase-context.sh"
+          }
+        ]
+      }
+    ]
   }
 }
