@@ -63,10 +63,119 @@ export const getDashboardMetrics = onCall({ memory: '512MiB' }, async (request) 
   const endTs = admin.firestore.Timestamp.fromDate(new Date(endDate))
   const db = admin.firestore()
 
-  // Run the 7 independent reads in parallel. Aggregates and materialized snapshots
-  // are not transactional with each other; in-flight writes can introduce a small
-  // drift (≤ ε) between card totals (aggregates) and sparkline sums (materialized).
-  // The Math.max(0, ...) floors guard against transient negative residuals.
+  // [INSTRUMENTATION 2026-04-28] Promise.allSettled with labeled queries to pinpoint
+  // which of the 7 reads is throwing FAILED_PRECONDITION (Subprojeto 2 Task 18 dev smoke).
+  // Revert to Promise.all once the missing index/exemption is identified and deployed.
+  const labeledQueries = [
+    {
+      label: 'Q1_allCreditsTotal_agg',
+      run: () =>
+        db
+          .collectionGroup('transactions')
+          .where('type', '==', 'credit')
+          .where('status', '==', 'completed')
+          .where('createdAt', '>=', startTs)
+          .where('createdAt', '<=', endTs)
+          .aggregate({ totalCents: admin.firestore.AggregateField.sum('amount') })
+          .get(),
+    },
+    {
+      label: 'Q2_grantedTotal_agg',
+      run: () =>
+        db
+          .collectionGroup('transactions')
+          .where('type', '==', 'credit')
+          .where('status', '==', 'completed')
+          .where('adminAction', '==', true)
+          .where('createdAt', '>=', startTs)
+          .where('createdAt', '<=', endTs)
+          .aggregate({ creditsCents: admin.firestore.AggregateField.sum('amount') })
+          .get(),
+    },
+    {
+      label: 'Q3_txSnap',
+      run: () =>
+        db
+          .collectionGroup('transactions')
+          .where('type', '==', 'credit')
+          .where('status', '==', 'completed')
+          .where('createdAt', '>=', startTs)
+          .where('createdAt', '<=', endTs)
+          .select('amount', 'adminAction', 'createdAt', 'type', 'status')
+          .get(),
+    },
+    {
+      label: 'Q4_usersInRangeSnap',
+      run: () =>
+        db
+          .collection('users')
+          .where('createdAt', '>=', startTs)
+          .where('createdAt', '<=', endTs)
+          .select('createdAt')
+          .get(),
+    },
+    {
+      label: 'Q5_totalUsers_agg',
+      run: () =>
+        db
+          .collection('users')
+          .aggregate({ totalCount: admin.firestore.AggregateField.count() })
+          .get(),
+    },
+    {
+      label: 'Q6_activeTxSnap',
+      run: () =>
+        db
+          .collectionGroup('transactions')
+          .where('createdAt', '>=', startTs)
+          .where('createdAt', '<=', endTs)
+          .select('amount', 'adminAction', 'createdAt', 'type', 'status')
+          .get(),
+    },
+    {
+      label: 'Q7_adAccountsSnap',
+      run: () =>
+        db
+          .collectionGroup('adAccounts')
+          .where('isActive', '==', true)
+          .select('platform', 'isActive')
+          .get(),
+    },
+  ]
+
+  const settled = await Promise.allSettled(labeledQueries.map((q) => q.run()))
+  const failures: Array<{ label: string; err: unknown }> = []
+  for (let i = 0; i < settled.length; i++) {
+    const r = settled[i]
+    if (r.status === 'rejected') {
+      failures.push({ label: labeledQueries[i].label, err: r.reason })
+    }
+  }
+
+  if (failures.length > 0) {
+    for (const f of failures) {
+      const e = f.err as {
+        code?: number
+        message?: string
+        details?: string
+        metadata?: unknown
+        stack?: string
+      }
+      console.error(`[dashboard:fail:${f.label}]`, {
+        code: e?.code,
+        message: e?.message,
+        details: e?.details ?? '(empty)',
+        stackHead: typeof e?.stack === 'string' ? e.stack.split('\n').slice(0, 5).join(' | ') : '(no stack)',
+      })
+    }
+    throw new HttpsError(
+      'internal',
+      `Dashboard query failures: ${failures.map((f) => f.label).join(', ')}`,
+    )
+  }
+
+  type AnySnap = FirebaseFirestore.QuerySnapshot | FirebaseFirestore.AggregateQuerySnapshot<Record<string, FirebaseFirestore.AggregateField<number>>>
+  const fulfilled = settled.map((r) => (r as PromiseFulfilledResult<AnySnap>).value)
   const [
     allCreditsTotal,
     grantedTotal,
@@ -75,62 +184,15 @@ export const getDashboardMetrics = onCall({ memory: '512MiB' }, async (request) 
     totalUsersAgg,
     activeTxSnap,
     adAccountsSnap,
-  ] = await Promise.all([
-    // 1. Total credits (real + granted) — single aggregate
-    db
-      .collectionGroup('transactions')
-      .where('type', '==', 'credit')
-      .where('status', '==', 'completed')
-      .where('createdAt', '>=', startTs)
-      .where('createdAt', '<=', endTs)
-      .aggregate({ totalCents: admin.firestore.AggregateField.sum('amount') })
-      .get(),
-    // 2. Granted credits aggregate (adminAction == true)
-    db
-      .collectionGroup('transactions')
-      .where('type', '==', 'credit')
-      .where('status', '==', 'completed')
-      .where('adminAction', '==', true)
-      .where('createdAt', '>=', startTs)
-      .where('createdAt', '<=', endTs)
-      .aggregate({ creditsCents: admin.firestore.AggregateField.sum('amount') })
-      .get(),
-    // 3. Materialized read of credits-in-range for sparkline split (real vs credits per day).
-    //    Project only the fields needed; drop description/payerName/payerCpf/etc.
-    db
-      .collectionGroup('transactions')
-      .where('type', '==', 'credit')
-      .where('status', '==', 'completed')
-      .where('createdAt', '>=', startTs)
-      .where('createdAt', '<=', endTs)
-      .select('amount', 'adminAction', 'createdAt', 'type', 'status')
-      .get(),
-    // 4. Users created in range — full snapshot drives both newCount + sparkline
-    db
-      .collection('users')
-      .where('createdAt', '>=', startTs)
-      .where('createdAt', '<=', endTs)
-      .select('createdAt')
-      .get(),
-    // 5. Total users (snapshot)
-    db
-      .collection('users')
-      .aggregate({ totalCount: admin.firestore.AggregateField.count() })
-      .get(),
-    // 6. Active users — distinct uid in transactions in range (only need parent ref)
-    db
-      .collectionGroup('transactions')
-      .where('createdAt', '>=', startTs)
-      .where('createdAt', '<=', endTs)
-      .select('amount', 'adminAction', 'createdAt', 'type', 'status')
-      .get(),
-    // 7. Integrations — distinct active users per platform (snapshot, range-independent)
-    db
-      .collectionGroup('adAccounts')
-      .where('isActive', '==', true)
-      .select('platform', 'isActive')
-      .get(),
-  ])
+  ] = fulfilled as [
+    FirebaseFirestore.AggregateQuerySnapshot<{ totalCents: FirebaseFirestore.AggregateField<number> }>,
+    FirebaseFirestore.AggregateQuerySnapshot<{ creditsCents: FirebaseFirestore.AggregateField<number> }>,
+    FirebaseFirestore.QuerySnapshot,
+    FirebaseFirestore.QuerySnapshot,
+    FirebaseFirestore.AggregateQuerySnapshot<{ totalCount: FirebaseFirestore.AggregateField<number> }>,
+    FirebaseFirestore.QuerySnapshot,
+    FirebaseFirestore.QuerySnapshot,
+  ]
 
   // Revenue totals.
   // `adminAction` is set ONLY when an admin manually credits a wallet via
