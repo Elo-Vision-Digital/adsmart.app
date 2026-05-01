@@ -15,10 +15,16 @@ patternA='setDoc\([^)]*['"'"'"][^'"'"'"]*\b(wallet/current|transactions/)'
 patternB='setDoc\(\s*doc\([^)]*['"'"'"]wallet['"'"'"][[:space:]]*,[[:space:]]*['"'"'"]current['"'"'"]'
 # Pattern C: modular SDK doc(db, ..., 'transactions', ...)
 patternC='setDoc\(\s*doc\([^)]*['"'"'"]transactions['"'"'"][[:space:]]*,'
+# Pattern D: modular SDK addDoc(collection(db, ..., 'wallet', ...))
+patternD='addDoc\(\s*collection\([^)]*['"'"'"]wallet['"'"'"]'
+# Pattern E: modular SDK addDoc(collection(db, ..., 'transactions'))
+patternE='addDoc\(\s*collection\([^)]*['"'"'"]transactions['"'"'"]'
 
 if echo "$content" | grep -qE "$patternA" \
   || echo "$content" | grep -qE "$patternB" \
-  || echo "$content" | grep -qE "$patternC"; then
+  || echo "$content" | grep -qE "$patternC" \
+  || echo "$content" | grep -qE "$patternD" \
+  || echo "$content" | grep -qE "$patternE"; then
   cat >&2 <<'EOF'
 ❌ Blocked: client-side setDoc on wallet/current or transactions/.
 

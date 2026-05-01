@@ -67,6 +67,7 @@ if [[ ",$only," == *",indexes,"* ]]; then
   echo "→ Polling indexes until all Enabled (max 5 min, sleep 30s)..."
   attempts=0
   max_attempts=10
+  all_enabled=0
   while [ $attempts -lt $max_attempts ]; do
     attempts=$((attempts + 1))
     sleep 30
@@ -76,9 +77,15 @@ if [[ ",$only," == *",indexes,"* ]]; then
       echo "  [$attempts/$max_attempts] still building..."
     else
       echo "  [$attempts/$max_attempts] all indexes Enabled."
+      all_enabled=1
       break
     fi
   done
+  if [ $all_enabled -eq 0 ]; then
+    echo "⚠ Indexes still building after 5 min." >&2
+    echo "   Check status: bunx firebase firestore:indexes --project $project" >&2
+    echo "   Queries hitting these indexes will throw FAILED_PRECONDITION until Enabled." >&2
+  fi
 fi
 
 echo "✓ Deploy complete."

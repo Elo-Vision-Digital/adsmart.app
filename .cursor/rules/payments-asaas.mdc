@@ -1,6 +1,7 @@
 ---
 description: Payment gateway is Asaas — SuitPay deprecated, do not extend
-alwaysApply: true
+globs: functions/src/suitpay*.ts, functions/src/asaas*.ts, src/services/payments/**, src/components/payment/**, docs/PAYMENTS.md
+alwaysApply: false
 ---
 
 # Payments: Asaas only (SuitPay deprecated)
