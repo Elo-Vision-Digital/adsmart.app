@@ -57,3 +57,6 @@ firestore-debug.log
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local timestamp stamp written by scripts/firebase/test-rules.sh
+.firebase/rules-last-tested.txt
