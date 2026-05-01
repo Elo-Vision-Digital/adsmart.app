@@ -10,6 +10,23 @@ Format conventions:
 
 ---
 
+### 2026-05-01 — feat(claude): Firebase Conventions Pack
+
+Added enforcement tooling that moves AdSmart's Firebase conventions from passive docs to active tooling:
+
+- 4 slash commands in `.claude/commands/` (firestore-rules-test, firestore-new-query, functions-new-callable, firebase-deploy)
+- 3 agents in `.claude/agents/` (firestore-rules-reviewer, functions-security-reviewer, firestore-query-reviewer)
+- 6 hooks in `.claude/settings.json` (3 PreToolUse blocks, 2 PostToolUse warns, 1 UserPromptSubmit inject)
+- 7 Cursor rules in `.cursor/rules/` mirroring the same conventions
+- Helper scripts in `scripts/firebase/` (test-rules.sh, safe-deploy.sh, 3 PreToolUse helpers, 1 UserPromptSubmit helper, context-snippet.txt)
+
+Patterns validated against Firebase Functions v2 SDK + Firestore Security Rules + index docs (Context7) AND against actual project code (`reserveUserDocument.ts`, `getDashboardMetrics.ts`, `bootstrapUser.ts`, `config/index.ts`).
+
+Spec: [docs/superpowers/specs/2026-05-01-firebase-conventions-design.md](superpowers/specs/2026-05-01-firebase-conventions-design.md).
+Plan: [docs/superpowers/plans/2026-05-01-firebase-conventions-pack-plan.md](superpowers/plans/2026-05-01-firebase-conventions-pack-plan.md).
+
+---
+
 ## [2026-05-01] — Subprojeto 2 Task 18 closed: `getDashboardMetrics` 500 INTERNAL resolved (dev + prod deployed)
 
 **Status:** Resolves the "Task 18 Step 3 — outstanding" blocker from the [2026-04-26] WIP entry below. The admin dashboard callable now returns 200 consistently. Function and indexes deployed to **both** `adsmart-web-dev` and `adsmart-web`. UI smoke green in dev (Cowork agent, 5/5 calls 200). UI smoke in prod is **deferred** until the next hosting deploy (see "Prod UI smoke deferred" below — the served prod bundle predates the dashboard route).

@@ -37,6 +37,7 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 | Add a new page | `src/App.tsx`, `src/components/PrivateRoute.tsx`, `src/components/AdminRoute.tsx` |
 | Add an admin sub-page | `src/pages/admin/AdminLayout.tsx`, `src/App.tsx` (admin nested routes), `src/locales/pt-BR.json` admin namespace, `src/locales/types.ts` `Admin` interface |
 | Add a Cloud Function | `functions/src/index.ts`, `functions/src/config/index.ts`, `functions/AGENTS.md` |
+| Add a Cloud Function (callable) | `.claude/commands/functions-new-callable.md` (slash command), `functions/src/reserveUserDocument.ts` (canonical example) |
 | Change auth/admin logic | `src/contexts/AuthContext.tsx`, `src/components/AdminRoute.tsx`, `docs/SECURITY.md` |
 | Change Firestore rules | `firestore.rules`, `docs/DATA-MODEL.md`, `functions/test/firestore-rules.test.ts` |
 | Change wallet / billing | `docs/DOMAIN.md`, `functions/src/adminWalletManager.ts`, `src/hooks/useWallet.ts` |
