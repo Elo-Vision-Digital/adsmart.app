@@ -1,0 +1,40 @@
+---
+description: Zod-first schema source-of-truth for Firestore docs (ADR-009)
+globs: packages/shared/src/schemas/**, src/types/**, functions/src/**/*.ts
+alwaysApply: false
+---
+
+# Firestore schemas (AdSmart, ADR-009)
+
+`packages/shared/src/schemas/` is the single source of truth for Firestore document shapes. Types are derived via `z.infer`. NEVER hand-write a parallel TypeScript interface.
+
+## Pattern
+
+```ts
+// packages/shared/src/schemas/userWallet.ts
+import { z } from 'zod'
+
+export const UserWalletSchema = z.object({
+  id: z.string().optional(),
+  balance: z.number().int().min(0),
+  currency: z.literal('BRL'),
+  updatedAt: z.unknown(), // Timestamp at runtime
+})
+
+export type UserWallet = z.infer<typeof UserWalletSchema>
+```
+
+Re-export in `packages/shared/src/index.ts`. Use the schema for validation in callables (`safeParse`); use the inferred type elsewhere.
+
+## After changing a schema
+
+1. Add or update Vitest case in the matching `*.test.ts` (co-located).
+2. Run `cd packages/shared && bun run test` and root `bun run typecheck`.
+3. Update `docs/DATA-MODEL.md` (markdown follows the schema, not the other way).
+4. Add a dated entry in `docs/CHANGES.md` describing the field-level drift.
+
+## References
+
+- CLAUDE.md → "Editing Firestore document shapes"
+- docs/Decisions.md → ADR-009
+- docs/DATA-MODEL.md

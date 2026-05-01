@@ -1,0 +1,44 @@
+---
+description: Wallet/transactions are write-only via Cloud Functions (ADR-010)
+globs: src/**/*.ts, src/**/*.tsx
+alwaysApply: false
+---
+
+# Wallet/transactions immutability from client (AdSmart, ADR-010)
+
+Phase 3 firestore.rules REJECT client-side writes to:
+- `users/{uid}/wallet/**`
+- `users/{uid}/transactions/**`
+
+Wallet is seeded server-side by `bootstrapUser` (Auth blocking trigger). Transactions are written by Cloud Functions using Admin SDK.
+
+## NEVER (will be blocked by hook + rules)
+
+```ts
+// String-path
+await setDoc(doc(db, 'users/X/wallet/current'), data)
+
+// Modular SDK
+await setDoc(doc(db, 'users', uid, 'wallet', 'current'), data)
+await setDoc(doc(db, 'users', uid, 'transactions', txId), data)
+```
+
+## OK
+
+```ts
+// Update name/phone on users/{uid}
+await updateDoc(doc(db, 'users', uid), { name, phone, updatedAt })
+
+// Read wallet
+const snap = await getDoc(doc(db, 'users', uid, 'wallet', 'current'))
+
+// Credit wallet via callable
+const fn = httpsCallable(functions, 'addUserCredits')
+await fn({ targetUid, amountCents })
+```
+
+## References
+
+- firestore.rules:51-58
+- docs/Decisions.md → ADR-010, ADR-012
+- src/hooks/useWallet.ts
