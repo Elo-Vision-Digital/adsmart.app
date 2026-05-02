@@ -10,6 +10,27 @@ Format conventions:
 
 ---
 
+## [2026-05-02] — Docs sweep: Subprojeto 2 surface graduated to "shipped" in conventions/docs
+
+Closes the docs-sweep follow-up flagged by the [2026-05-01] Subprojeto 2 Task 18 entry. The dashboard callable + UI surface are now reflected in the conventions docs and per-feature contracts; no code change.
+
+- **[AGENTS.md](../AGENTS.md):** the "Add an admin sub-page" row in the read-first map now points at `AdminLayout.tsx` (tab list) and notes the `React.lazy` pattern from `AdminDashboardPage.tsx` for heavy pages (charts, etc.). New row "Add an admin metrics callable" points at `getDashboardMetrics.ts` as the canonical example (admin gate, Zod input from `@adsmart/shared`, `Promise.allSettled` over labelled reads, BRT-anchored day bucketing).
+- **[docs/QA-CHECKLIST.md](QA-CHECKLIST.md):** admin panel section bumped from 3 tabs to 4 tabs (Dashboard / Logs / Prices / Wallet) with `/admin` → `/admin/dashboard` as the new default redirect (spec R9). Added a dedicated "Dashboard tab" subsection with 11 manual QA items covering preset buttons, custom-range dialog, > 365d guard (client + server), card content, sparkline behavior, error-banner retry path, and the console-clean assertion (`error|fail|dashboard|Q[1-7]|FAILED_PRECONDITION|HttpsError|internal`). The pre-existing Security/Prices/Wallet items are preserved verbatim, just regrouped under per-tab headings.
+- **[docs/API-CONTRACTS.md](API-CONTRACTS.md):** new `getDashboardMetrics` entry added after `getSecurityStats`. Documents the `onCall({ memory: '512MiB' })` config, admin gate, Zod schemas via `@adsmart/shared`, the `Promise.allSettled` orchestration over Q1–Q7, day-bucketing TZ, the `realCents = max(0, totalCents - grantedCents)` derivation, full input/output shapes, error codes (including the labelled `Dashboard query failures: Q<n>` message), and the required composite indexes / field overrides shipped in [firestore.indexes.json](../firestore.indexes.json).
+- **[docs/DEPLOYMENT.md](DEPLOYMENT.md):** "Auth blocking triggers (Identity Platform)" section corrected — three references to the legacy `bootstrapUserWallet` name updated to `bootstrapUser` (renamed in the 2026-04-26 ADR-010 revision when the trigger was extended to seed both `users/{uid}` and `users/{uid}/wallet/current` in a single batched write). The link from `bootstrapUserWallet` to ADR-010's older anchor is replaced with the current anchor (`adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger`). Added a backstop sentence noting that both projects had Identity Platform enabled and the trigger deployed during the 2026-04-26 reconciliation.
+- **[docs/ERROR-HANDLING.md](ERROR-HANDLING.md):** new subsection "Multi-read callables: labelled `Promise.allSettled` over `Promise.all`" added after the `instanceof HttpsError` re-throw pattern. Promotes the Subprojeto 2 Task 18 instrumentation (`fb2595e`) from incident-specific to a documented project convention for any callable orchestrating 3+ reads, with `getDashboardMetrics` as the canonical example.
+
+What was deliberately NOT changed:
+
+- **[docs/Decisions.md](Decisions.md):** ADR-010 already reads "Per-user state bootstrap" and the 2026-04-26 revision note already covers the rename. No new ADR for the labelled-allSettled pattern — it's a small convention, not an architectural decision; ERROR-HANDLING.md is the right home.
+- **[docs/REFACTOR-PLAN.md](REFACTOR-PLAN.md):** Phases A–E already marked Completed at the header; no Subprojeto 2 content belongs there.
+- **[docs/DATA-MODEL.md](DATA-MODEL.md):** dashboard reads from existing collections only; no new collection or shape was introduced. Field-level docs are unchanged.
+- **Dead-code cleanup** (top-level `campaigns/{id}` + `reportTemplates/{id}` rules + backupScheduler config). Still pending production-data verification via `gcloud firestore` per the post-Phase-D follow-up. Out of scope for this sweep.
+
+Verification: `bun run typecheck` not required (markdown-only). All updated docs render cleanly under the existing markdown conventions; cross-links resolve. Working tree was clean before the sweep; only docs files plus this CHANGES entry are modified.
+
+---
+
 ### 2026-05-01 — feat(claude): Firebase Conventions Pack
 
 Added enforcement tooling that moves AdSmart's Firebase conventions from passive docs to active tooling:

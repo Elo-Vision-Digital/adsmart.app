@@ -8,10 +8,12 @@ Read [../AGENTS.md](../AGENTS.md) for the project-wide overview. This file cover
 functions/
   src/
     config/
-      index.ts          # All defineSecret handles (googleAdsClientSecret, metaAdsAppSecret, recaptchaSecretKey)
+      index.ts          # All defineSecret handles (googleAdsClientSecret, metaAdsAppSecret, recaptchaSecretKey, encryptionKey)
     index.ts            # Exports all functions; Firebase Admin init
     rateLimiter.ts      # checkRateLimit() utility
     securityLogger.ts   # SecurityLogger class, SecurityEventType, SecuritySeverity enums
+    bootstrapUser.ts    # beforeUserCreated blocking trigger — seeds users/{uid} + wallet/current (ADR-010)
+    reserveUserDocument.ts  # reserveUserDocument (onCall) — CPF/CNPJ uniqueness + immutability (ADR-012)
     recaptcha.ts        # verifyRecaptcha (onCall)
     adminWalletManager.ts  # addUserCredits (onCall, admin-only)
     googleAdsOAuth.ts   # V1 deprecated: getGoogleAdsAuthUrl, getGoogleAdsCampaigns
@@ -19,8 +21,9 @@ functions/
     metaAdsOAuth.ts     # V1 deprecated: getMetaAdsAuthUrl, getMetaAdsCampaigns
     metaAdsOAuthV2.ts   # V2: handleMetaAdsCallbackWithSelection, confirmMetaAdsAccountSelection
     priceManager.ts     # getProductPrices, updateProductPrices, initializeDefaultPrices
-    getPublicProductPrices.ts  # getPublicProductPrices (no auth required)
+    getPublicProductPrices.ts  # getPublicProductPrices (no auth required, invoker:'public')
     securityStats.ts    # getSecurityStats (admin-only)
+    getDashboardMetrics.ts  # getDashboardMetrics (admin-only) — powers /admin/dashboard
     deleteUserData.ts   # deleteUserData (placeholder)
     suitpayPayment.ts   # @deprecated: createPixPayment, checkPaymentStatus
     suitpayWebhook.ts   # @deprecated: suitpayWebhook (onRequest)
@@ -56,6 +59,7 @@ import { defineSecret } from 'firebase-functions/params'
 export const googleAdsClientSecret = defineSecret('GOOGLE_ADS_CLIENT_SECRET')
 export const metaAdsAppSecret = defineSecret('META_ADS_APP_SECRET')
 export const recaptchaSecretKey = defineSecret('RECAPTCHA_SECRET_KEY')
+export const encryptionKey = defineSecret('ENCRYPTION_KEY')  // declared; tokens currently base64 (real crypto pending)
 ```
 
 Every function that uses a secret MUST:

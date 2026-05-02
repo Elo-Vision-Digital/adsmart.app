@@ -321,6 +321,58 @@ Returns aggregated security event counts from `securityLogs`.
 
 ---
 
+## getDashboardMetrics
+
+**File:** `functions/src/getDashboardMetrics.ts`
+**Trigger:** `onCall({ memory: '512MiB' })`
+**Auth required:** Yes + admin check (custom claim `admin === true` OR `ADMIN_EMAILS` allowlist)
+**Schemas:** `GetDashboardMetricsInputSchema` / `GetDashboardMetricsOutputSchema` from `@adsmart/shared` (source of truth: [packages/shared/src/schemas/dashboardMetrics.ts](../packages/shared/src/schemas/dashboardMetrics.ts))
+
+Powers `/admin/dashboard`. Runs 7 reads in parallel via `Promise.allSettled` over labelled queries (Q1–Q7). On any rejection, throws `internal` with `Dashboard query failures: Q<n>[, Q<m>...]` so Cloud Logging surfaces which read failed instead of collapsing into an opaque `INTERNAL`. Day buckets for sparklines use `America/Sao_Paulo` via a BRT-anchored `enumerateDays`. `realCents = max(0, totalCents - grantedCents)` derives real revenue (Firestore lacks a `!=` aggregation operator).
+
+**Input:**
+```typescript
+{
+  startDate: string,  // ISO 8601 datetime
+  endDate: string     // ISO 8601 datetime; must be >= startDate; range capped at 365 days
+}
+```
+
+**Output:**
+```typescript
+{
+  range: { startDate: string, endDate: string, days: number },
+  revenue: {
+    realCents: number,        // integer >= 0 (BRL centavos)
+    creditsCents: number,     // integer >= 0 (admin-issued)
+    sparkline: Array<{ date: string /* YYYY-MM-DD */, realCents: number, creditsCents: number }>
+  },
+  users: {
+    newCount: number,
+    activeCount: number,
+    totalCount: number,
+    sparkline: Array<{ date: string /* YYYY-MM-DD */, newCount: number }>
+  },
+  integrations: {
+    byPlatform: Array<{ platform: 'google_ads' | 'meta_ads', distinctUserCount: number }>
+  },
+  generatedAt: string         // ISO 8601 datetime
+}
+```
+
+**Errors:**
+- `unauthenticated` — not signed in
+- `permission-denied` — caller is not admin
+- `invalid-argument` — bad ISO datetime, `endDate < startDate`, or range > 365 days (server-side guard mirrors the client guard for defense-in-depth)
+- `internal` — labelled as `Dashboard query failures: Q<n>[, Q<m>...]` when one or more reads reject (typically a missing composite index or `fieldOverride`); see Cloud Logging for the per-query `[dashboard:fail:Q<n>]` rows
+
+**Required indexes / overrides** (in [firestore.indexes.json](../firestore.indexes.json)):
+- `transactions` (collection group) — composite indexes for the aggregate-sum queries (Q1, Q2): `status + type + createdAt + amount` and `adminAction + status + type + createdAt + amount`; field overrides for `createdAt` (ASC + DESC, COLLECTION + COLLECTION_GROUP) and `amount`
+- `adAccounts.isActive` — single-field override at COLLECTION (ASC + DESC) and COLLECTION_GROUP (ASC) scopes for Q7
+- `users.createdAt` — ASC for Q4 (users-in-range)
+
+---
+
 ## suitpayWebhook (deprecated)
 
 **File:** `functions/src/suitpayWebhook.ts`  

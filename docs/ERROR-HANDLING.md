@@ -43,6 +43,12 @@ export const myCallable = onCall({ secrets: [...] }, async (request) => {
 
 The `instanceof HttpsError` re-throw is **load-bearing**. Without it, deliberate `permission-denied` / `invalid-argument` errors would be swallowed and re-emitted as `internal`, masking the real cause for clients (and breaking client-side error UX). Reference: `functions/src/googleAdsOAuthV2.ts:262`, `functions/src/metaAdsOAuth.ts:154`, `functions/src/adminWalletManager.ts:344`.
 
+### Multi-read callables: labelled `Promise.allSettled` over `Promise.all`
+
+When a callable orchestrates several independent reads (typical for analytics endpoints), prefer `Promise.allSettled` over labelled queries instead of `Promise.all`. `Promise.all` collapses any rejection into a single opaque `INTERNAL` — Cloud Logging often shows `details: ''` for missing-index errors, which makes the failing read invisible.
+
+Canonical example: [`getDashboardMetrics`](../functions/src/getDashboardMetrics.ts) runs 7 reads (`Q1_allCreditsTotal_agg` … `Q7_adAccountsSnap`) via `Promise.allSettled`, logs `[dashboard:fail:Q<n>]` with `error.code` / `message` / `details` / `stackHead` for each rejection, and throws `HttpsError('internal', 'Dashboard query failures: Q<n>[, Q<m>...]')` so the failing labels reach the client message directly. The same pattern applies to any callable that fans out 3+ reads where one missing index would otherwise be undebuggable from logs alone. See the 2026-05-01 entry in [CHANGES.md](CHANGES.md) for the original incident (Subprojeto 2 Task 18).
+
 ### What to log vs surface
 
 - **Log** (server-side via `console.error` and/or `securityLogger`): the full error object, stack, all context (userId, action, payload digest).

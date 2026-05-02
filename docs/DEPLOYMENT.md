@@ -200,14 +200,16 @@ Test rules locally before deploying — see `docs/TESTING.md`.
 
 ## Auth blocking triggers (Identity Platform)
 
-Functions that use `firebase-functions/v2/identity` (e.g. `bootstrapUserWallet` — see [ADR-010](Decisions.md#adr-010-wallet-bootstrap-moved-to-server-side-auth-blocking-trigger)) require Identity Platform to be enabled on the target Firebase project. The CLI deploy refuses the trigger otherwise.
+Functions that use `firebase-functions/v2/identity` (e.g. `bootstrapUser` — see [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger)) require Identity Platform to be enabled on the target Firebase project. The CLI deploy refuses the trigger otherwise.
 
 One-time enablement per project (dev and prod):
 1. Firebase Console → Authentication → Settings → "User actions" tab.
 2. Enable Identity Platform (Google may surface a billing-tier upgrade prompt; blocking functions are included on Blaze).
-3. Re-run `firebase deploy --only functions:bootstrapUserWallet --project <target>`.
+3. Re-run `firebase deploy --only functions:bootstrapUser --project <target>`.
 
-Blocking triggers run **synchronously** on every signup — they add latency to the auth flow. Keep them small (a single Admin SDK write is the upper bound for `bootstrapUserWallet`).
+Both `adsmart-web-dev` and `adsmart-web` had Identity Platform enabled and `bootstrapUser` deployed during the 2026-04-26 reconciliation — see the "Production reconciled (Subprojeto 0.5)" entry in [CHANGES.md](CHANGES.md).
+
+Blocking triggers run **synchronously** on every signup — they add latency to the auth flow. Keep them small (a single batched Admin SDK write is the upper bound for `bootstrapUser`, which seeds both `users/{uid}` and `users/{uid}/wallet/current`).
 
 ## GitHub Actions CI
 

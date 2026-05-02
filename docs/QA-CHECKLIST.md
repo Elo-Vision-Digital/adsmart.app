@@ -50,20 +50,43 @@ Run this checklist before every production deploy. Check each item manually unle
 
 ## Admin panel
 
-Routes (post-Subprojeto 1 IA refactor): `/admin` → `/admin/security` (default redirect), `/admin/prices`, `/admin/wallet`. Single `AdminRoute` guard at the parent.
+Routes (post-Subprojeto 2): `/admin` → `/admin/dashboard` (default redirect), `/admin/security`, `/admin/prices`, `/admin/wallet`. Single `AdminRoute` guard at the parent. The `AdminDashboardPage` is `React.lazy`-loaded so recharts + d3 transitive deps don't bloat first paint of the rest of the app.
 
-- [ ] `/admin` redirects to `/admin/security`
-- [ ] Sub-nav has three tabs: Logs de Segurança, Configuração de Preços, Gestão de Saldo
+- [ ] `/admin` redirects to `/admin/dashboard`
+- [ ] Sub-nav has four tabs in order: Dashboard, Logs de Segurança, Configuração de Preços, Gestão de Saldo
 - [ ] Active tab matches the URL (clicking tabs updates URL; pasting a sub-route URL highlights the right tab)
-- [ ] Refreshing on `/admin/prices` or `/admin/wallet` stays on that route (does not redirect to `/admin/security`)
-- [ ] Non-admin cannot access `/admin/security`, `/admin/prices`, or `/admin/wallet` (each redirects to `/dashboard`)
-- [ ] Security tab loads stats from `getSecurityStats` without console errors
-- [ ] Prices tab loads from `getProductPrices` and shows the 4 default products
+- [ ] Refreshing on `/admin/security`, `/admin/prices`, or `/admin/wallet` stays on that route (does not redirect to `/admin/dashboard`)
+- [ ] Non-admin cannot access any `/admin/*` route (each redirects to `/dashboard`)
+- [ ] Switching language re-renders the admin panel labels (no raw `admin.*` keys visible)
+
+### Dashboard tab (`/admin/dashboard`)
+
+- [ ] Page loads with default range `30d` (from `getDateRangeFromPreset('30d')`)
+- [ ] Three cards render in a 1/2/3-col responsive grid: Receita, Usuários, Integrações
+- [ ] Skeleton (`DashboardSkeleton`) shows briefly on first mount (no layout shift when data arrives)
+- [ ] Preset buttons (`today | 7d | 30d | 60d | 90d | 180d | 365d`) trigger refetch and render new totals
+- [ ] Custom range dialog: opening, picking a 2-sided range, confirming triggers a refetch
+- [ ] Range > 365 days surfaces "Período não pode exceder 365 dias" inline (client-side guard) AND server rejects with `invalid-argument` (defense-in-depth via `GetDashboardMetricsInputSchema.refine`)
+- [ ] Revenue card: `realCents` + `creditsCents` formatted as `R$ X,XX` (Intl.NumberFormat pt-BR); sparkline plots only `realCents` over day buckets
+- [ ] Users card: `newCount` / `activeCount` / `totalCount` integers; sparkline plots `newCount`
+- [ ] Integrations card: vertical list `{platform → distinctUserCount}` with horizontal bars; empty-state copy when `byPlatform.length === 0`
+- [ ] Force-error path (e.g., disconnect network mid-fetch): red-bordered banner with retry button; clicking retry re-invokes the callable
+- [ ] Console clean of `error|fail|dashboard|Q[1-7]|FAILED_PRECONDITION|HttpsError|internal` while the dashboard is open
+
+### Security tab
+
+- [ ] Loads stats from `getSecurityStats` without console errors
+
+### Prices tab
+
+- [ ] Loads from `getProductPrices` and shows the 4 default products
 - [ ] Saving prices calls `updateProductPrices` and shows the success message
-- [ ] Wallet tab: admin can add credits to a user by email
+
+### Wallet tab
+
+- [ ] Admin can add credits to a user by email
 - [ ] Amount validation: > 0, ≤ R$ 1.000
 - [ ] Reason validation: ≥ 10 characters
-- [ ] Switching language re-renders the admin panel labels (no raw `admin.*` keys visible)
 
 ## Settings
 
