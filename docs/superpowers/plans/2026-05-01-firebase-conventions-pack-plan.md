@@ -481,7 +481,7 @@ only=$2
 
 case "$target" in
   dev)  project="adsmart-web-dev" ;;
-  prod) project="adsmart-web-prod" ;;
+  prod) project="adsmart-web" ;;
   *)    usage ;;
 esac
 
@@ -949,7 +949,7 @@ If the codebase has multiple queries that share an equality + orderBy on the sam
 
 ### 5. Both deploy targets
 
-Remind: indexes must be deployed to BOTH `adsmart-web-dev` AND `adsmart-web-prod` (use `/firebase-deploy` or `safe-deploy.sh`). Index build is async, 1-3 min.
+Remind: indexes must be deployed to BOTH `adsmart-web-dev` AND `adsmart-web` (use `/firebase-deploy` or `safe-deploy.sh`). Index build is async, 1-3 min.
 
 ## Output format
 
@@ -1408,7 +1408,7 @@ Você está executando um deploy seguro para Firebase. Esse command é o ponto �
 
 Se o usuário não passou args inline, pergunte:
 
-1. **Target**: `dev` (`adsmart-web-dev`) ou `prod` (`adsmart-web-prod`)?
+1. **Target**: `dev` (`adsmart-web-dev`) ou `prod` (`adsmart-web`)?
 2. **O que deployar** (comma-separated, qualquer subset de): `rules`, `indexes`, `functions`, `hosting`?
 
 ### 2. Pré-condições (se inclui `rules`)
@@ -1427,7 +1427,7 @@ Mostre ao usuário o diff entre `firestore.indexes.json` local e o último deplo
 
 Se target = `prod`, mostre WARNING explícito antes de continuar:
 
-> ⚠️  Você vai fazer deploy de [<list>] para PRODUÇÃO (adsmart-web-prod). Confirma? (sim/não)
+> ⚠️  Você vai fazer deploy de [<list>] para PRODUÇÃO (adsmart-web). Confirma? (sim/não)
 
 ### 5. Execute
 

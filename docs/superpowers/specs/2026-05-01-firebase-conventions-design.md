@@ -189,7 +189,7 @@ export const myCallable = onCall<MyInput, Promise<MyOutput>>(
 **Descrição:** Deploy seguro multi-target com confirm gate.
 
 **Fluxo:**
-1. Pergunta target: `adsmart-web-dev` ou `adsmart-web-prod`.
+1. Pergunta target: `adsmart-web-dev` ou `adsmart-web`.
 2. Pergunta o que deployar: `rules`, `indexes`, `functions`, `hosting`, ou múltiplos.
 3. Se inclui `rules`: pré-condição executa `/firestore-rules-test` automaticamente; aborta se falhar.
 4. Se inclui `indexes`: mostra o diff do `firestore.indexes.json` vs último deployed.
@@ -343,7 +343,7 @@ Cada agent é um arquivo Markdown com frontmatter `name`, `description`, `tools`
 - Validar field order: equalities primeiro, depois range/inequality por seletividade decrescente (Firebase docs: "the leftmost fields satisfy equality constraints").
 - Validar query scope: `COLLECTION` para queries em path específico (`db.collection('users/X/transactions')`), `COLLECTION_GROUP` para `collectionGroup('transactions')`.
 - Sugerir index merging onde múltiplos `==` clauses podem reusar indexes (citar Firebase docs §"Use index merging").
-- Lembrar deploy em **ambos** targets (`adsmart-web-dev` e `adsmart-web-prod`).
+- Lembrar deploy em **ambos** targets (`adsmart-web-dev` e `adsmart-web`).
 
 ## 8. Cursor rules (`.cursor/rules/*.mdc`)
 

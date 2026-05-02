@@ -56,7 +56,7 @@ If the codebase has multiple queries that share an equality + orderBy on the sam
 
 ### 5. Both deploy targets
 
-Remind: indexes must be deployed to BOTH `adsmart-web-dev` AND `adsmart-web-prod` (use `/firebase-deploy` or `safe-deploy.sh`). Index build is async, 1-3 min.
+Remind: indexes must be deployed to BOTH `adsmart-web-dev` AND `adsmart-web` (use `/firebase-deploy` or `safe-deploy.sh`). Index build is async, 1-3 min.
 
 ## Output format
 

@@ -12,7 +12,7 @@ Você está executando um deploy seguro para Firebase. Esse command é o ponto �
 
 Se o usuário não passou args inline, pergunte:
 
-1. **Target**: `dev` (`adsmart-web-dev`) ou `prod` (`adsmart-web-prod`)?
+1. **Target**: `dev` (`adsmart-web-dev`) ou `prod` (`adsmart-web`)?
 2. **O que deployar** (comma-separated, qualquer subset de): `rules`, `indexes`, `functions`, `hosting`?
 
 ### 2. Pré-condições (se inclui `rules`)
@@ -31,7 +31,7 @@ Mostre ao usuário o diff entre `firestore.indexes.json` local e o último deplo
 
 Se target = `prod`, mostre WARNING explícito antes de continuar:
 
-> ⚠️  Você vai fazer deploy de [<list>] para PRODUÇÃO (adsmart-web-prod). Confirma? (sim/não)
+> ⚠️  Você vai fazer deploy de [<list>] para PRODUÇÃO (adsmart-web). Confirma? (sim/não)
 
 ### 5. Execute
 

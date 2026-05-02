@@ -26,7 +26,7 @@ only=$2
 
 case "$target" in
   dev)  project="adsmart-web-dev" ;;
-  prod) project="adsmart-web-prod" ;;
+  prod) project="adsmart-web" ;;
   *)    usage ;;
 esac
 
