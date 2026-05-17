@@ -11,9 +11,11 @@ export enum SecurityEventType {
   LOGIN_SUCCESS = 'login_success',
   LOGIN_FAILED = 'login_failed',
   // @deprecated 2026-05-17 — reCAPTCHA was removed (see docs/Decisions.md
-  // ADR-013). Enum values kept so the admin SecurityLogsPage can still
-  // render historical entries from before the removal without a fallback
-  // path for unknown event types. No producer remains in the codebase.
+  // ADR-013). The admin SecurityLogsPage that consumed these enum values
+  // was also removed (2026-05-17, see ADR-014). Values kept so historical
+  // securityLogs/{id} entries can still be queried directly in Cloud
+  // Logging or via Admin SDK for audit, without forcing a fallback path
+  // for unknown event types. No producer remains in the codebase.
   RECAPTCHA_SUCCESS = 'recaptcha_success',
   RECAPTCHA_FAILED = 'recaptcha_failed',
   RATE_LIMIT_EXCEEDED = 'rate_limit_exceeded',
@@ -216,43 +218,6 @@ export class SecurityLogger {
     })
   }
 
-  // Método para obter estatísticas de segurança
-  async getSecurityStats(days: number = 7): Promise<any> {
-    const cutoffTime = new Date()
-    cutoffTime.setDate(cutoffTime.getDate() - days)
-
-    const snapshot = await this.getDb()
-      .collection('securityLogs')
-      .where('metadata.timestamp', '>=', admin.firestore.Timestamp.fromDate(cutoffTime))
-      .get()
-
-    const stats = {
-      total: snapshot.size,
-      byType: {} as Record<string, number>,
-      bySeverity: {} as Record<string, number>,
-      criticalEvents: [] as any[]
-    }
-
-    snapshot.forEach(doc => {
-      const data = doc.data() as SecurityEvent
-      
-      // Por tipo
-      stats.byType[data.eventType] = (stats.byType[data.eventType] || 0) + 1
-      
-      // Por severidade
-      stats.bySeverity[data.severity] = (stats.bySeverity[data.severity] || 0) + 1
-      
-      // Eventos críticos
-      if (data.severity === SecuritySeverity.CRITICAL) {
-        stats.criticalEvents.push({
-          id: doc.id,
-          ...data
-        })
-      }
-    })
-
-    return stats
-  }
 }
 
 // Exportar instância única

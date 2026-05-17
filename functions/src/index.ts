@@ -7,7 +7,6 @@ if (!admin.apps.length) {
 
 export { checkRateLimit } from './rateLimiter'
 export { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
-export { getSecurityStats } from './securityStats'
 
 // ✅ Exportar funções de backup
 // export { scheduledBackup, restoreBackup } from './backupScheduler'
