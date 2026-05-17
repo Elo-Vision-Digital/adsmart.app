@@ -10,6 +10,48 @@ Format conventions:
 
 ---
 
+## [2026-05-17] — Security Logs admin tab removed (logger primitive kept)
+
+**Status:** Shipped (client + functions code). Deploy + zombie delete: pending the next deploy step. Decision documented in [Decisions.md ADR-014](Decisions.md#adr-014-remove-security-logs-admin-tab-keep-logger-primitive).
+
+The `/admin/security` tab and its `getSecurityStats` callable were removed. Same overengineering argument as the reCAPTCHA removal earlier this day (ADR-013): at current product stage the admin opens this tab roughly never, Cloud Logging covers the same data with proper filtering and retention, and the bespoke UI was duplicating Cloud Logging without adding signal. Critical distinction enforced in the implementation: the LOGGER primitive (`SecurityLogger` class + `SecurityEventType` + `SecuritySeverity` enums + `securityLogs/{id}` Firestore collection) **stays** — 5 other Cloud Functions write to it for audit (`googleAdsOAuth`, `metaAdsOAuth`, `rateLimiter`, `adminWalletManager`, and the SUSPICIOUS_ACTIVITY re-entrancy guard inside `securityLogger.ts` itself). Removing the logger would have broken all of them.
+
+**Client (commit `d899a7a`):**
+
+- Deleted [src/pages/admin/SecurityLogsPage.tsx](../src/pages/admin/SecurityLogsPage.tsx) (124 lines, single consumer of `getSecurityStats`).
+- [src/App.tsx](../src/App.tsx) — dropped `SecurityLogsPage` import + `<Route path="security">` child route. Navigating to `/admin/security` now falls through to the parent's `<Route index element={<Navigate to="dashboard" replace />} />` and lands on `/admin/dashboard` — no 404, bookmarks survive.
+- [src/pages/admin/AdminLayout.tsx](../src/pages/admin/AdminLayout.tsx) — removed `Shield` icon import (no other consumer) and the security entry from `tabs`. Admin sub-nav goes from 4 tabs to 3.
+- [src/pages/admin/AdminLayout.test.tsx](../src/pages/admin/AdminLayout.test.tsx) — adapted to 3-tab world: renamed the first test, dropped the security child route, added a defensive `expect(hrefs).not.toContain('/admin/security')` assertion to catch silent re-introduction.
+- [src/locales/pt-BR.json](../src/locales/pt-BR.json), [src/locales/en.json](../src/locales/en.json), [src/locales/es.json](../src/locales/es.json) — removed `admin.nav.security` plus the full `admin.security.*` subtree (10 keys per locale).
+- [src/locales/types.ts](../src/locales/types.ts) — removed `nav.security: string` and the `security: {...}` interface block so the `as Translations` casts in `LanguageContext` stay structurally sound.
+
+**Functions (commit `24407d4`):**
+
+- Deleted [functions/src/securityStats.ts](../functions/src/securityStats.ts) (56 lines, the callable that wrapped `SecurityLogger.getSecurityStats()` with an admin gate).
+- [functions/src/index.ts](../functions/src/index.ts) — removed `export { getSecurityStats } from './securityStats'`.
+- [functions/src/securityLogger.ts](../functions/src/securityLogger.ts) — removed the `getSecurityStats(days)` method (~40 lines, only consumer was `securityStats.ts`). The rest of the class is intact: `logEvent`, `getDb`, SUSPICIOUS_ACTIVITY re-entrancy guard, the `SecurityEvent` type, both enums. Refined the `@deprecated` comment on `RECAPTCHA_SUCCESS`/`RECAPTCHA_FAILED` so it no longer references the now-deleted `SecurityLogsPage`; the new justification is "Cloud Logging / Admin-SDK audit consumers depend on the enum being exhaustive".
+
+**Untouched (verified, not assumed):**
+
+- `firestore.rules` `match /securityLogs/{logId}` block — `allow read/write: if false` stays. Writes from app code go through Admin SDK in the logger; nothing client-side reads.
+- `firestore.indexes.json` — zero composite indexes on `securityLogs` existed (the collection was always Admin-SDK scanned), nothing to remove.
+- `functions/test/securityLogger.test.ts` — tests the logger primitive that stays.
+- All 5 writers (`googleAdsOAuth`, `metaAdsOAuth`, `rateLimiter`, `adminWalletManager`, the logger's own re-entrancy path).
+- `securityLogs/{id}` Firestore collection — audit trail intact; cleanup of historical documents is out of scope and can be batched separately if storage cost ever becomes material.
+
+**Deploys + zombie cleanup (pending after this commit):**
+
+- `firebase deploy --only functions --project adsmart-web-dev` will abort with the expected non-interactive warning ("functions found in your project but do not exist in your local source code: getSecurityStats"). Resolve with `firebase functions:delete getSecurityStats --project adsmart-web-dev --region us-central1 --force`, then re-deploy. Same sequence for `--project adsmart-web` after dev validation.
+- No Secret Manager cleanup required (no secret declarations were removed).
+
+**Verification:**
+
+- `bun run typecheck` clean across the monorepo.
+- `bun run test` 61/61 web tests pass (AdminLayout test adapted to 3 tabs; everything else unchanged).
+- `cd functions && bun run typecheck` clean; `bun run build` produces 0.77 MB bundle (was 0.78 MB pre-removal — 10 KB saved from the dead code path, not material).
+
+---
+
 ## [2026-05-17] — reCAPTCHA removed end-to-end (login, callable, secret declaration, CSP)
 
 **Status:** Shipped. Decision documented in [Decisions.md ADR-013](Decisions.md#adr-013-drop-google-recaptcha-from-authentication).

@@ -311,16 +311,6 @@ Adds BRL centavos credits to any user's wallet. Admin-only.
 
 ---
 
-## getSecurityStats
-
-**File:** `functions/src/securityStats.ts`  
-**Trigger:** `onCall`  
-**Auth required:** Yes + admin check
-
-Returns aggregated security event counts from `securityLogs`.
-
----
-
 ## getDashboardMetrics
 
 **File:** `functions/src/getDashboardMetrics.ts`

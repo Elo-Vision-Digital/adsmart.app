@@ -50,12 +50,13 @@ Run this checklist before every production deploy. Check each item manually unle
 
 ## Admin panel
 
-Routes (post-Subprojeto 2): `/admin` → `/admin/dashboard` (default redirect), `/admin/security`, `/admin/prices`, `/admin/wallet`. Single `AdminRoute` guard at the parent. The `AdminDashboardPage` is `React.lazy`-loaded so recharts + d3 transitive deps don't bloat first paint of the rest of the app.
+Routes (post-Subprojeto 2 + ADR-014 Security Logs removal): `/admin` → `/admin/dashboard` (default redirect), `/admin/prices`, `/admin/wallet`. Single `AdminRoute` guard at the parent. The `AdminDashboardPage` is `React.lazy`-loaded so recharts + d3 transitive deps don't bloat first paint of the rest of the app.
 
 - [ ] `/admin` redirects to `/admin/dashboard`
-- [ ] Sub-nav has four tabs in order: Dashboard, Logs de Segurança, Configuração de Preços, Gestão de Saldo
+- [ ] Sub-nav has three tabs in order: Dashboard, Configuração de Preços, Gestão de Saldo
 - [ ] Active tab matches the URL (clicking tabs updates URL; pasting a sub-route URL highlights the right tab)
-- [ ] Refreshing on `/admin/security`, `/admin/prices`, or `/admin/wallet` stays on that route (does not redirect to `/admin/dashboard`)
+- [ ] Refreshing on `/admin/prices` or `/admin/wallet` stays on that route (does not redirect to `/admin/dashboard`)
+- [ ] Navigating to `/admin/security` (legacy URL) resolves to `/admin/dashboard` via the parent's default child redirect — no 404, no white screen
 - [ ] Non-admin cannot access any `/admin/*` route (each redirects to `/dashboard`)
 - [ ] Switching language re-renders the admin panel labels (no raw `admin.*` keys visible)
 
@@ -72,10 +73,6 @@ Routes (post-Subprojeto 2): `/admin` → `/admin/dashboard` (default redirect), 
 - [ ] Integrations card: vertical list `{platform → distinctUserCount}` with horizontal bars; empty-state copy when `byPlatform.length === 0`
 - [ ] Force-error path (e.g., disconnect network mid-fetch): red-bordered banner with retry button; clicking retry re-invokes the callable
 - [ ] Console clean of `error|fail|dashboard|Q[1-7]|FAILED_PRECONDITION|HttpsError|internal` while the dashboard is open
-
-### Security tab
-
-- [ ] Loads stats from `getSecurityStats` without console errors
 
 ### Prices tab
 

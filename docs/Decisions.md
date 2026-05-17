@@ -386,7 +386,7 @@ Remove reCAPTCHA entirely from the codebase, the deploy surface, and the secret 
 3. **Cloud Functions.** Delete [functions/src/recaptcha.ts](../functions/src/recaptcha.ts) entirely. Remove the `verifyRecaptcha` export from [functions/src/index.ts](../functions/src/index.ts) and the `recaptchaSecretKey = defineSecret('RECAPTCHA_SECRET_KEY')` declaration from `functions/src/config/index.ts`. (Commit `6d0e05a`.)
 4. **Zombie function deletion.** `firebase deploy --only functions` does NOT auto-prune unreferenced exports — the deployed `getDashboardMetrics`, `verifyRecaptcha`, etc. all stay until explicitly removed. After the new functions codebase rolls out, run `firebase functions:delete verifyRecaptcha --project adsmart-web-dev --force` and the same against `adsmart-web` (prod). Verify with `firebase functions:list`.
 5. **Secret cleanup.** `firebase functions:secrets:destroy RECAPTCHA_SECRET_KEY --project <id>` per project. Irreversible — every version of the secret is wiped. Run only after step 4 confirms no function still references it.
-6. **`SecurityEventType` enum retention.** Keep `RECAPTCHA_SUCCESS` and `RECAPTCHA_FAILED` in [functions/src/securityLogger.ts](../functions/src/securityLogger.ts), marked `@deprecated 2026-05-17`. The admin `SecurityLogsPage` still reads historical entries from `securityLogs/{id}` that reference these types; dropping them would force a type-narrowing fallback for "unknown event type". No producer remains.
+6. **`SecurityEventType` enum retention.** Keep `RECAPTCHA_SUCCESS` and `RECAPTCHA_FAILED` in [functions/src/securityLogger.ts](../functions/src/securityLogger.ts), marked `@deprecated 2026-05-17`. Historical entries in `securityLogs/{id}` still reference these types and the logger primitive remains (it is consumed by `googleAdsOAuth`, `metaAdsOAuth`, `rateLimiter`, `adminWalletManager`, and its own SUSPICIOUS_ACTIVITY re-entrancy guard — see [ADR-014](#adr-014-remove-security-logs-admin-tab) for the corresponding UI removal). Dropping the enum values would force every current and future consumer (Cloud Logging queries, Admin-SDK audit tooling) into a "unknown event type" fallback. No producer remains in the codebase.
 
 **Threat model after removal:**
 
@@ -418,3 +418,63 @@ Re-introduce a bot-prevention layer **only if** one of: (a) abuse patterns surfa
 - [src/hooks/useRateLimit.ts](../src/hooks/useRateLimit.ts) — remaining client-side abuse guard.
 - [functions/src/securityLogger.ts](../functions/src/securityLogger.ts) — `RECAPTCHA_*` enum values marked deprecated.
 - [firebase.json](../firebase.json) — trimmed CSP.
+
+---
+
+## ADR-014: Remove Security Logs admin tab (keep logger primitive)
+
+**Date:** 2026-05-17
+**Status:** Accepted
+
+**Context:**
+
+The admin panel previously surfaced a "Logs de Segurança" tab at `/admin/security` ([src/pages/admin/SecurityLogsPage.tsx](../src/pages/admin/SecurityLogsPage.tsx)) that called a `getSecurityStats` callable ([functions/src/securityStats.ts](../functions/src/securityStats.ts)) and rendered an aggregated view of recent `securityLogs/{id}` events: total events, critical events, breakdown by `SecurityEventType`, breakdown by `SecuritySeverity`. The callable wrapped a `SecurityLogger.getSecurityStats(days)` method that scanned the collection via Admin SDK.
+
+At the current product stage (early beta, ~1 active admin, audit volume so low that the page typically shows "Nenhum evento" or one or two entries) the tab is not actionable — the same data is more discoverable in Cloud Logging directly, with proper filtering, retention, and search. Maintaining a bespoke admin UI on top of it duplicates Cloud Logging without adding signal. Same overengineering argument as the [reCAPTCHA removal in ADR-013](#adr-013-drop-google-recaptcha-from-authentication).
+
+**Critical separation — what is removed vs what stays:**
+
+The user surface (the read side, the UI tab) goes. The **logger primitive** — the `SecurityLogger` class with its `logEvent` method, the `SecurityEventType` enum, the `SecuritySeverity` enum, and the `securityLogs/{id}` Firestore collection — **stays intact**. Five other Cloud Functions actively WRITE to it for audit and would break if the primitive were removed:
+
+| Function | Events emitted |
+|---|---|
+| [functions/src/googleAdsOAuth.ts](../functions/src/googleAdsOAuth.ts) | OAUTH_INIT, OAUTH_SUCCESS, OAUTH_ERROR |
+| [functions/src/metaAdsOAuth.ts](../functions/src/metaAdsOAuth.ts) | OAUTH_INIT, OAUTH_SUCCESS, OAUTH_ERROR |
+| [functions/src/rateLimiter.ts](../functions/src/rateLimiter.ts) | RATE_LIMIT_EXCEEDED |
+| [functions/src/adminWalletManager.ts](../functions/src/adminWalletManager.ts) | UNAUTHORIZED_ACCESS |
+| [functions/src/securityLogger.ts](../functions/src/securityLogger.ts) (self) | SUSPICIOUS_ACTIVITY (re-entrancy guard) |
+
+After this ADR, `securityLogs/{id}` is **write-only from app code, read-only via Cloud Logging or Admin SDK**. The Firestore rule already blocks both client read and client write (`allow read: if false; allow write: if false;`); that stays unchanged.
+
+**Decision:**
+
+1. **Client.** Delete [src/pages/admin/SecurityLogsPage.tsx](../src/pages/admin/SecurityLogsPage.tsx) entirely (124 lines, single consumer of `getSecurityStats`). Remove its import and `<Route path="security">` from [src/App.tsx](../src/App.tsx). Drop the `Shield` icon import and the security entry from the `tabs` array in [src/pages/admin/AdminLayout.tsx](../src/pages/admin/AdminLayout.tsx) — admin sub-nav goes from 4 tabs to 3. Update `AdminLayout.test.tsx` (4-tab → 3-tab assertions, add a defensive `not.toContain('/admin/security')`). Strip `admin.nav.security` and the full `admin.security.*` subtree (10 keys) from `src/locales/{pt-BR,en,es}.json` and mirror the deletion in `src/locales/types.ts`. (Commit `d899a7a`.)
+2. **Cloud Functions.** Delete [functions/src/securityStats.ts](../functions/src/securityStats.ts). Remove the `getSecurityStats` export from [functions/src/index.ts](../functions/src/index.ts). Remove the `getSecurityStats(days)` method (~40 lines) from the `SecurityLogger` class in [functions/src/securityLogger.ts](../functions/src/securityLogger.ts). The class retains `logEvent`, `getDb`, the SUSPICIOUS_ACTIVITY re-entrancy guard, the `SecurityEvent` type, and both enums. (Commit `24407d4`.)
+3. **Zombie function deletion.** `firebase functions:delete getSecurityStats --project adsmart-web-dev --region us-central1 --force` and same against `adsmart-web`. Verify with `firebase functions:list`.
+4. **Firestore.** Rules: no change (already locked). Indexes: no change (no composite indexes existed on `securityLogs`; the collection has always been Admin-SDK scanned without index hints). Collection itself: keep for audit. Cleanup of old documents is out of scope and can be batched separately if storage cost ever becomes material (current volume is negligible).
+
+**`/admin/security` legacy URL behavior:**
+
+After removal, navigating to `/admin/security` no longer matches any child route. Because the parent `<Route path="/admin">` has `<Route index element={<Navigate to="dashboard" replace />} />` and React Router falls back to the index route when no child matches, the user lands on `/admin/dashboard` automatically. No 404, no white screen. Acceptable redirect behavior — bookmarks pre-removal won't break.
+
+**Trade-offs:**
+
+- **Lost layer.** Admin can no longer scan a synthesized recent-events view from the app. Cloud Logging via `https://console.cloud.google.com/logs/query?project=adsmart-web-dev` (or `adsmart-web` for prod) covers the same data with more flexibility and longer retention. Acceptable given the low query volume.
+- **Stale enum values.** Same situation as ADR-013 — `RECAPTCHA_SUCCESS`/`RECAPTCHA_FAILED` already deprecated; no new deprecation introduced here since the OTHER enum values (`LOGIN_SUCCESS`, `RATE_LIMIT_EXCEEDED`, `OAUTH_*`, `UNAUTHORIZED_ACCESS`, `SUSPICIOUS_ACTIVITY`, etc.) still have writers.
+- **No regression test.** `SecurityLogsPage` never had unit tests; nothing was lost. The `securityLogger.test.ts` covers the logger primitive that stays.
+
+**Reintroduction trigger:**
+
+If audit volume grows past the point where Cloud Logging filtering becomes friction (rough threshold: >1000 `securityLogs/{id}` writes per day, or >5 distinct admin users needing self-service forensics), reintroduce a similar surface — but back it by a paginated query over `securityLogs/{id}` rather than the `Promise<any>`-typed `getSecurityStats` aggregator, and ship with: server-side pagination, type-safe Zod output (mirror the `getDashboardMetrics` pattern), and a test in `functions/test/`.
+
+**Alternatives considered:**
+
+- **Keep the page, fix it later.** The page was already functional; the deletion is purely a YAGNI call. The cost of carrying it (admin sub-nav clutter, an extra callable in the deploy list, a Firestore scan per page open, a code path that drifts as the underlying logger evolves) outweighs the benefit at current usage. Rejected.
+- **Move the view from the admin panel to a separate `/security` route with broader access.** Same problems plus broader exposure of audit data. Rejected.
+- **Delete the entire `securityLogs/{id}` collection + the logger primitive.** Would break 5 other features that depend on the writer interface. Rejected as scope creep.
+
+**References:**
+- [src/pages/admin/AdminLayout.tsx](../src/pages/admin/AdminLayout.tsx) — admin sub-nav after removal (3 tabs).
+- [src/App.tsx](../src/App.tsx) — admin route block after removal.
+- [functions/src/securityLogger.ts](../functions/src/securityLogger.ts) — logger primitive that stays (5 writers depend on it).
+- [firestore.rules](../firestore.rules) — `match /securityLogs/{logId}` block (unchanged: `allow read/write: if false`).
