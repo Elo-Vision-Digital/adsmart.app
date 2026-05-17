@@ -347,7 +347,6 @@
     "welcomeBack": "Welcome, {name}",
     "nav": {
       "dashboard": "Dashboard",
-      "security": "Security Logs",
       "prices": "Price Configuration",
       "wallet": "Wallet Management"
     },
@@ -388,18 +387,6 @@
         "invalidRange": "Start date must be before end date",
         "rangeTooLong": "Range cannot exceed 365 days"
       }
-    },
-    "security": {
-      "title": "Security Logs",
-      "subtitle": "Security events from the last {days} days",
-      "totalEvents": "Total Events",
-      "criticalEvents": "Critical Events",
-      "byType": "Events by Type",
-      "bySeverity": "By Severity",
-      "noEvents": "Click \"Refresh\" to load statistics",
-      "refresh": "Refresh",
-      "loading": "Loading statistics...",
-      "lastDays": "{days} days"
     },
     "prices": {
       "title": "Price Configuration",

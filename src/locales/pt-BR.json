@@ -347,7 +347,6 @@
     "welcomeBack": "Bem-vindo, {name}",
     "nav": {
       "dashboard": "Dashboard",
-      "security": "Logs de Segurança",
       "prices": "Configuração de Preços",
       "wallet": "Gestão de Saldo"
     },
@@ -388,18 +387,6 @@
         "invalidRange": "Data inicial deve ser anterior à final",
         "rangeTooLong": "Período não pode exceder 365 dias"
       }
-    },
-    "security": {
-      "title": "Logs de Segurança",
-      "subtitle": "Eventos de segurança dos últimos {days} dias",
-      "totalEvents": "Total de Eventos",
-      "criticalEvents": "Eventos Críticos",
-      "byType": "Eventos por Tipo",
-      "bySeverity": "Por Severidade",
-      "noEvents": "Clique em \"Atualizar\" para carregar as estatísticas",
-      "refresh": "Atualizar",
-      "loading": "Carregando estatísticas...",
-      "lastDays": "{days} dias"
     },
     "prices": {
       "title": "Configuração de Preços",

@@ -8,7 +8,6 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AccountsPage } from '@/pages/AccountsPage'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { PricesConfigPage } from '@/pages/admin/PricesConfigPage'
-import { SecurityLogsPage } from '@/pages/admin/SecurityLogsPage'
 import { WalletAdminPage } from '@/pages/admin/WalletAdminPage'
 import { Dashboard } from '@/pages/Dashboard'
 import { DeleteDataPage } from '@/pages/DeleteDataPage'
@@ -146,7 +145,6 @@ function App() {
                     </Suspense>
                   }
                 />
-                <Route path="security" element={<SecurityLogsPage />} />
                 <Route path="prices" element={<PricesConfigPage />} />
                 <Route path="wallet" element={<WalletAdminPage />} />
               </Route>

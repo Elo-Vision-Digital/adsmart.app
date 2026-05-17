@@ -31,7 +31,6 @@ const renderAt = (path: string) =>
       <Routes>
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<div>dashboard child</div>} />
-          <Route path="security" element={<div>security child</div>} />
           <Route path="prices" element={<div>prices child</div>} />
           <Route path="wallet" element={<div>wallet child</div>} />
         </Route>
@@ -40,14 +39,14 @@ const renderAt = (path: string) =>
   )
 
 describe('AdminLayout', () => {
-  it('renders four sub-nav links pointing at the admin sub-routes', () => {
+  it('renders three sub-nav links pointing at the admin sub-routes', () => {
     renderAt('/admin/dashboard')
     const links = screen.getAllByRole('link')
     const hrefs = links.map((a) => a.getAttribute('href'))
     expect(hrefs).toContain('/admin/dashboard')
-    expect(hrefs).toContain('/admin/security')
     expect(hrefs).toContain('/admin/prices')
     expect(hrefs).toContain('/admin/wallet')
+    expect(hrefs).not.toContain('/admin/security')
   })
 
   it('renders the active child route content via Outlet', () => {

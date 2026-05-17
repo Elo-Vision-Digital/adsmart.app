@@ -376,7 +376,6 @@ export interface Translations {
     welcomeBack: string
     nav: {
       dashboard: string
-      security: string
       prices: string
       wallet: string
     }
@@ -417,18 +416,6 @@ export interface Translations {
         invalidRange: string
         rangeTooLong: string
       }
-    }
-    security: {
-      title: string
-      subtitle: string
-      totalEvents: string
-      criticalEvents: string
-      byType: string
-      bySeverity: string
-      noEvents: string
-      refresh: string
-      loading: string
-      lastDays: string
     }
     prices: {
       title: string
