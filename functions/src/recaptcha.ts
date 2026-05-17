@@ -39,10 +39,27 @@ export const verifyRecaptcha = onCall(
         }
       )
 
-      const { success } = response.data
+      const { success } = response.data ?? {}
 
       if (!success) {
-        throw new HttpsError('failed-precondition', 'Falha na verificação do ReCAPTCHA')
+        // [INSTRUMENTATION 2026-05-02] Capture Google's diagnostic codes before
+        // collapsing into a generic HttpsError. Mirrors the dashboard's
+        // `[label:fail:context]` pattern (commit fb2595e). Without this the
+        // client-facing 500 INTERNAL is opaque and the Cloud Logging entry only
+        // carries `code: 'failed-precondition', details: undefined`.
+        const errorCodes: unknown = response.data?.['error-codes']
+        console.error('[recaptcha:fail:siteverify]', {
+          success,
+          errorCodes: errorCodes ?? '(none)',
+          hostname: response.data?.hostname ?? '(none)',
+          challengeTs: response.data?.challenge_ts ?? '(none)',
+          score: response.data?.score ?? '(none)',
+        })
+        throw new HttpsError(
+          'failed-precondition',
+          'Falha na verificação do ReCAPTCHA',
+          { errorCodes: errorCodes ?? ['unknown'] },
+        )
       }
 
       // Log de sucesso usando o novo sistema
@@ -63,23 +80,46 @@ export const verifyRecaptcha = onCall(
       }
     } catch (error: any) {
       // Se for erro de rate limit, relançar
-      if (error.code === 'resource-exhausted') {
+      if (error?.code === 'resource-exhausted') {
         throw error
       }
 
-      // Log de falha usando o novo sistema
+      // Distinguish siteverify rejection (already labelled above) from unknown
+      // failure modes (axios timeout, Firestore rateLimits write, etc).
+      const isSiteverifyFailure =
+        error instanceof HttpsError && error.code === 'failed-precondition'
+      if (!isSiteverifyFailure) {
+        console.error('[recaptcha:fail:unknown]', {
+          code: error?.code,
+          message: error?.message,
+          details: error?.details ?? '(empty)',
+          isAxiosError: error?.isAxiosError === true,
+          httpStatus: error?.response?.status,
+          httpData: error?.response?.data,
+          stackHead:
+            typeof error?.stack === 'string'
+              ? error.stack.split('\n').slice(0, 5).join(' | ')
+              : '(no stack)',
+        })
+      }
+
+      // Audit trail: every non-rate-limit failure remains a RECAPTCHA_FAILED event.
       await securityLogger.logEvent(
         SecurityEventType.RECAPTCHA_FAILED,
         userId,
         {
           userId,
-          error: error.message,
+          error: error?.message,
           timestamp: new Date()
         },
         SecuritySeverity.WARNING
       )
 
-      console.error('Erro ao verificar ReCAPTCHA:', error)
+      // Preserve the labelled HttpsError so the siteverify class is distinct in
+      // Cloud Logging from unknown internal errors.
+      if (isSiteverifyFailure) {
+        throw error
+      }
       throw new HttpsError('internal', 'Erro ao verificar ReCAPTCHA')
     }
   }

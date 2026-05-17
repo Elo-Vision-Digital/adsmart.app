@@ -8,9 +8,8 @@ import {
   signInWithPopup,
   type User,
 } from 'firebase/auth'
-import { httpsCallable } from 'firebase/functions'
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
-import { auth, functions } from '@/firebase/config'
+import { auth } from '@/firebase/config'
 
 interface AuthContextType {
   user: User | null
@@ -18,7 +17,7 @@ interface AuthContextType {
   isAdmin: boolean
   hasPasswordProvider: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signInWithEmail: (email: string, password: string, recaptchaToken?: string) => Promise<void>
+  signInWithEmail: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
   signInWithFacebook: () => Promise<void>
@@ -83,44 +82,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return unsubscribe
   }, [])
 
-  // Função para verificar o ReCAPTCHA
-  const verifyRecaptchaToken = async (token: string) => {
-    try {
-      const verifyRecaptcha = httpsCallable(functions, 'verifyRecaptcha')
-      const result = await verifyRecaptcha({ token })
-      return result.data
-    } catch (error) {
-      console.error('Erro ao verificar ReCAPTCHA:', error)
-      throw new Error('Falha na verificação de segurança')
-    }
-  }
-
   const signIn = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password)
   }
 
-  const signInWithEmail = async (email: string, password: string, recaptchaToken?: string) => {
-    // Verificar se é o usuário de teste
-    const isTestUser = email.toLowerCase().trim() === 'review.user@adsmart.app'
-
-    // Só verificar reCAPTCHA se não for desenvolvimento, usuário de teste ou token especial
-    if (
-      recaptchaToken &&
-      recaptchaToken !== 'local-dev' &&
-      recaptchaToken !== 'test-user' &&
-      !isTestUser
-    ) {
-      await verifyRecaptchaToken(recaptchaToken)
-    }
-
-    if (recaptchaToken === 'local-dev') {
-      console.log('🔧 Modo desenvolvimento: Login sem reCAPTCHA')
-    }
-
-    if (isTestUser || recaptchaToken === 'test-user') {
-      console.log('🧪 Usuário de teste: Login sem verificação reCAPTCHA')
-    }
-
+  const signInWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password)
   }
 

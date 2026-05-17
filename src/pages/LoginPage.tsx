@@ -1,13 +1,11 @@
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { useState } from 'react'
-import ReCAPTCHA from 'react-google-recaptcha'
 import { Link, useNavigate } from 'react-router-dom'
 import { LanguageSelector } from '@/components/common/LanguageSelector'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { auth } from '@/firebase/config'
 import { useRateLimit } from '@/hooks/useRateLimit'
-import { getDevConfig } from '@/utils/development'
 import { sanitizeEmail, sanitizeInput } from '@/utils/sanitize'
 import { validatePassword } from '@/utils/validation'
 
@@ -19,14 +17,12 @@ export function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [recaptchaValue, setRecaptchaValue] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const { signInWithGoogle, signInWithFacebook, signInWithEmail } = useAuth()
   const { t } = useLanguage()
   const navigate = useNavigate()
-  const devConfig = getDevConfig()
 
   // Rate limiting
   const loginRateLimit = useRateLimit({
@@ -34,10 +30,6 @@ export function LoginPage() {
     windowMs: 15 * 60 * 1000, // 15 minutos
     message: t('common.error.tooManyAttempts'),
   })
-
-  // TEMPORÁRIO: Verificar se é o usuário de teste
-  const isTestUser = email.toLowerCase().trim() === 'review.user@adsmart.app'
-  const skipRecaptcha = devConfig.skipRecaptcha || isTestUser
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,27 +49,8 @@ export function LoginPage() {
 
     try {
       if (isLogin) {
-        // Verificar ReCAPTCHA no login - apenas se não for desenvolvimento ou usuário de teste
-        if (!skipRecaptcha && !recaptchaValue) {
-          throw new Error(t('common.validation.completeRecaptcha'))
-        }
-
-        // Passa o token do ReCAPTCHA para validação (ou 'test-user' se for usuário de teste)
-        await signInWithEmail(
-          sanitizedEmail,
-          password,
-          skipRecaptcha
-            ? isTestUser
-              ? 'test-user'
-              : devConfig.devRecaptchaToken
-            : recaptchaValue || undefined
-        )
+        await signInWithEmail(sanitizedEmail, password)
       } else {
-        // Verificar ReCAPTCHA no registro também
-        if (!skipRecaptcha && !recaptchaValue) {
-          throw new Error(t('common.validation.completeRecaptcha'))
-        }
-
         // Validar senha no registro
         const passwordErrors = validatePassword(password)
         if (passwordErrors.length > 0) {
@@ -188,20 +161,6 @@ export function LoginPage() {
 
         {/* Card de login */}
         <div className="bg-white rounded-xl p-8 shadow-sm">
-          {/* Aviso de desenvolvimento */}
-          {devConfig.skipRecaptcha && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-blue-600 text-sm">
-              {devConfig.devWarningMessage}
-            </div>
-          )}
-
-          {/* Aviso para usuário de teste */}
-          {isTestUser && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-600 text-sm">
-              {t('common.warning.testAccount')}
-            </div>
-          )}
-
           {/* Rate limit warning */}
           {loginRateLimit.isBlocked && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
@@ -377,19 +336,6 @@ export function LoginPage() {
               </div>
             )}
 
-            {/* ReCAPTCHA */}
-            {!skipRecaptcha && (
-              <div className="flex justify-center my-4">
-                <ReCAPTCHA
-                  sitekey={
-                    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
-                    '6LdPKVQqAAAAAB8i0jKKdChElAE1yrQgi0g_3B5s'
-                  }
-                  onChange={(value) => setRecaptchaValue(value)}
-                />
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={loading || loginRateLimit.isBlocked}
@@ -412,7 +358,6 @@ export function LoginPage() {
                   onClick={() => {
                     setIsLogin(false)
                     setError('')
-                    setRecaptchaValue(null)
                   }}
                   className="text-black font-semibold hover:underline"
                   disabled={loading || loginRateLimit.isBlocked}
@@ -427,7 +372,6 @@ export function LoginPage() {
                   onClick={() => {
                     setIsLogin(true)
                     setError('')
-                    setRecaptchaValue(null)
                   }}
                   className="text-black font-semibold hover:underline"
                   disabled={loading || loginRateLimit.isBlocked}
