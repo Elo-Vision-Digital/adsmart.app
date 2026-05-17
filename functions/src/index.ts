@@ -5,7 +5,6 @@ if (!admin.apps.length) {
   admin.initializeApp()
 }
 
-export { verifyRecaptcha } from './recaptcha'
 export { checkRateLimit } from './rateLimiter'
 export { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 export { getSecurityStats } from './securityStats'

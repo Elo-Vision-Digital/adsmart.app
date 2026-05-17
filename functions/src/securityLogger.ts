@@ -10,6 +10,10 @@ if (!admin.apps.length) {
 export enum SecurityEventType {
   LOGIN_SUCCESS = 'login_success',
   LOGIN_FAILED = 'login_failed',
+  // @deprecated 2026-05-17 — reCAPTCHA was removed (see docs/Decisions.md
+  // ADR-013). Enum values kept so the admin SecurityLogsPage can still
+  // render historical entries from before the removal without a fallback
+  // path for unknown event types. No producer remains in the codebase.
   RECAPTCHA_SUCCESS = 'recaptcha_success',
   RECAPTCHA_FAILED = 'recaptcha_failed',
   RATE_LIMIT_EXCEEDED = 'rate_limit_exceeded',
