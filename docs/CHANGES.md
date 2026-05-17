@@ -37,17 +37,18 @@ reCAPTCHA gating on the email/password login was removed from the product. Trigg
 
 - [functions/.gitignore](../functions/.gitignore) had an un-anchored `config/` rule that recursively ignored `functions/src/config/` — making the entire `defineSecret` manifest untracked. Removing the rule and force-adding `functions/src/config/index.ts` brings the canonical secrets manifest into version control for the first time. Public config only — secret VALUES live in Google Secret Manager; the file only references their names via `defineSecret`.
 
-**Deploys + secret cleanup (this commit not yet — pending deploy step):**
+**Deploys + secret cleanup (both environments executed in the same session):**
 
-- `firebase deploy --only functions --project adsmart-web-dev` then `firebase functions:delete verifyRecaptcha --project adsmart-web-dev --force` (the new functions bundle no longer exports it, but `firebase deploy` does not auto-prune unreferenced functions). Same for `--project adsmart-web` after dev validation.
-- `firebase functions:secrets:destroy RECAPTCHA_SECRET_KEY --project adsmart-web-dev` and `--project adsmart-web`. Irreversible — wipes every version of the secret.
+- **`adsmart-web-dev`** — `firebase deploy --only functions` aborted with the expected non-interactive warning ("functions found in your project but do not exist in your local source code: verifyRecaptcha"). `firebase functions:delete verifyRecaptcha --region us-central1 --force` succeeded. `firebase functions:secrets:destroy RECAPTCHA_SECRET_KEY --force` destroyed version 1 and reported "No active secret versions left. Destroying secret RECAPTCHA_SECRET_KEY". `firebase functions:list` confirms `verifyRecaptcha` no longer present.
+- **`adsmart-web`** — same sequence. `functions:delete` succeeded. The follow-up `firebase deploy --only functions` updated all 19 functions successfully **except `handleGoogleAdsCallbackWithSelection`**, which is a pre-existing OAuth callback configuration issue unrelated to reCAPTCHA — its previous revision remains active. `RECAPTCHA_SECRET_KEY@2` was destroyed (no other accessible versions; `firebase functions:secrets:access` confirms `DESTROYED state`). The handleGoogleAdsCallbackWithSelection deploy failure is tracked separately and does not block the reCAPTCHA work.
 
 **Verification:**
 
 - `bun run typecheck` clean across the monorepo.
 - `bun run test` 61/61 web tests pass (no reCAPTCHA-specific tests existed).
 - `bunx biome check` exits 0 — 6 pre-existing `useButtonType`/`noSvgWithoutTitle` warnings on social-login buttons, zero new warnings, zero errors.
-- Login flow validation in dev: pending the `functions:delete` step before re-opening the localhost form.
+- **Dev end-to-end smoke test (Chrome DevTools MCP):** login page renders without the reCAPTCHA iframe, console is empty, no requests to `google.com/recaptcha` / `gstatic.com/recaptcha`. Manual sign-in with admin email/password succeeded. `/admin/dashboard` rendered all three cards (Receita gerada / Usuários / Top integrações), the DateRangeFilter showed the default 30-day range, sparklines drew via recharts, and `getDashboardMetrics` returned HTTP 200 (4 calls observed — React StrictMode double-invoke + filter callback). Side effect: this validation unblocked Subprojeto 2 Task 18 Step 3, which had been blocked at "smoke test" since 2026-04-27 — the dashboard was likely fine after the index propagation but the reCAPTCHA login error prevented us from reaching it.
+- **Prod end-to-end smoke test:** pending the prod hosting deploy (frontend bundle without the reCAPTCHA widget is not yet published). The callable side has been verified live via the dev test pattern; once hosting deploys, the login flow at `https://adsmart.app/login` will mirror dev.
 
 ---
 

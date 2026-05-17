@@ -14,7 +14,6 @@ Index of every third-party service AdSmart talks to, with the dedicated doc, the
 | **Google Ads API (OAuth + Reporting)** | Connect ad account, generate Looker reports | Active | [OAUTH.md](OAUTH.md) | `functions/src/googleAdsOAuthV2.ts`, `src/services/oauthServices.ts` |
 | **Meta Ads API (OAuth + Reporting)** | Connect ad account, generate Looker reports | Active | [OAUTH.md](OAUTH.md) | `functions/src/metaAdsOAuth.ts` |
 | **Looker Studio** | Embedded report dashboards | Active | [DOMAIN.md](DOMAIN.md) | Template IDs in `.env.production` (`VITE_LOOKER_*`) |
-| **Google reCAPTCHA v2** | Bot protection on auth + sensitive flows | Active | [SECURITY.md](SECURITY.md), [ENVIRONMENT.md](ENVIRONMENT.md) | `functions/src/recaptcha.ts`, `src/components/Recaptcha.tsx` |
 | **Google Tag Manager** | Analytics + marketing pixels | Active | — | `src/lib/gtm.ts` |
 | **SuitPay** | Payment provider (PIX) | **Deprecated** — do not extend | [PAYMENTS.md](PAYMENTS.md) | `functions/src/suitpayPayment.ts` |
 | **Asaas** | Payment provider (replacement for SuitPay) | Planned | [PAYMENTS.md](PAYMENTS.md) | TBD |
@@ -37,7 +36,7 @@ Index of every third-party service AdSmart talks to, with the dedicated doc, the
 |---|---|---|---|
 | Google Ads | OAuth 2.0 | Firestore `users/{uid}/oauth/googleAds` (refresh token only; access token re-fetched per call) | On 401 from Ads API, refresh via stored refresh_token |
 | Meta Ads | OAuth 2.0 (long-lived user token) | Firestore `users/{uid}/oauth/metaAds` | Long-lived tokens (~60d); user re-auths on expiry |
-| Firebase Auth | Email/password + reCAPTCHA | Firebase SDK manages session; Auth state via `AuthContext` | Auto-refresh by Firebase SDK |
+| Firebase Auth | Email/password (no reCAPTCHA, removed 2026-05-17 — `useRateLimit` 5/15min + Firebase Auth heuristics cover abuse) | Firebase SDK manages session; Auth state via `AuthContext` | Auto-refresh by Firebase SDK |
 
 See [OAUTH.md](OAUTH.md) for the detailed flow per provider, including state validation, error codes, and rate-limit policy.
 

@@ -16,8 +16,8 @@ Run this checklist before every production deploy. Check each item manually unle
 
 - [ ] Sign in with Google works
 - [ ] Sign in with Facebook works
-- [ ] Sign in with email/password works
-- [ ] reCAPTCHA challenge appears on email sign-in
+- [ ] Sign in with email/password works (no reCAPTCHA — removed 2026-05-17, see [Decisions.md ADR-013](Decisions.md#adr-013-drop-google-recaptcha-from-authentication))
+- [ ] `useRateLimit` blocks after 5 failed attempts in a 15-minute window
 - [ ] After sign-out, all protected routes redirect to `/login`
 - [ ] Admin user (`agency.elovisiondigital@gmail.com`) sees admin panel at `/admin`
 - [ ] Non-admin user is redirected from `/admin` to `/dashboard`

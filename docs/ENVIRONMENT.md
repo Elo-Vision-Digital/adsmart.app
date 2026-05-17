@@ -15,7 +15,6 @@ Defined in `.env` (not committed). Template in `.env.example`.
 | `VITE_FIREBASE_MEASUREMENT_ID` | No | Google Analytics measurement ID (GTM-PDHQTJP8 is the GTM container) |
 | `VITE_FIREBASE_FUNCTIONS_URL` | No | Override for functions URL (default: `https://us-central1-{projectId}.cloudfunctions.net`) |
 | `VITE_USE_FIREBASE_EMULATOR` | No | Set to `"true"` to connect to local emulators. Only active in `DEV` mode on `localhost`. |
-| `VITE_RECAPTCHA_SITE_KEY` | Yes | reCAPTCHA v3 site key (public) |
 
 All values come from Firebase Console → Project settings → Your apps → Web app config.
 
@@ -40,8 +39,9 @@ Secrets are managed by Firebase Secret Manager. They are **not** in `.env`.
 |---|---|---|
 | `GOOGLE_ADS_CLIENT_SECRET` | `googleAdsClientSecret` | `googleAdsOAuth.ts`, `googleAdsOAuthV2.ts` |
 | `META_ADS_APP_SECRET` | `metaAdsAppSecret` | `metaAdsOAuth.ts`, `metaAdsOAuthV2.ts` |
-| `RECAPTCHA_SECRET_KEY` | `recaptchaSecretKey` | `recaptcha.ts` |
 | `ENCRYPTION_KEY` | `encryptionKey` | `googleAdsOAuthV2.ts` (declared; stub — tokens stored base64 pending real crypto) |
+
+Removed 2026-05-17: `RECAPTCHA_SECRET_KEY`. The `verifyRecaptcha` callable and `recaptcha.ts` were deleted (see [Decisions.md ADR-013](Decisions.md#adr-013-drop-google-recaptcha-from-authentication)); both versions of the secret have been destroyed in `adsmart-web-dev` and `adsmart-web`.
 
 To set/rotate a secret:
 ```bash
@@ -100,7 +100,6 @@ Before deploying to production:
 1. All secrets set in Secret Manager (see above).
 2. `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_DEVELOPER_TOKEN`, `META_ADS_APP_ID` set as Firebase Functions configuration or runtime env.
 3. OAuth redirect URIs registered for production domain.
-4. reCAPTCHA domain allowlist includes `adsmart.app`.
 
 See `docs/DEPLOYMENT.md` for the full deploy checklist.
 

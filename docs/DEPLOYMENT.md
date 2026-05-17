@@ -44,10 +44,9 @@ Before deploying, verify:
 
 - [ ] `bun run build` succeeds (TypeScript + Vite)
 - [ ] `cd functions && bun run build` succeeds
-- [ ] All secrets set in Secret Manager (`googleAdsClientSecret`, `metaAdsAppSecret`, `recaptchaSecretKey`)
+- [ ] All secrets set in Secret Manager (`googleAdsClientSecret`, `metaAdsAppSecret`)
 - [ ] `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_DEVELOPER_TOKEN`, `META_ADS_APP_ID` configured in functions environment
 - [ ] OAuth redirect URIs updated in Google Cloud Console and Meta App Dashboard if domain changed
-- [ ] reCAPTCHA domain allowlist includes `adsmart.app`
 - [ ] `bun run test` passes (web)
 - [ ] `cd functions && bun run test` passes
 

@@ -288,7 +288,7 @@ The unused `ReportTemplate` TypeScript interface was removed from `src/types/ind
 
 ## rateLimits/{userId}
 
-Document ID format: `{userId}_{actionName}` (e.g., `abc123_recaptcha_verify`).
+Document ID format: `{userId}_{actionName}` (e.g., `abc123_signin_attempt`).
 
 ```
 {

@@ -13,16 +13,16 @@ Rotation checklist:
 - [ ] Google Ads OAuth Client Secret (Google Cloud Console → OAuth 2.0 Client)
 - [ ] Meta Ads App Secret (developers.facebook.com → App → Settings → Advanced → Reset)
 - [ ] SuitPay client ID + client secret (SuitPay dashboard) — will be moot once Asaas migration completes
-- [ ] reCAPTCHA v2 secret (https://www.google.com/recaptcha/admin)
 - [ ] Any ENCRYPTION_KEY used for local data encryption (if in use)
 
 After rotation, set new values via:
 
 ```bash
-firebase functions:secrets:set RECAPTCHA_SECRET_KEY
 firebase functions:secrets:set GOOGLE_ADS_CLIENT_SECRET
 firebase functions:secrets:set META_ADS_APP_SECRET
 ```
+
+> reCAPTCHA was removed 2026-05-17 — see [Decisions.md ADR-013](Decisions.md#adr-013-drop-google-recaptcha-from-authentication). No reCAPTCHA secret to rotate.
 
 ## Admin access
 
@@ -73,8 +73,9 @@ the client.
 
 Firebase Hosting responds with:
 - HSTS (2 years, preload)
-- CSP allowlisting Firebase, reCAPTCHA, Google Fonts, Meta Graph, and
-  Google Tag Manager
+- CSP allowlisting Firebase, Google Fonts, Meta Graph, and Google Tag
+  Manager (reCAPTCHA hosts were removed from `script-src`/`connect-src`/
+  `frame-src` on 2026-05-17 — see [Decisions.md ADR-013](Decisions.md#adr-013-drop-google-recaptcha-from-authentication))
 - COOP + CORP same-origin (cross-origin isolation)
 - X-Content-Type-Options, X-Frame-Options, Referrer-Policy,
   Permissions-Policy
