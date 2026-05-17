@@ -361,3 +361,60 @@ Firestore security rules cannot read another user's document during evaluation �
 - [functions/src/reserveUserDocument.ts](../functions/src/reserveUserDocument.ts) — implementation.
 - [firestore.rules](../firestore.rules) — `userDocuments` collection rule + `users/{uid}` `documentLocked()` helper.
 - [src/pages/SettingsPage.tsx](../src/pages/SettingsPage.tsx) — client UX (disabled inputs, callable invocation, error mapping).
+
+---
+
+## ADR-013: Drop Google reCAPTCHA from authentication
+
+**Date:** 2026-05-17
+**Status:** Accepted
+
+**Context:**
+
+The login flow (email/password sign-in and sign-up at [src/pages/LoginPage.tsx](../src/pages/LoginPage.tsx)) previously gated submissions behind a Google reCAPTCHA v2 challenge. The widget mounted client-side via `react-google-recaptcha`, the resulting token was forwarded to a `verifyRecaptcha` Cloud Function ([functions/src/recaptcha.ts](../functions/src/recaptcha.ts)) which called the Google `siteverify` REST API with a stored secret, and rejected the login with `HttpsError('failed-precondition')` on a `success: false` response.
+
+In May 2026 the dev environment's secret pair drifted out of sync with the site key it was meant to validate — every login attempt at `localhost → adsmart-web-dev` failed with `["invalid-input-response"]` from `siteverify`. The same pattern was almost certainly going to bite prod under any future site/secret rotation.
+
+The trigger for the cleanup was operational, but the deeper question was **whether reCAPTCHA was earning its weight at this product stage at all.** AdSmart is in early-beta with a small admin/test-user pool, no observed bot or abusive-traffic patterns, and the existing client-side `useRateLimit` hook ([src/hooks/useRateLimit.ts](../src/hooks/useRateLimit.ts), 5 attempts / 15 min) plus Firebase Auth's own anti-abuse heuristics (per-account lockout on repeated failed sign-ins, IP-based throttling on `signInWithEmailAndPassword`) already cover the threat model that motivated reCAPTCHA in the first place.
+
+**Decision:**
+
+Remove reCAPTCHA entirely from the codebase, the deploy surface, and the secret manifest. Specifically:
+
+1. **Client.** Delete the `<ReCAPTCHA>` widget mount, the `recaptchaValue` state and all branches in `handleSubmit`, the `getDevConfig`/`skipRecaptcha`/`isTestUser` toggle layer, the `verifyRecaptchaToken` helper in [AuthContext.tsx](../src/contexts/AuthContext.tsx), and the `recaptchaToken?: string` parameter from `signInWithEmail`. Drop the `react-google-recaptcha` + `@types/react-google-recaptcha` npm packages and the `VITE_RECAPTCHA_SITE_KEY` env var from `.env.example` and `.env.production`. (Commit `cc0d2d0`.)
+2. **CSP.** Trim `https://www.google.com` and `https://www.gstatic.com` from `script-src`, `connect-src`, `frame-src` in [firebase.json](../firebase.json). `apis.google.com` stays for Firebase Auth's Google popup, `fonts.gstatic.com` stays for Google Fonts, `googletagmanager.com` stays for GTM. (Same commit.)
+3. **Cloud Functions.** Delete [functions/src/recaptcha.ts](../functions/src/recaptcha.ts) entirely. Remove the `verifyRecaptcha` export from [functions/src/index.ts](../functions/src/index.ts) and the `recaptchaSecretKey = defineSecret('RECAPTCHA_SECRET_KEY')` declaration from `functions/src/config/index.ts`. (Commit `6d0e05a`.)
+4. **Zombie function deletion.** `firebase deploy --only functions` does NOT auto-prune unreferenced exports — the deployed `getDashboardMetrics`, `verifyRecaptcha`, etc. all stay until explicitly removed. After the new functions codebase rolls out, run `firebase functions:delete verifyRecaptcha --project adsmart-web-dev --force` and the same against `adsmart-web` (prod). Verify with `firebase functions:list`.
+5. **Secret cleanup.** `firebase functions:secrets:destroy RECAPTCHA_SECRET_KEY --project <id>` per project. Irreversible — every version of the secret is wiped. Run only after step 4 confirms no function still references it.
+6. **`SecurityEventType` enum retention.** Keep `RECAPTCHA_SUCCESS` and `RECAPTCHA_FAILED` in [functions/src/securityLogger.ts](../functions/src/securityLogger.ts), marked `@deprecated 2026-05-17`. The admin `SecurityLogsPage` still reads historical entries from `securityLogs/{id}` that reference these types; dropping them would force a type-narrowing fallback for "unknown event type". No producer remains.
+
+**Threat model after removal:**
+
+| Attack | Mitigation |
+|---|---|
+| Credential stuffing against a known email | `useRateLimit` 5/15min client guard + Firebase Auth's server-side per-account throttle |
+| Distributed credential stuffing across many emails | Firebase Auth IP-based rate limit on `identitytoolkit.googleapis.com` |
+| Automated signup spam | `useRateLimit` on the same form path + Firebase Auth abuse detection. Signup volume is currently tiny; if it grows, add Firebase App Check (modern, friction-less alternative) instead of re-introducing reCAPTCHA |
+| Bot abuse of other endpoints | All callables already enforce `request.auth` and the admin-only ones check the custom claim. The dashboard's `useRateLimit` is the right primitive to extend to other forms if needed |
+
+**Reintroduction trigger:**
+
+Re-introduce a bot-prevention layer **only if** one of: (a) abuse patterns surface in Cloud Logging (sustained `LOGIN_FAILED` rate >100/hr from outside the admin team), (b) sign-up volume scales past ~100/day, (c) a compliance review specifically requires it. The replacement should be **Firebase App Check** (token-based, transparent to users, no widget) rather than the legacy reCAPTCHA v2 widget — `onCall({ enforceAppCheck: true })` is the supported path on Cloud Functions v2.
+
+**Trade-offs:**
+
+- **Lost layer.** Even at this stage, reCAPTCHA was non-zero defense against drive-by automated signups. The rate-limiter is purely client-side state (resets on reload), so a determined attacker can paper over it. Acceptable given the product stage.
+- **Historical logs reference a deprecated enum.** `RECAPTCHA_SUCCESS/FAILED` values remain in the type union with a comment. Cleanup window: 90 days after this ADR, sweep `securityLogs/` for entries with these types older than 90 days and delete them, then remove the enum entries. Out of scope here.
+
+**Alternatives considered:**
+
+- **Re-sync the dev secret with the site key.** Restores the immediate breakage but doesn't address the recurring drift risk or the overengineering concern. Rejected.
+- **Migrate to reCAPTCHA Enterprise / v3.** More effort for the same questionable ROI at current product stage.
+- **Switch to Firebase App Check directly.** Right answer eventually, but App Check needs a debug-token setup for local dev + per-platform site keys + provider configuration. Out of scope for "make login work today". Tracked for reintroduction (see trigger above).
+
+**References:**
+- [src/pages/LoginPage.tsx](../src/pages/LoginPage.tsx) — login form after removal (no widget, no state).
+- [src/contexts/AuthContext.tsx](../src/contexts/AuthContext.tsx) — simplified `signInWithEmail(email, password)`.
+- [src/hooks/useRateLimit.ts](../src/hooks/useRateLimit.ts) — remaining client-side abuse guard.
+- [functions/src/securityLogger.ts](../functions/src/securityLogger.ts) — `RECAPTCHA_*` enum values marked deprecated.
+- [firebase.json](../firebase.json) — trimmed CSP.

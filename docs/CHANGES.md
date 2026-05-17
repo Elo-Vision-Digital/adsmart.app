@@ -10,6 +10,47 @@ Format conventions:
 
 ---
 
+## [2026-05-17] — reCAPTCHA removed end-to-end (login, callable, secret declaration, CSP)
+
+**Status:** Shipped. Decision documented in [Decisions.md ADR-013](Decisions.md#adr-013-drop-google-recaptcha-from-authentication).
+
+reCAPTCHA gating on the email/password login was removed from the product. Trigger was an `["invalid-input-response"]` failure from Google `siteverify` against `adsmart-web-dev` (the dev secret had drifted out of sync with the site key, blocking every dev login) but the underlying decision was that the layer was overengineering for the current product stage. The remaining anti-abuse posture is the existing client-side `useRateLimit` (5 attempts / 15 min) + Firebase Auth's server-side per-account/IP throttling. The full threat-model after the change and the reintroduction trigger (Firebase App Check, not reCAPTCHA v2) are in the ADR.
+
+**Client (commit `cc0d2d0`):**
+
+- [src/pages/LoginPage.tsx](../src/pages/LoginPage.tsx) — deleted `<ReCAPTCHA>` widget, `recaptchaValue` state, the dev/test-user toggle banners, all `skipRecaptcha`/`isTestUser`/`devConfig` branches in `handleSubmit`, and the `setRecaptchaValue(null)` resets in the login/signup toggle. `signInWithEmail` is now called with just `(email, password)`.
+- [src/contexts/AuthContext.tsx](../src/contexts/AuthContext.tsx) — deleted the `verifyRecaptchaToken` helper, simplified `signInWithEmail(email, password)` (dropped the 3rd `recaptchaToken?: string` parameter), removed `httpsCallable` + `functions` imports (no other consumer in this file).
+- [src/utils/development.ts](../src/utils/development.ts) — deleted entirely. `getDevConfig()` was 100% reCAPTCHA-related; the unused `isDevelopment()` and `isPrivateIP()` helpers had no consumers either.
+- [package.json](../package.json) — removed `react-google-recaptcha@^3.1.0` and `@types/react-google-recaptcha@^2.1.9`. `bun install` removed 2 packages.
+- [.env.example](../.env.example), [.env.production](../.env.production) — removed `VITE_RECAPTCHA_SITE_KEY` (and its preceding comment block in `.env.example`).
+- [firebase.json](../firebase.json) CSP — trimmed `https://www.google.com` and `https://www.gstatic.com` from `script-src`, `connect-src`, `frame-src`. Kept `apis.google.com` (Firebase Auth Google popup), `fonts.gstatic.com` (Google Fonts), `googletagmanager.com` (GTM).
+
+**Functions (commit `6d0e05a`):**
+
+- Deleted `functions/src/recaptcha.ts` (126 lines including a recent uncommitted 2026-05-02 instrumentation patch capturing Google's `errorCodes` in `HttpsError.details`).
+- [functions/src/index.ts](../functions/src/index.ts) — removed `export { verifyRecaptcha } from './recaptcha'`.
+- `functions/src/config/index.ts` — removed `recaptchaSecretKey = defineSecret('RECAPTCHA_SECRET_KEY')`. The other secrets (`encryptionKey`, `googleAdsClientSecret`, `metaAdsAppSecret`) remain.
+- [functions/src/securityLogger.ts](../functions/src/securityLogger.ts) — KEPT the `RECAPTCHA_SUCCESS` / `RECAPTCHA_FAILED` enum values with a `@deprecated 2026-05-17` comment. Historical `securityLogs/{id}` entries reference these types; admin `SecurityLogsPage` relies on the enum being exhaustive. No producer remains.
+- `axios` (in `functions/package.json`) **not removed** — verified `googleAdsOAuth.ts`, `metaAdsOAuth.ts`, `suitpayPayment.ts`, `googleAdsOAuthV2.ts` all import it.
+
+**Hygiene fix surfaced en route (commit `438449e`):**
+
+- [functions/.gitignore](../functions/.gitignore) had an un-anchored `config/` rule that recursively ignored `functions/src/config/` — making the entire `defineSecret` manifest untracked. Removing the rule and force-adding `functions/src/config/index.ts` brings the canonical secrets manifest into version control for the first time. Public config only — secret VALUES live in Google Secret Manager; the file only references their names via `defineSecret`.
+
+**Deploys + secret cleanup (this commit not yet — pending deploy step):**
+
+- `firebase deploy --only functions --project adsmart-web-dev` then `firebase functions:delete verifyRecaptcha --project adsmart-web-dev --force` (the new functions bundle no longer exports it, but `firebase deploy` does not auto-prune unreferenced functions). Same for `--project adsmart-web` after dev validation.
+- `firebase functions:secrets:destroy RECAPTCHA_SECRET_KEY --project adsmart-web-dev` and `--project adsmart-web`. Irreversible — wipes every version of the secret.
+
+**Verification:**
+
+- `bun run typecheck` clean across the monorepo.
+- `bun run test` 61/61 web tests pass (no reCAPTCHA-specific tests existed).
+- `bunx biome check` exits 0 — 6 pre-existing `useButtonType`/`noSvgWithoutTitle` warnings on social-login buttons, zero new warnings, zero errors.
+- Login flow validation in dev: pending the `functions:delete` step before re-opening the localhost form.
+
+---
+
 ## [2026-05-02] — Docs sweep: Subprojeto 2 surface graduated to "shipped" in conventions/docs
 
 Closes the docs-sweep follow-up flagged by the [2026-05-01] Subprojeto 2 Task 18 entry. The dashboard callable + UI surface are now reflected in the conventions docs and per-feature contracts; no code change.
