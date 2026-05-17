@@ -1,6 +1,6 @@
+import { CreditCard } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { useWallet } from '@/hooks/useWallet'
-import { CreditCard } from 'lucide-react'
 import { PixPaymentModal } from './PixPaymentModal'
 
 interface AddCreditsModalProps {
@@ -53,7 +53,7 @@ export function AddCreditsModal({ open, onOpenChange }: AddCreditsModalProps) {
               Adicione créditos à sua carteira para gerar relatórios. Cada relatório custa R$ 5,00.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-2">
               {predefinedAmounts.map((value) => (
@@ -91,7 +91,8 @@ export function AddCreditsModal({ open, onOpenChange }: AddCreditsModalProps) {
 
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                💳 Pagamento seguro via PIX. Os créditos são adicionados instantaneamente após a confirmação do pagamento.
+                💳 Pagamento seguro via PIX. Os créditos são adicionados instantaneamente após a
+                confirmação do pagamento.
               </p>
             </div>
           </div>
@@ -100,10 +101,7 @@ export function AddCreditsModal({ open, onOpenChange }: AddCreditsModalProps) {
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleAddCredits} 
-              disabled={!amount || parseFloat(amount) <= 0}
-            >
+            <Button onClick={handleAddCredits} disabled={!amount || parseFloat(amount) <= 0}>
               <CreditCard className="mr-2 h-4 w-4" />
               Continuar para Pagamento
             </Button>

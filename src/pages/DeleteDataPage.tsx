@@ -1,12 +1,12 @@
+import { deleteUser } from 'firebase/auth'
+import { deleteDoc, doc } from 'firebase/firestore'
+import { AlertTriangle, ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, ArrowLeft } from 'lucide-react'
-import { deleteUser } from 'firebase/auth'
-import { doc, deleteDoc } from 'firebase/firestore'
+import { useAuth } from '@/contexts/AuthContext'
 import { db } from '@/firebase/config'
 
 export function DeleteDataPage() {
@@ -33,10 +33,10 @@ export function DeleteDataPage() {
 
       // 1. Deletar dados do Firestore
       await deleteDoc(doc(db, 'users', user.uid))
-      
+
       // 2. Deletar subcoleções (se existirem)
       // TODO: Implementar exclusão de subcoleções via Cloud Function
-      
+
       // 3. Deletar conta de autenticação
       await deleteUser(user)
 
@@ -44,7 +44,7 @@ export function DeleteDataPage() {
       navigate('/')
     } catch (error: any) {
       console.error('Erro ao excluir conta:', error)
-      
+
       if (error.code === 'auth/requires-recent-login') {
         setError('Por segurança, faça login novamente antes de excluir sua conta')
       } else {
@@ -59,11 +59,7 @@ export function DeleteDataPage() {
     <MainLayout>
       <div className="min-h-screen bg-background">
         <div className="max-w-2xl mx-auto p-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(-1)}
-            className="mb-6"
-          >
+          <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
@@ -74,9 +70,7 @@ export function DeleteDataPage() {
                 <AlertTriangle className="h-6 w-6 text-red-600" />
                 <CardTitle className="text-red-600">Excluir Conta e Dados</CardTitle>
               </div>
-              <CardDescription>
-                Esta ação é permanente e não pode ser desfeita
-              </CardDescription>
+              <CardDescription>Esta ação é permanente e não pode ser desfeita</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
@@ -94,9 +88,10 @@ export function DeleteDataPage() {
 
               <div className="space-y-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Para confirmar a exclusão, digite <strong>EXCLUIR MINHA CONTA</strong> no campo abaixo:
+                  Para confirmar a exclusão, digite <strong>EXCLUIR MINHA CONTA</strong> no campo
+                  abaixo:
                 </p>
-                
+
                 <input
                   type="text"
                   value={confirmText}
@@ -124,8 +119,8 @@ export function DeleteDataPage() {
 
               <div className="pt-4 border-t">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  De acordo com o GDPR e LGPD, seus dados serão completamente removidos de nossos sistemas. 
-                  Alguns dados podem ser mantidos por obrigações legais por até 5 anos.
+                  De acordo com o GDPR e LGPD, seus dados serão completamente removidos de nossos
+                  sistemas. Alguns dados podem ser mantidos por obrigações legais por até 5 anos.
                 </p>
               </div>
             </CardContent>

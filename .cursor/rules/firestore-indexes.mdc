@@ -1,0 +1,60 @@
+---
+description: Composite index requirements + selectivity ordering (Firebase docs)
+globs: firestore.indexes.json, src/**/*.ts, src/**/*.tsx, functions/src/**/*.ts
+alwaysApply: false
+---
+
+# Firestore composite indexes (AdSmart)
+
+ANY query with `where + orderBy` on different fields, OR 2+ range filters, REQUIRES a composite index in `firestore.indexes.json`.
+
+## Optimal field ordering (Firebase docs)
+
+1. **Equality fields** (`==`, `in`) FIRST — order by selectivity decreasing.
+2. **Range/inequality fields** AFTER equalities — order by selectivity decreasing.
+3. **`orderBy` field** at the end (or position dictated by inequality).
+4. Direction (`ASC`/`DESC`) matches the orderBy direction.
+
+## Example
+
+Query:
+
+```ts
+db.collectionGroup('transactions')
+  .where('type', '==', 'credit')
+  .where('status', '==', 'completed')
+  .orderBy('createdAt', 'desc')
+```
+
+Index entry:
+
+```json
+{
+  "collectionGroup": "transactions",
+  "queryScope": "COLLECTION_GROUP",
+  "fields": [
+    { "fieldPath": "type", "order": "ASCENDING" },
+    { "fieldPath": "status", "order": "ASCENDING" },
+    { "fieldPath": "createdAt", "order": "DESCENDING" }
+  ]
+}
+```
+
+## Deploy in BOTH targets
+
+```bash
+bash scripts/firebase/safe-deploy.sh dev indexes
+bash scripts/firebase/safe-deploy.sh prod indexes
+```
+
+Index build is async (1-3 min). Query stays red (`FAILED_PRECONDITION`) until `Enabled`.
+
+## Use the slash command
+
+Prefer `/firestore-new-query` — it walks through the decision tree.
+
+## References
+
+- CLAUDE.md → "Adding Firestore queries"
+- docs/DEPLOYMENT.md
+- Firebase docs: query-data/index-overview, multiple-range-fields

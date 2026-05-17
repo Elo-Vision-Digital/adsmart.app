@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, migrate]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  web:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-web-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-web-
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Build
+        run: bun run build
+
+  functions:
+    name: Cloud Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-functions-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-functions-
+
+      # Non-blocking until Phase 2 ESLint 8→9 migration
+      - name: Lint (non-blocking)
+        working-directory: functions
+        run: bun run lint
+        continue-on-error: true
+
+      - name: Build
+        working-directory: functions
+        run: bun run build

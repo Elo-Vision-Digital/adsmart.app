@@ -1,0 +1,72 @@
+---
+description: Cloud Function v2 onCall canonical pattern (AdSmart)
+globs: functions/src/**/*.ts
+alwaysApply: false
+---
+
+# Cloud Function v2 onCall pattern (AdSmart)
+
+Pattern verified against `reserveUserDocument.ts` and `getDashboardMetrics.ts`.
+
+## Skeleton
+
+```ts
+import * as admin from 'firebase-admin'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { MyInputSchema, type MyOutput } from '@adsmart/shared'
+
+if (!admin.apps.length) admin.initializeApp()
+
+export const myCallable = onCall<unknown, Promise<MyOutput>>(
+  // Options block — omit entirely if no special needs.
+  // Use { memory: '512MiB' } for volume; { secrets: [mySecret] } for secrets.
+  // DO NOT set `region` — project uses default us-central1.
+  // DO NOT set `enforceAppCheck` — App Check not yet initialized in client.
+  async (request) => {
+    // 1. Auth (always)
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Usuário não autenticado')
+    }
+    const uid = request.auth.uid
+
+    // 2. Zod input validation (always)
+    const parsed = MyInputSchema.safeParse(request.data)
+    if (!parsed.success) {
+      throw new HttpsError('invalid-argument', parsed.error.issues[0]?.message ?? 'Invalid input')
+    }
+
+    // 3. Rate limit (CONDITIONAL: only sensitive/write functions)
+    // await checkRateLimit(uid, 'myAction')
+
+    // 4. Logic. For atomic multi-doc writes: db.runTransaction(async (tx) => { ... })
+
+    // 5. Security log (CONDITIONAL: auth/payment/admin events)
+    // await securityLogger.logEvent(SecurityEventType.X, uid, {...}, SecuritySeverity.INFO)
+
+    // 6. Return typed
+    return { /* ... */ }
+  },
+)
+```
+
+## HttpsError codes
+
+- `unauthenticated` — no `request.auth`
+- `invalid-argument` — input validation failed
+- `failed-precondition` — business rule violation
+- `already-exists` — uniqueness conflict
+- `permission-denied` — authenticated but not authorized
+
+## Server timestamps
+
+`admin.firestore.Timestamp.now()` or `FieldValue.serverTimestamp()`. Never `Date.now()`.
+
+## Use the slash command
+
+Prefer `/functions-new-callable` — it scaffolds the right pattern based on function type.
+
+## References
+
+- functions/src/reserveUserDocument.ts, getDashboardMetrics.ts, bootstrapUser.ts
+- AGENTS.md, CLAUDE.md
+- docs/SECURITY.md

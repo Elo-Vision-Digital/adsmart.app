@@ -1,12 +1,12 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useTheme } from '@/contexts/ThemeContext'
 import {
+  FinanceIcon,
   HomeIcon,
   IntegrationsIcon,
   ReportsIcon,
   TemplatesIcon,
-  FinanceIcon
 } from '@/components/icons'
+import { useTheme } from '@/contexts/ThemeContext'
 
 interface NavItem {
   id: string
@@ -18,7 +18,7 @@ interface NavItem {
 export function BottomNavigation() {
   const location = useLocation()
   const { theme } = useTheme()
-  
+
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <HomeIcon />, path: '/dashboard' },
     { id: 'integrations', label: 'Integrações', icon: <IntegrationsIcon />, path: '/accounts' },
@@ -26,15 +26,15 @@ export function BottomNavigation() {
     { id: 'templates', label: 'Templates', icon: <TemplatesIcon />, path: '/templates' },
     { id: 'finance', label: 'Financeiro', icon: <FinanceIcon />, path: '/transactions' },
   ]
-  
+
   const isActive = (path: string) => location.pathname === path
-  
+
   return (
-    <nav className={`fixed bottom-0 left-0 right-0 border-t md:hidden z-50 ${
-      theme === 'dark' 
-        ? 'bg-black border-white/10' 
-        : 'bg-white border-black/10'
-    }`}>
+    <nav
+      className={`fixed bottom-0 left-0 right-0 border-t md:hidden z-50 ${
+        theme === 'dark' ? 'bg-black border-white/10' : 'bg-white border-black/10'
+      }`}
+    >
       <div className="grid grid-cols-5 h-16 px-4">
         {navItems.map((item) => (
           <Link
@@ -50,12 +50,8 @@ export function BottomNavigation() {
                   : 'text-gray-600'
             }`}
           >
-            <span className="w-6 h-6">
-              {item.icon}
-            </span>
-            <span className="text-[10px] font-medium leading-none">
-              {item.label}
-            </span>
+            <span className="w-6 h-6">{item.icon}</span>
+            <span className="text-[10px] font-medium leading-none">{item.label}</span>
           </Link>
         ))}
       </div>

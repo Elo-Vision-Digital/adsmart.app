@@ -1,13 +1,13 @@
+import { httpsCallable } from 'firebase/functions'
+import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
-import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/firebase/config'
 
 export function OAuthCallbackPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  
+
   const code = searchParams.get('code')
   const state = searchParams.get('state')
   const platform = window.location.pathname.includes('google') ? 'google' : 'meta'
@@ -15,41 +15,41 @@ export function OAuthCallbackPage() {
   useEffect(() => {
     const handleCallback = async () => {
       if (!code || !state) {
-        navigate('/accounts', { 
-          state: { 
-            error: 'Parâmetros de autorização inválidos' 
-          } 
+        navigate('/accounts', {
+          state: {
+            error: 'Parâmetros de autorização inválidos',
+          },
         })
         return
       }
 
       try {
         // Chamar função que processa o OAuth e retorna os dados
-        const functionName = platform === 'google' 
-          ? 'handleGoogleAdsCallbackWithSelection' 
-          : 'handleMetaAdsCallbackWithSelection'
-        
+        const functionName =
+          platform === 'google'
+            ? 'handleGoogleAdsCallbackWithSelection'
+            : 'handleMetaAdsCallbackWithSelection'
+
         const handleCallback = httpsCallable<{ code: string; state: string }, any>(
-          functions, 
+          functions,
           functionName
         )
-        
+
         const result = await handleCallback({ code, state })
-        
+
         // Redirecionar para accounts com os dados do OAuth
-        navigate('/accounts', { 
-          state: { 
+        navigate('/accounts', {
+          state: {
             oauthData: result.data,
-            platform: platform === 'google' ? 'google_ads' : 'meta_ads'
-          } 
+            platform: platform === 'google' ? 'google_ads' : 'meta_ads',
+          },
         })
-        
       } catch (error: any) {
         console.error('Erro no callback OAuth:', error)
-        navigate('/accounts', { 
-          state: { 
-            error: error.message || 'Erro ao conectar conta' 
-          } 
+        navigate('/accounts', {
+          state: {
+            error: error.message || 'Erro ao conectar conta',
+          },
         })
       }
     }

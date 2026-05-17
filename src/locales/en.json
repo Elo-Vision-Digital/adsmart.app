@@ -1,0 +1,443 @@
+{
+  "common": {
+    "button": {
+      "start": "Get Started",
+      "login": "Log In",
+      "createAccount": "Create Free Account",
+      "viewDemo": "View Demo",
+      "signUp": "Sign Up",
+      "loginWithGoogle": "Sign in with Google",
+      "loginWithFacebook": "Sign in with Facebook",
+      "forgotPassword": "Forgot your password?",
+      "deposit": "Deposit",
+      "add": "Add",
+      "search": "Search",
+      "refresh": "Refresh",
+      "delete": "Delete",
+      "manage": "Manage",
+      "createNew": "Create new",
+      "back": "Back",
+      "saveChanges": "Save changes",
+      "sending": "Sending..."
+    },
+    "form": {
+      "email": "Email",
+      "password": "Password",
+      "name": "Name",
+      "confirmPassword": "Confirm password",
+      "rememberMe": "Remember me",
+      "fullName": "Full name",
+      "phone": "Phone",
+      "documentType": "Document type",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmNewPassword": "Confirm new password"
+    },
+    "validation": {
+      "requiredField": "Required field",
+      "invalidEmail": "Invalid email",
+      "passwordMismatch": "Passwords do not match",
+      "weakPassword": "Password must be at least 8 characters",
+      "completeRecaptcha": "Please complete the ReCAPTCHA",
+      "emailCannotBeChanged": "Email cannot be changed",
+      "minimumCharacters": "Minimum 6 characters",
+      "invalidDocument": "Invalid {type}"
+    },
+    "general": {
+      "user": "User",
+      "settings": "Settings",
+      "logout": "Log out",
+      "noResults": "No results found",
+      "loading": "Loading...",
+      "synced": "Synced",
+      "recently": "Recently",
+      "admin": "Admin",
+      "balance": "Balance",
+      "saving": "Saving...",
+      "changing": "Changing..."
+    },
+    "theme": {
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "perReport": "per report",
+    "footer": {
+      "rights": "All rights reserved",
+      "termsOfUse": "Terms of Use",
+      "privacyPolicy": "Privacy Policy"
+    },
+    "loading": "Loading...",
+    "locale": "en-US",
+    "error": {
+      "generic": "Error processing request",
+      "tooManyAttempts": "Too many attempts. Try again in 15 minutes.",
+      "deleteAccount": "Error removing account",
+      "saveProfile": "Error saving profile",
+      "changePassword": "Error changing password",
+      "sendVerificationEmail": "Error sending email. Please try again later.",
+      "wrongPassword": "Incorrect current password"
+    },
+    "warning": {
+      "testAccount": "Test account identified - ReCAPTCHA disabled",
+      "rateLimit": "Too many attempts. Try again in 15 minutes.",
+      "rateLimitRemaining": "Warning: You have only {attempts} attempts remaining."
+    }
+  },
+  "dashboard": {
+    "myReports": "My reports",
+    "integrations": "Integrations",
+    "viewTemplates": "View Report Templates",
+    "searchPlaceholder": "Search...",
+    "noReportsFound": "No reports found",
+    "noAccountsConnected": "No accounts connected",
+    "clickToStart": "Click \"Add accounts\" to start",
+    "loadingConnections": "Loading connections...",
+    "deleteConfirm": "Are you sure you want to remove this account?",
+    "addAccounts": "Add accounts",
+    "createNewReport": "Create new report"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "integrations": "Integrations",
+    "reports": "Reports",
+    "templates": "Templates",
+    "finance": "Finance",
+    "settings": "Settings",
+    "administration": "Administration"
+  },
+  "footer": {
+    "tagline": "One more tool, one less subscription! Generate reports paying only for what you use.",
+    "quickLinks": "Quick Links",
+    "legal": "Legal",
+    "contact": "Contact",
+    "location": "São Paulo, SP - Brazil",
+    "developedBy": "Developed with ❤️ by Zen Technology",
+    "allRightsReserved": "All rights reserved"
+  },
+  "loginPage": {
+    "title": {
+      "login": "Log In",
+      "signUp": "Sign Up"
+    },
+    "subtitle": {
+      "login": "Please fill in the details below",
+      "signUp": "Fill in the details to create your account"
+    },
+    "message": {
+      "noAccount": "Don't have an account?",
+      "haveAccount": "Already have an account?",
+      "loginSuccess": "Successfully logged in!",
+      "signupSuccess": "Account created successfully!"
+    },
+    "error": {
+      "invalidCredentials": "Invalid email or password",
+      "emailInUse": "This email is already in use",
+      "weakPasswordDetails": "Password must contain at least 8 characters, including uppercase, lowercase, numbers and special characters",
+      "socialLoginFailed": "Social login failed. Please try again."
+    }
+  },
+  "homePage": {
+    "hero": {
+      "title": "Professional Ad Reports in Minutes",
+      "subtitle": "Transform Google Ads and Meta Ads data into stunning visual insights with just a few clicks."
+    },
+    "features": {
+      "title": "Everything you need for professional analytics",
+      "subtitle": "Powerful tools to transform your data into actionable insights",
+      "googleAds": {
+        "title": "Google Ads",
+        "description": "Complete Google Ads integration for detailed campaign analysis"
+      },
+      "metaAds": {
+        "title": "Meta Ads",
+        "description": "Connect Facebook and Instagram Ads for unified reporting"
+      },
+      "automation": {
+        "title": "Smart Automation",
+        "description": "Automatic report generation with real-time data"
+      },
+      "insights": {
+        "title": "Deep Insights",
+        "description": "Advanced analytics and AI-based recommendations"
+      }
+    },
+    "templates": {
+      "title": "Professional Templates Ready to Use",
+      "subtitle": "Choose from our templates optimized for different business types"
+    },
+    "pricing": {
+      "title": "Simple and Transparent Pricing",
+      "subtitle": "Pay only for the reports you generate",
+      "simple": {
+        "title": "Simple Model",
+        "subtitle": "No monthly fees, pay only for what you use"
+      },
+      "templates": {
+        "google": {
+          "launch": "Google Ads - Launch",
+          "localBusiness": "Google Ads - Local Business"
+        },
+        "meta": {
+          "launch": "Meta Ads - Launch",
+          "localBusiness": "Meta Ads - Local Business"
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to Impress your Clients?",
+      "subtitle": "Start creating professional reports in minutes"
+    },
+    "stats": {
+      "reports": "Reports Generated",
+      "users": "Active Users",
+      "integrations": "Integrations"
+    }
+  },
+  "reportsPage": {
+    "title": "My Reports",
+    "subtitle": "Manage and access all your generated reports",
+    "totalReports": "Total reports: {count}",
+    "createNewReport": "Create new report",
+    "searchPlaceholder": "Search by name or account...",
+    "noReportsFound": "No reports found",
+    "noReportsHint": "Try adjusting the filters or create a new report",
+    "filters": {
+      "allPlatforms": "All platforms",
+      "mostRecent": "Most recent",
+      "oldest": "Oldest"
+    },
+    "stats": {
+      "thisMonth": "This month"
+    }
+  },
+  "templatesPage": {
+    "title": "Report Templates",
+    "subtitle": "Choose the ideal template for your marketing analysis",
+    "backToDashboard": "Back to Dashboard",
+    "currentBalance": "Your current balance",
+    "warning": "Warning",
+    "insufficientBalance": {
+      "title": "Insufficient Balance",
+      "message": "You need to add credits to generate reports. Your current balance is {balance}.",
+      "button": "Add Credits"
+    },
+    "howItWorks": {
+      "title": "How it works?",
+      "step1": "Choose the appropriate template for your ads platform",
+      "step2": "Connect your Google Ads or Meta Ads account",
+      "step3": "Select campaigns and analysis period",
+      "step4": "Confirm payment (real-time updated values)",
+      "step5": "Receive your personalized dashboard link in minutes!"
+    }
+  },
+  "templateCard": {
+    "featuresIncluded": "Features included:",
+    "loading": "Loading...",
+    "insufficientBalance": "Insufficient Balance",
+    "useTemplate": "Use this Template",
+    "defaultTitle": "{platform} Dashboard",
+    "defaultDescription": "Professional dashboard for your campaigns",
+    "templateTypes": {
+      "launch": "Launch",
+      "localBusiness": "Local Business"
+    },
+    "templateDescriptions": {
+      "googleLaunch": "Dashboard for launch campaigns on Google Ads",
+      "metaLaunch": "Dashboard for launch campaigns on Meta Ads",
+      "googleLocal": "Dashboard for local businesses on Google Ads",
+      "metaLocal": "Dashboard for local businesses on Meta Ads"
+    }
+  },
+  "templateFeatures": {
+    "googleLaunch": {
+      "feature1": "Conversion and ROI analysis",
+      "feature2": "Detailed engagement metrics",
+      "feature3": "Period comparison",
+      "feature4": "Automatic performance insights"
+    },
+    "metaLaunch": {
+      "feature1": "Target audience analysis",
+      "feature2": "Performance by ad format",
+      "feature3": "Detailed conversion funnel",
+      "feature4": "Suggested optimizations"
+    },
+    "googleLocal": {
+      "feature1": "Geographic conversion analysis",
+      "feature2": "Performance by location",
+      "feature3": "Peak conversion hours",
+      "feature4": "ROI by region"
+    },
+    "metaLocal": {
+      "feature1": "Reach by region",
+      "feature2": "Local engagement",
+      "feature3": "Detailed demographic analysis",
+      "feature4": "Cost per local lead"
+    }
+  },
+  "accountsPage": {
+    "title": "Ad Accounts",
+    "subtitle": "Connect your Google Ads and Meta Ads accounts to generate reports",
+    "backToDashboard": "Back to Dashboard",
+    "addDemoAccounts": "Add Demo Accounts",
+    "demo": "Demo",
+    "connect": "Connect",
+    "accountConnected": "account connected",
+    "accountsConnectedPlural": "accounts connected",
+    "noAccountsConnected": "No accounts connected",
+    "connectGoogleToStart": "Connect your Google Ads account to start",
+    "connectMetaToStart": "Connect your Meta Ads account to start",
+    "synced": "Synced",
+    "confirmRemove": "Are you sure you want to remove this account?",
+    "mockAccountsAdded": "Demo accounts added!",
+    "accountsConnectedSuccess": "{count} {platform} accounts connected successfully!",
+    "importantInfo": {
+      "title": "Important Information",
+      "description": "To connect your ad accounts, you will need to authorize adsmart to access your data. We use secure OAuth2 connections and do not store your passwords. You can revoke access at any time."
+    },
+    "error": {
+      "connectGoogle": "Error connecting to Google Ads. Please try again.",
+      "connectMeta": "Error connecting to Meta Ads. Please try again.",
+      "saveAccounts": "Error saving selected accounts"
+    }
+  },
+  "transactionsPage": {
+    "loading": "Loading transactions...",
+    "backToDashboard": "Back to Dashboard",
+    "title": "Transaction History",
+    "subtitle": "Track all your wallet movements",
+    "currentBalance": "Current Balance",
+    "recentTransactions": "Recent Transactions",
+    "lastTransactions": "Last 10 transactions",
+    "noTransactions": "No transactions yet.",
+    "dateUnavailable": "Date unavailable",
+    "transactionStatus": {
+      "completed": "Completed",
+      "pending": "Pending",
+      "failed": "Failed"
+    }
+  },
+  "settingsPage": {
+    "title": "Settings",
+    "subtitle": "Manage your personal information and security",
+    "personalInfo": {
+      "title": "Personal Information",
+      "subtitle": "Your data is required to make deposits on the platform"
+    },
+    "changePassword": {
+      "title": "Change Password",
+      "subtitle": "Keep your account secure with a strong password"
+    },
+    "emailVerification": {
+      "notVerified": "Email not verified",
+      "verifyToAccess": "Verify your email to access all platform features.",
+      "resendVerification": "Resend verification email",
+      "verificationSent": "Verification email sent! Check your inbox.",
+      "errorSending": "Error sending email. Please try again later."
+    },
+    "messages": {
+      "profileUpdated": "Profile updated successfully!",
+      "passwordChanged": "Password changed successfully!",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "currentPasswordIncorrect": "Current password is incorrect"
+    }
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "welcomeBack": "Welcome, {name}",
+    "nav": {
+      "dashboard": "Dashboard",
+      "prices": "Price Configuration",
+      "wallet": "Wallet Management"
+    },
+    "dashboard": {
+      "title": "Overview dashboard",
+      "ranges": {
+        "today": "Today",
+        "7d": "7 days",
+        "30d": "30 days",
+        "60d": "60 days",
+        "90d": "90 days",
+        "180d": "180 days",
+        "365d": "365 days",
+        "custom": "Custom"
+      },
+      "revenue": {
+        "title": "Generated revenue",
+        "real": "Real revenue",
+        "credits": "Granted credits"
+      },
+      "users": {
+        "title": "Users",
+        "new": "New",
+        "active": "Active",
+        "total": "All-time"
+      },
+      "integrations": {
+        "title": "Top integrations",
+        "empty": "No active integrations",
+        "platforms": {
+          "google_ads": "Google Ads",
+          "meta_ads": "Meta Ads"
+        }
+      },
+      "errors": {
+        "loadFailed": "Failed to load metrics",
+        "retry": "Try again",
+        "invalidRange": "Start date must be before end date",
+        "rangeTooLong": "Range cannot exceed 365 days"
+      }
+    },
+    "prices": {
+      "title": "Price Configuration",
+      "subtitle": "Manage dashboard prices",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "reload": "Reload",
+      "loading": "Loading prices...",
+      "priceLabel": "Price:",
+      "categoryLabel": "Category",
+      "typeLabel": "Type",
+      "updatedAtLabel": "Updated",
+      "category": { "google": "Google Ads", "meta": "Meta Ads" },
+      "type": { "lancamento": "Launch", "negocioLocal": "Local Business" },
+      "currency": "R$"
+    },
+    "wallet": {
+      "title": "Wallet Management",
+      "subtitle": "Add credits to a user's balance",
+      "addCreditsTitle": "Add Credits to User",
+      "targetEmail": "User Email",
+      "targetEmailPlaceholder": "user@example.com",
+      "amount": "Amount in BRL (R$)",
+      "amountPlaceholder": "0.00",
+      "amountHint": "Enter the amount in BRL. Ex: 10.50 for R$ 10.50 (Maximum: R$ 1,000.00)",
+      "reason": "Reason",
+      "reasonPlaceholder": "Describe the reason for adding credits (minimum 10 characters)",
+      "reasonCounter": "{count}/10 minimum characters",
+      "addCredits": "Add Credits",
+      "adding": "Adding...",
+      "limits": {
+        "title": "Warning - Security Controls",
+        "addsRealBalance": "This action adds real balance to the user",
+        "affectsProduction": "Balance added affects production",
+        "perTx": "Per-transaction limit: R$ 1,000.00",
+        "daily": "Daily admin limit: R$ 5,000.00",
+        "txCount": "Maximum 50 transactions per day",
+        "reasonRequired": "Reason required (minimum 10 characters)",
+        "loggedWithIp": "All actions are logged with IP and timestamp",
+        "useResponsibly": "Use responsibly"
+      }
+    },
+    "messages": {
+      "fillFields": "Please fill in all fields",
+      "invalidAmount": "Please enter a valid amount",
+      "reasonTooShort": "Reason must be at least 10 characters",
+      "loadError": "Error loading data",
+      "saveSuccess": "Changes saved successfully",
+      "pricesLoaded": "Prices loaded successfully!",
+      "pricesUpdated": "Prices updated successfully!",
+      "creditsAddedToUser": "Credits added successfully for {email}! Daily limits: R$ {used} / R$ {max}"
+    }
+  }
+}

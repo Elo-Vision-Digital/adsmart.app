@@ -30,18 +30,18 @@ interface CampaignsResponse {
 class OAuthService {
   // Helper para detectar ambiente de desenvolvimento
   private isLocalEnvironment(): boolean {
-    return window.location.hostname === 'localhost' || 
-           window.location.hostname === '127.0.0.1' ||
-           window.location.hostname.includes('192.168.') ||
-           window.location.hostname === '10.0.0.2'
+    return (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname.includes('192.168.') ||
+      window.location.hostname === '10.0.0.2'
+    )
   }
 
   // Helper para obter o callback URL baseado no ambiente
   private getCallbackUrl(platform: 'google-ads' | 'meta-ads'): string {
-    const baseUrl = this.isLocalEnvironment() 
-      ? `http://localhost:5173` 
-      : `https://adsmart.app`
-    
+    const baseUrl = this.isLocalEnvironment() ? `http://localhost:5173` : `https://adsmart.app`
+
     return `${baseUrl}/auth/${platform}/callback`
   }
 
@@ -51,30 +51,32 @@ class OAuthService {
       console.log('Chamando Cloud Function getGoogleAdsAuthUrl...')
       console.log('Ambiente local?', this.isLocalEnvironment())
       console.log('Callback URL esperado:', this.getCallbackUrl('google-ads'))
-      
+
       const getAuthUrl = httpsCallable<{ isLocalEnv: boolean }, OAuthUrlResponse>(
-        functions, 
+        functions,
         'getGoogleAdsAuthUrl'
       )
-      
-      const result = await getAuthUrl({ 
-        isLocalEnv: this.isLocalEnvironment() 
+
+      const result = await getAuthUrl({
+        isLocalEnv: this.isLocalEnvironment(),
       })
-      
+
       console.log('URL OAuth recebida:', result.data.authUrl)
       return result.data.authUrl
     } catch (error: any) {
       console.error('Erro ao obter URL OAuth Google Ads:', error)
-      
+
       // Mensagem mais detalhada do erro
       if (error.code === 'functions/not-found') {
-        throw new Error('Função getGoogleAdsAuthUrl não encontrada. Verifique se foi deployada corretamente.')
+        throw new Error(
+          'Função getGoogleAdsAuthUrl não encontrada. Verifique se foi deployada corretamente.'
+        )
       } else if (error.code === 'unauthenticated') {
         throw new Error('Usuário não autenticado. Faça login novamente.')
       } else if (error.message?.includes('CORS')) {
         throw new Error('Erro de CORS. Verifique a configuração do Firebase Functions.')
       }
-      
+
       throw new Error(error.message || 'Erro ao conectar com Google Ads')
     }
   }
@@ -83,7 +85,7 @@ class OAuthService {
     try {
       console.log('Processando callback Google Ads...')
       const handleCallback = httpsCallable<{ code: string; state: string }, OAuthCallbackResponse>(
-        functions, 
+        functions,
         'handleGoogleAdsCallback'
       )
       const result = await handleCallback({ code, state })
@@ -115,30 +117,32 @@ class OAuthService {
       console.log('Chamando Cloud Function getMetaAdsAuthUrl...')
       console.log('Ambiente local?', this.isLocalEnvironment())
       console.log('Callback URL esperado:', this.getCallbackUrl('meta-ads'))
-      
+
       const getAuthUrl = httpsCallable<{ isLocalEnv: boolean }, OAuthUrlResponse>(
-        functions, 
+        functions,
         'getMetaAdsAuthUrl'
       )
-      
-      const result = await getAuthUrl({ 
-        isLocalEnv: this.isLocalEnvironment() 
+
+      const result = await getAuthUrl({
+        isLocalEnv: this.isLocalEnvironment(),
       })
-      
+
       console.log('URL OAuth Meta recebida:', result.data.authUrl)
       return result.data.authUrl
     } catch (error: any) {
       console.error('Erro ao obter URL OAuth Meta Ads:', error)
-      
+
       // Mensagem mais detalhada do erro
       if (error.code === 'functions/not-found') {
-        throw new Error('Função getMetaAdsAuthUrl não encontrada. Verifique se foi deployada corretamente.')
+        throw new Error(
+          'Função getMetaAdsAuthUrl não encontrada. Verifique se foi deployada corretamente.'
+        )
       } else if (error.code === 'unauthenticated') {
         throw new Error('Usuário não autenticado. Faça login novamente.')
       } else if (error.message?.includes('CORS')) {
         throw new Error('Erro de CORS. Verifique a configuração do Firebase Functions.')
       }
-      
+
       throw new Error(error.message || 'Erro ao conectar com Meta Ads')
     }
   }

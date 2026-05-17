@@ -1,6 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
+import { AdAccountSchema } from '@adsmart/shared'
+import { googleAdsClientSecret } from './config'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -29,7 +31,7 @@ interface TemporaryTokenData {
 /**
  * Processa o callback OAuth e retorna contas disponíveis para seleção
  */
-export const handleGoogleAdsCallbackWithSelection = onCall(async (request) => {
+export const handleGoogleAdsCallbackWithSelection = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
   console.log('=== INICIANDO handleGoogleAdsCallbackWithSelection ===')
   
   // Verificar autenticação
@@ -255,29 +257,39 @@ export const handleGoogleAdsCallbackWithSelection = onCall(async (request) => {
     }
 
   } catch (error: any) {
-    console.error('=== ERRO DETALHADO ===')
+    // Rethrow semantic HttpsError (e.g. invalid-argument, permission-denied,
+    // deadline-exceeded) so callers can distinguish CSRF/validation failures
+    // from genuine server faults. Only wrap NON-HttpsError exceptions.
+    if (error instanceof HttpsError) {
+      throw error
+    }
+
+    console.error('=== ERRO DETALHADO (Google Ads OAuth) ===')
     console.error('Mensagem:', error.message)
     console.error('Status:', error.response?.status)
     console.error('Data:', JSON.stringify(error.response?.data, null, 2))
-    console.error('Config usada:', error.config)
     console.error('Stack:', error.stack)
-    
-    // Log de erro
+
     await securityLogger.logEvent(
       OAuthEventType.OAUTH_ERROR,
       userId,
-      { 
+      {
         error: error.message,
         code: error.response?.status,
-        details: error.response?.data
+        details: error.response?.data,
       },
       SecuritySeverity.ERROR
     )
 
     if (error.response?.data?.error) {
-      throw new HttpsError('internal', error.response.data.error_description || error.response.data.error || 'Erro ao processar OAuth')
+      throw new HttpsError(
+        'internal',
+        error.response.data.error_description ||
+          error.response.data.error ||
+          'Erro ao processar OAuth'
+      )
     }
-    
+
     throw new HttpsError('internal', error.message || 'Erro ao conectar conta Google Ads')
   }
 })
@@ -285,7 +297,7 @@ export const handleGoogleAdsCallbackWithSelection = onCall(async (request) => {
 /**
  * Confirma a seleção de contas e salva no Firestore
  */
-export const confirmGoogleAdsAccountSelection = onCall(async (request) => {
+export const confirmGoogleAdsAccountSelection = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -358,7 +370,12 @@ export const confirmGoogleAdsAccountSelection = onCall(async (request) => {
         .collection('adAccounts')
         .doc(`google_ads_${account.customerId}`)
 
-      batch.set(accountRef, {
+      const validated = AdAccountSchema.omit({
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        lastSyncAt: true,
+      }).parse({
         platform: 'google_ads',
         accountId: account.customerId,
         accountName: account.descriptiveName,
@@ -366,6 +383,10 @@ export const confirmGoogleAdsAccountSelection = onCall(async (request) => {
         currency: account.currencyCode,
         timezone: account.timeZone,
         isActive: true,
+      })
+
+      batch.set(accountRef, {
+        ...validated,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         lastSyncAt: admin.firestore.FieldValue.serverTimestamp()
@@ -633,7 +654,7 @@ async function getDeveloperToken(): Promise<string> {
 async function getGoogleAdsConfig() {
   const config = {
     clientId: process.env.GOOGLE_ADS_CLIENT_ID || '422483165860-npdsq44121mh4chg2gers6qade02bo5l.apps.googleusercontent.com',
-    clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET || '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',
+    clientSecret: googleAdsClientSecret.value(),
     redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
     redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
     // ALTERAÇÃO IMPORTANTE: Adicionar todos os escopos necessários
@@ -643,7 +664,7 @@ async function getGoogleAdsConfig() {
       'https://www.googleapis.com/auth/adwords'
     ].join(' ')
   }
-  
+
   console.log('Configurações carregadas com escopos:', config.scope)
   return config
 }

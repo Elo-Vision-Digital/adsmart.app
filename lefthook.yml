@@ -1,0 +1,19 @@
+pre-commit:
+  parallel: true
+  commands:
+    biome:
+      glob: "*.{ts,tsx,js,jsx,json}"
+      run: bunx biome check --write --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+
+pre-push:
+  parallel: true
+  commands:
+    typecheck-shared:
+      root: "packages/shared/"
+      run: bun run typecheck
+    typecheck-web:
+      run: bun run typecheck
+    typecheck-functions:
+      root: "functions/"
+      run: bun run build

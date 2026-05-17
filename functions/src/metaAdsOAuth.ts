@@ -1,6 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
+import { CampaignSchema } from '@adsmart/shared'
+import { metaAdsAppSecret } from './config'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -16,10 +18,9 @@ const OAuthEventType = {
   OAUTH_ERROR: 'oauth_error' as SecurityEventType
 }
 
-// Configurações OAuth do Meta Ads (usando apenas process.env)
+// Configurações OAuth do Meta Ads (app secret via defineSecret; demais valores via process.env)
 const META_ADS_CONFIG = {
   appId: process.env.META_ADS_APP_ID || '4052927898253765',
-  appSecret: process.env.META_ADS_APP_SECRET || '2f0e01c4fd98450545053e84c90f250a',
   redirectUri: process.env.META_ADS_REDIRECT_URI || 'https://adsmart.app/auth/meta-ads/callback',
   redirectUriDev: process.env.META_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/meta-ads/callback',
   scope: 'ads_read,ads_management,business_management,read_insights',
@@ -39,7 +40,7 @@ interface MetaAdsTokens {
 /**
  * Gera a URL de autorização OAuth para Meta Ads
  */
-export const getMetaAdsAuthUrl = onCall(async (request) => {
+export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -97,7 +98,7 @@ export const getMetaAdsAuthUrl = onCall(async (request) => {
  * Processa o callback OAuth e troca o código por tokens
  * NOTA: Esta função agora redireciona para a v2 automaticamente
  */
-export const handleMetaAdsCallback = onCall(async (request) => {
+export const handleMetaAdsCallback = onCall({ secrets: [metaAdsAppSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -173,7 +174,7 @@ export const handleMetaAdsCallback = onCall(async (request) => {
 /**
  * Busca campanhas do Meta Ads
  */
-export const getMetaAdsCampaigns = onCall(async (request) => {
+export const getMetaAdsCampaigns = onCall({ secrets: [metaAdsAppSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -203,7 +204,7 @@ export const getMetaAdsCampaigns = onCall(async (request) => {
         .collection('campaigns')
         .doc(`meta_ads_${campaign.id}`)
 
-      batch.set(campaignRef, {
+      const validated = CampaignSchema.omit({ id: true, lastSyncAt: true }).parse({
         accountId,
         platform: 'meta_ads',
         campaignId: campaign.id,
@@ -214,7 +215,11 @@ export const getMetaAdsCampaigns = onCall(async (request) => {
         spend: campaign.spend || 0,
         impressions: campaign.impressions || 0,
         clicks: campaign.clicks || 0,
-        lastSyncAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+
+      batch.set(campaignRef, {
+        ...validated,
+        lastSyncAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true })
     }
 

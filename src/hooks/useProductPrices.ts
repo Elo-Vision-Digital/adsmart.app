@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
 import { httpsCallable } from 'firebase/functions'
+import { useEffect, useState } from 'react'
 import { functions } from '@/firebase/config'
 
 export interface ProductPrice {
@@ -18,8 +18,10 @@ interface UseProductPricesReturn {
   prices: ProductPrice[]
   loading: boolean
   error: string | null
-  refetch: () => Promise<void>
-  getPriceByCategory: (category: 'google' | 'meta', type: 'lancamento' | 'negocio_local') => ProductPrice | undefined
+  getPriceByCategory: (
+    category: 'google' | 'meta',
+    type: 'lancamento' | 'negocio_local'
+  ) => ProductPrice | undefined
 }
 
 export function useProductPrices(): UseProductPricesReturn {
@@ -33,93 +35,93 @@ export function useProductPrices(): UseProductPricesReturn {
       id: 'google_lancamento',
       name: 'Dashboard Google Ads - Lançamento',
       description: 'Dashboard para campanhas de lançamento no Google Ads',
-      price: 10.00,
+      price: 10.0,
       category: 'google',
       type: 'lancamento',
-      isActive: true
+      isActive: true,
     },
     {
       id: 'meta_lancamento',
       name: 'Dashboard Meta Ads - Lançamento',
       description: 'Dashboard para campanhas de lançamento no Meta Ads',
-      price: 10.00,
+      price: 10.0,
       category: 'meta',
       type: 'lancamento',
-      isActive: true
+      isActive: true,
     },
     {
       id: 'google_negocio_local',
       name: 'Dashboard Google Ads - Negócios Locais',
       description: 'Dashboard para negócios locais no Google Ads',
-      price: 5.00,
+      price: 5.0,
       category: 'google',
       type: 'negocio_local',
-      isActive: true
+      isActive: true,
     },
     {
       id: 'meta_negocio_local',
       name: 'Dashboard Meta Ads - Negócios Locais',
       description: 'Dashboard para negócios locais no Meta Ads',
-      price: 5.00,
+      price: 5.0,
       category: 'meta',
       type: 'negocio_local',
-      isActive: true
-    }
+      isActive: true,
+    },
   ]
 
-  // Buscar preços via Cloud Function
-  const fetchPrices = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const getPublicProductPrices = httpsCallable(functions, 'getPublicProductPrices')
-      const result = await getPublicProductPrices()
-      
-      if (result.data && (result.data as any).success) {
-        const pricesData = (result.data as any).prices
-        setPrices(pricesData)
-        console.log('✅ Preços carregados:', pricesData.length)
-      } else {
-        throw new Error('Falha ao carregar preços')
-      }
-    } catch (err: any) {
-      console.error('❌ Erro ao buscar preços:', err)
-      setError('Erro ao carregar preços. Usando valores padrão.')
-      // Usar preços padrão em caso de erro
-      setPrices(DEFAULT_PRICES)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Buscar preços quando o componente montar
+  // Buscar preços quando o componente montar.
+  // Padrão "ignore flag" recomendado por React 18 docs (synchronizing-with-effects)
+  // para evitar setState em componente desmontado / race conditions sob StrictMode.
   useEffect(() => {
+    let ignore = false
+
+    const fetchPrices = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const getPublicProductPrices = httpsCallable(functions, 'getPublicProductPrices')
+        const result = await getPublicProductPrices()
+
+        if (ignore) return
+
+        if (result.data && (result.data as any).success) {
+          const pricesData = (result.data as any).prices
+          setPrices(pricesData)
+        } else {
+          throw new Error('Falha ao carregar preços')
+        }
+      } catch (err) {
+        if (ignore) return
+        console.error('[useProductPrices] preços em modo degradado — usando DEFAULT_PRICES.', err)
+        setError('Erro ao carregar preços. Usando valores padrão.')
+        setPrices(DEFAULT_PRICES)
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+
     fetchPrices()
-    
-    // Recarregar preços a cada 30 segundos para pegar atualizações
-    const interval = setInterval(() => {
-      fetchPrices()
-    }, 30000) // 30 segundos
-    
-    return () => clearInterval(interval)
+    const interval = setInterval(fetchPrices, 30000)
+
+    return () => {
+      ignore = true
+      clearInterval(interval)
+    }
   }, [])
 
   // Função auxiliar para buscar preço específico
-  const getPriceByCategory = (category: 'google' | 'meta', type: 'lancamento' | 'negocio_local') => {
-    return prices.find(p => p.category === category && p.type === type)
-  }
-
-  // Função para recarregar preços manualmente
-  const refetch = async () => {
-    await fetchPrices()
+  const getPriceByCategory = (
+    category: 'google' | 'meta',
+    type: 'lancamento' | 'negocio_local'
+  ) => {
+    return prices.find((p) => p.category === category && p.type === type)
   }
 
   return {
     prices,
     loading,
     error,
-    refetch,
-    getPriceByCategory
+    getPriceByCategory,
   }
 }

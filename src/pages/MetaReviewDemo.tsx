@@ -1,29 +1,30 @@
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { MainLayout } from '@/components/layout/MainLayout'
-import { 
-  BarChart3, 
-  MousePointer, 
-  DollarSign, 
-  Eye, 
-  Users, 
-  TrendingUp,
+import {
+  AlertTriangle,
+  BarChart3,
+  Building2,
+  DollarSign,
+  Eye,
+  FileText,
+  MousePointer,
   Pause,
   Play,
-  Building2,
-  FileText
+  TrendingUp,
+  Users,
 } from 'lucide-react'
+import { useState } from 'react'
+import { MainLayout } from '@/components/layout/MainLayout'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 // Mock data para demonstração
 const mockAdAccounts = [
   { id: 'act_123456789', name: 'Test Business Account', currency: 'USD' },
-  { id: 'act_987654321', name: 'Demo Agency Account', currency: 'BRL' }
+  { id: 'act_987654321', name: 'Demo Agency Account', currency: 'BRL' },
 ]
 
 const mockPages = [
   { id: 'page_001', name: 'Adsmart Official Page', followers: 15420 },
-  { id: 'page_002', name: 'Adsmart Support', followers: 8930 }
+  { id: 'page_002', name: 'Adsmart Support', followers: 8930 },
 ]
 
 const mockCampaigns = [
@@ -31,22 +32,22 @@ const mockCampaigns = [
     id: 'camp_001',
     name: 'Summer Sale Campaign',
     status: 'active',
-    budget: 100.00,
-    spend: 75.00,
+    budget: 100.0,
+    spend: 75.0,
     impressions: 125000,
     clicks: 3200,
-    ctr: 2.56
+    ctr: 2.56,
   },
   {
     id: 'camp_002',
     name: 'Brand Awareness Campaign',
     status: 'paused',
-    budget: 50.00,
-    spend: 25.00,
+    budget: 50.0,
+    spend: 25.0,
     impressions: 85000,
     clicks: 1200,
-    ctr: 1.41
-  }
+    ctr: 1.41,
+  },
 ]
 
 const mockPageEngagement = {
@@ -54,7 +55,7 @@ const mockPageEngagement = {
   comments: 3420,
   shares: 890,
   reactions: 12500,
-  weeklyGrowth: 12.5
+  weeklyGrowth: 12.5,
 }
 
 export function MetaReviewDemo() {
@@ -63,9 +64,9 @@ export function MetaReviewDemo() {
   const [campaigns, setCampaigns] = useState(mockCampaigns)
 
   const toggleCampaignStatus = (campaignId: string) => {
-    setCampaigns(prev => 
-      prev.map(camp => 
-        camp.id === campaignId 
+    setCampaigns((prev) =>
+      prev.map((camp) =>
+        camp.id === campaignId
           ? { ...camp, status: camp.status === 'active' ? 'paused' : 'active' }
           : camp
       )
@@ -76,6 +77,20 @@ export function MetaReviewDemo() {
     <MainLayout>
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto space-y-6">
+          {/* Demo-mode banner — all data on this page is fictitious */}
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-800 rounded-lg p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-700 dark:text-yellow-300 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-yellow-900 dark:text-yellow-200">
+                Demo mode — fictitious data
+              </p>
+              <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                This page exists for Meta App Review and uses hard-coded mock values to demonstrate
+                the requested permissions. No real Meta Graph API calls are made.
+              </p>
+            </div>
+          </div>
+
           {/* Header */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h1 className="text-2xl font-bold mb-2">Meta API Review Demo</h1>
@@ -91,20 +106,18 @@ export function MetaReviewDemo() {
                 <FileText className="w-5 h-5 text-blue-500" />
                 Permission: pages_show_list
               </CardTitle>
-              <CardDescription>
-                Select a Facebook Page from your managed pages
-              </CardDescription>
+              <CardDescription>Select a Facebook Page from your managed pages</CardDescription>
             </CardHeader>
             <CardContent>
-              <select 
+              <select
                 className="w-full p-2 border rounded-md"
                 value={selectedPage.id}
                 onChange={(e) => {
-                  const page = mockPages.find(p => p.id === e.target.value)
+                  const page = mockPages.find((p) => p.id === e.target.value)
                   if (page) setSelectedPage(page)
                 }}
               >
-                {mockPages.map(page => (
+                {mockPages.map((page) => (
                   <option key={page.id} value={page.id}>
                     {page.name} ({page.followers.toLocaleString()} followers)
                   </option>
@@ -120,20 +133,18 @@ export function MetaReviewDemo() {
                 <Building2 className="w-5 h-5 text-green-500" />
                 Permissions: business_management & ads_read
               </CardTitle>
-              <CardDescription>
-                Select an Ad Account and view campaigns
-              </CardDescription>
+              <CardDescription>Select an Ad Account and view campaigns</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <select 
+              <select
                 className="w-full p-2 border rounded-md"
                 value={selectedAccount.id}
                 onChange={(e) => {
-                  const account = mockAdAccounts.find(a => a.id === e.target.value)
+                  const account = mockAdAccounts.find((a) => a.id === e.target.value)
                   if (account) setSelectedAccount(account)
                 }}
               >
-                {mockAdAccounts.map(account => (
+                {mockAdAccounts.map((account) => (
                   <option key={account.id} value={account.id}>
                     {account.name} ({account.currency})
                   </option>
@@ -141,15 +152,17 @@ export function MetaReviewDemo() {
               </select>
 
               <div className="space-y-3">
-                {campaigns.map(campaign => (
+                {campaigns.map((campaign) => (
                   <div key={campaign.id} className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium">{campaign.name}</h4>
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        campaign.status === 'active' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded ${
+                          campaign.status === 'active'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}
+                      >
                         {campaign.status}
                       </span>
                     </div>
@@ -184,9 +197,7 @@ export function MetaReviewDemo() {
                 <BarChart3 className="w-5 h-5 text-purple-500" />
                 Permission: read_insights
               </CardTitle>
-              <CardDescription>
-                Performance metrics from the selected Ad Account
-              </CardDescription>
+              <CardDescription>Performance metrics from the selected Ad Account</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-4 gap-4">
@@ -233,26 +244,32 @@ export function MetaReviewDemo() {
                 <Users className="w-5 h-5 text-orange-500" />
                 Permission: pages_read_engagement
               </CardTitle>
-              <CardDescription>
-                Organic engagement metrics for {selectedPage.name}
-              </CardDescription>
+              <CardDescription>Organic engagement metrics for {selectedPage.name}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-4 gap-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-blue-600">{mockPageEngagement.likes.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {mockPageEngagement.likes.toLocaleString()}
+                  </p>
                   <p className="text-sm text-gray-500">Page Likes</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-green-600">{mockPageEngagement.comments.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {mockPageEngagement.comments.toLocaleString()}
+                  </p>
                   <p className="text-sm text-gray-500">Comments</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-purple-600">{mockPageEngagement.shares.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {mockPageEngagement.shares.toLocaleString()}
+                  </p>
                   <p className="text-sm text-gray-500">Shares</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-orange-600">{mockPageEngagement.reactions.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-orange-600">
+                    {mockPageEngagement.reactions.toLocaleString()}
+                  </p>
                   <p className="text-sm text-gray-500">Reactions</p>
                 </div>
               </div>
@@ -271,18 +288,24 @@ export function MetaReviewDemo() {
                 <Play className="w-5 h-5 text-red-500" />
                 Permission: ads_management
               </CardTitle>
-              <CardDescription>
-                Toggle campaign status (pause/resume)
-              </CardDescription>
+              <CardDescription>Toggle campaign status (pause/resume)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {campaigns.map(campaign => (
-                  <div key={campaign.id} className="flex items-center justify-between p-3 border rounded-lg">
+                {campaigns.map((campaign) => (
+                  <div
+                    key={campaign.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
                     <div>
                       <p className="font-medium">{campaign.name}</p>
                       <p className="text-sm text-gray-500">
-                        Status: <span className={campaign.status === 'active' ? 'text-green-600' : 'text-yellow-600'}>
+                        Status:{' '}
+                        <span
+                          className={
+                            campaign.status === 'active' ? 'text-green-600' : 'text-yellow-600'
+                          }
+                        >
                           {campaign.status}
                         </span>
                       </p>
@@ -310,7 +333,8 @@ export function MetaReviewDemo() {
               </div>
               <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  ℹ️ This demonstrates our limited use of ads_management - only for user-initiated status changes
+                  ℹ️ This demonstrates our limited use of ads_management - only for user-initiated
+                  status changes
                 </p>
               </div>
             </CardContent>
@@ -323,12 +347,25 @@ export function MetaReviewDemo() {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
-                <li>✓ <strong>pages_show_list:</strong> Dropdown showing Facebook Pages</li>
-                <li>✓ <strong>business_management:</strong> Dropdown showing Ad Accounts</li>
-                <li>✓ <strong>ads_read:</strong> List of campaigns with metrics</li>
-                <li>✓ <strong>read_insights:</strong> Performance dashboard with impressions, clicks, spend</li>
-                <li>✓ <strong>pages_read_engagement:</strong> Organic page engagement metrics</li>
-                <li>✓ <strong>ads_management:</strong> Campaign pause/resume toggle buttons</li>
+                <li>
+                  ✓ <strong>pages_show_list:</strong> Dropdown showing Facebook Pages
+                </li>
+                <li>
+                  ✓ <strong>business_management:</strong> Dropdown showing Ad Accounts
+                </li>
+                <li>
+                  ✓ <strong>ads_read:</strong> List of campaigns with metrics
+                </li>
+                <li>
+                  ✓ <strong>read_insights:</strong> Performance dashboard with impressions, clicks,
+                  spend
+                </li>
+                <li>
+                  ✓ <strong>pages_read_engagement:</strong> Organic page engagement metrics
+                </li>
+                <li>
+                  ✓ <strong>ads_management:</strong> Campaign pause/resume toggle buttons
+                </li>
               </ul>
             </CardContent>
           </Card>

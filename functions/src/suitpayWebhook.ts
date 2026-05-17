@@ -1,3 +1,9 @@
+/**
+ * @deprecated SuitPay integration is being phased out in favor of Asaas.
+ * This file will be removed in a future phase. No new features should be
+ * added here; existing behaviour is maintained only until Asaas migration
+ * completes.
+ */
 import { onRequest } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import { createHash } from 'crypto'
@@ -33,12 +39,18 @@ export const suitpayWebhook = onRequest(
     
     console.log('🌐 IP de origem:', sourceIP)
     
-    // NOVO: Salvar log do webhook para debug
+    // Reduced logging — the original stored the full headers dict, which
+    // can include authorization tokens, cookies and other PII. Keep only
+    // the headers that are useful for forensics.
     await admin.firestore().collection('webhook_logs').add({
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       ip: sourceIP,
       body: request.body,
-      headers: request.headers
+      headersSubset: {
+        userAgent: request.headers['user-agent'] || null,
+        xForwardedFor: request.headers['x-forwarded-for'] || null,
+        contentType: request.headers['content-type'] || null,
+      },
     })
     
     // Em produção, validar IP

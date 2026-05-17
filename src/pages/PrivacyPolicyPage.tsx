@@ -1,5 +1,5 @@
+import { Database, Globe, Lock, Mail, Shield, UserCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Shield, Lock, Database, UserCheck, Mail, Globe } from 'lucide-react'
 
 export function PrivacyPolicyPage() {
   return (
@@ -13,9 +13,7 @@ export function PrivacyPolicyPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             Política de Privacidade
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Última atualização: Janeiro de 2025
-          </p>
+          <p className="text-gray-600 dark:text-gray-400">Última atualização: Janeiro de 2025</p>
         </div>
 
         {/* Content */}
@@ -29,9 +27,10 @@ export function PrivacyPolicyPage() {
               </h2>
             </div>
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              A Adsmart ("nós", "nosso" ou "nossa") está comprometida em proteger sua privacidade. 
-              Esta Política de Privacidade explica como coletamos, usamos, compartilhamos e protegemos 
-              suas informações quando você usa nosso serviço de automação de relatórios para Google Ads e Meta Ads.
+              A Adsmart ("nós", "nosso" ou "nossa") está comprometida em proteger sua privacidade.
+              Esta Política de Privacidade explica como coletamos, usamos, compartilhamos e
+              protegemos suas informações quando você usa nosso serviço de automação de relatórios
+              para Google Ads e Meta Ads.
             </p>
           </section>
 
@@ -54,22 +53,22 @@ export function PrivacyPolicyPage() {
                   <li>Dados da empresa (nome, CNPJ, endereço)</li>
                 </ul>
               </div>
-              
+
               <div>
                 <h3 className="font-medium text-gray-900 dark:text-white mb-2">
                   Dados de Plataformas de Anúncios
                 </h3>
                 <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>Métricas de campanhas do Google Ads (impressões, cliques, conversões, custos)</li>
+                  <li>
+                    Métricas de campanhas do Google Ads (impressões, cliques, conversões, custos)
+                  </li>
                   <li>Dados de campanhas do Meta Ads (alcance, engajamento, gastos)</li>
                   <li>Informações de contas publicitárias conectadas</li>
                 </ul>
               </div>
 
               <div>
-                <h3 className="font-medium text-gray-900 dark:text-white mb-2">
-                  Dados de Uso
-                </h3>
+                <h3 className="font-medium text-gray-900 dark:text-white mb-2">Dados de Uso</h3>
                 <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
                   <li>Logs de acesso e atividades no sistema</li>
                   <li>Preferências de relatórios e templates</li>
@@ -106,7 +105,10 @@ export function PrivacyPolicyPage() {
               </h2>
             </div>
             <div className="space-y-3 text-gray-600 dark:text-gray-400">
-              <p>Implementamos medidas de segurança técnicas e organizacionais para proteger suas informações:</p>
+              <p>
+                Implementamos medidas de segurança técnicas e organizacionais para proteger suas
+                informações:
+              </p>
               <ul className="list-disc list-inside space-y-1">
                 <li>Criptografia de dados em trânsito e em repouso</li>
                 <li>Autenticação segura via OAuth 2.0</li>
@@ -131,7 +133,9 @@ export function PrivacyPolicyPage() {
                 <li>Com seu consentimento explícito</li>
                 <li>Para cumprir obrigações legais</li>
                 <li>Com processadores de pagamento para transações</li>
-                <li>Com Google e Meta através de APIs oficiais para acessar seus dados de campanhas</li>
+                <li>
+                  Com Google e Meta através de APIs oficiais para acessar seus dados de campanhas
+                </li>
               </ul>
             </div>
           </section>
@@ -173,9 +177,10 @@ export function PrivacyPolicyPage() {
               </h2>
             </div>
             <p className="text-gray-600 dark:text-gray-400">
-              Mantemos seus dados pelo tempo necessário para fornecer nossos serviços e cumprir 
-              obrigações legais. Dados de campanhas são mantidos por até 2 anos para permitir 
-              análises históricas. Após o cancelamento da conta, seus dados são excluídos em até 90 dias.
+              Mantemos seus dados pelo tempo necessário para fornecer nossos serviços e cumprir
+              obrigações legais. Dados de campanhas são mantidos por até 2 anos para permitir
+              análises históricas. Após o cancelamento da conta, seus dados são excluídos em até 90
+              dias.
             </p>
           </section>
 
@@ -188,12 +193,13 @@ export function PrivacyPolicyPage() {
               </h2>
             </div>
             <p className="text-gray-600 dark:text-gray-400">
-              Utilizamos cookies essenciais para autenticação e funcionamento do serviço. 
-              Não utilizamos cookies de rastreamento ou publicidade. Para mais informações, 
-              consulte nossa{' '}
+              Utilizamos cookies essenciais para autenticação e funcionamento do serviço. Não
+              utilizamos cookies de rastreamento ou publicidade. Para mais informações, consulte
+              nossa{' '}
               <Link to="/cookies" className="text-primary hover:underline">
                 Política de Cookies
-              </Link>.
+              </Link>
+              .
             </p>
           </section>
 
@@ -206,8 +212,8 @@ export function PrivacyPolicyPage() {
               </h2>
             </div>
             <p className="text-gray-600 dark:text-gray-400">
-              Podemos atualizar esta política periodicamente. Notificaremos você sobre 
-              mudanças significativas por email ou através de um aviso em nosso serviço.
+              Podemos atualizar esta política periodicamente. Notificaremos você sobre mudanças
+              significativas por email ou através de um aviso em nosso serviço.
             </p>
           </section>
 

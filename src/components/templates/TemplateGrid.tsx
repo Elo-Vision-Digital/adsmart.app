@@ -7,10 +7,10 @@ interface TemplateGridProps {
   className?: string // Opcional: classes CSS adicionais
 }
 
-export function TemplateGrid({ 
-  onSelectTemplate, 
+export function TemplateGrid({
+  onSelectTemplate,
   templates = availableTemplates,
-  className = ''
+  className = '',
 }: TemplateGridProps) {
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 ${className}`}>
@@ -29,6 +29,6 @@ export function TemplateGrid({
   )
 }
 
+export type { TemplateData } from './templateData'
 // Export para facilitar imports
 export { availableTemplates } from './templateData'
-export type { TemplateData } from './templateData'

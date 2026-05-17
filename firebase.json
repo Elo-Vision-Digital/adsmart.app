@@ -25,16 +25,28 @@
             "value": "SAMEORIGIN"
           },
           {
-            "key": "X-XSS-Protection",
-            "value": "1; mode=block"
-          },
-          {
             "key": "Referrer-Policy",
             "value": "strict-origin-when-cross-origin"
           },
           {
             "key": "Permissions-Policy",
             "value": "camera=(), microphone=(), geolocation=()"
+          },
+          {
+            "key": "Strict-Transport-Security",
+            "value": "max-age=63072000; includeSubDomains; preload"
+          },
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin"
+          },
+          {
+            "key": "Cross-Origin-Resource-Policy",
+            "value": "same-origin"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://graph.facebook.com https://www.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; frame-src https://*.firebaseapp.com https://www.googletagmanager.com; object-src 'none'; base-uri 'self'"
           }
         ]
       },
@@ -50,7 +62,10 @@
     ]
   },
   "functions": {
-    "source": "functions"
+    "source": "functions/deploy",
+    "predeploy": [
+      "bunx turbo run build --filter=@adsmart/functions..."
+    ]
   },
   "firestore": {
     "rules": "firestore.rules",

@@ -1,25 +1,33 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { AuthProvider } from '@/contexts/AuthContext'
-import { ThemeProvider } from '@/contexts/ThemeContext'
-import { LanguageProvider } from '@/contexts/LanguageContext'
-import { LoginPage } from '@/pages/LoginPage'
-import { Dashboard } from '@/pages/Dashboard'
-import { TransactionsPage } from '@/pages/TransactionsPage'
-import { AccountsPage } from '@/pages/AccountsPage'
-import { TemplatesPage } from '@/pages/TemplatesPage'
-import { GenerateReportPage } from '@/pages/GenerateReportPage'
-import { ReportSuccessPage } from '@/pages/ReportSuccessPage'
-import { AdminPanel } from '@/pages/AdminPanel'
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AdminRoute } from '@/components/AdminRoute'
 import { PrivateRoute } from '@/components/PrivateRoute'
-import { ReportsPage } from '@/pages/ReportsPage'
-import { SettingsPage } from '@/pages/SettingsPage'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { LanguageProvider } from '@/contexts/LanguageContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import { AccountsPage } from '@/pages/AccountsPage'
+import { AdminLayout } from '@/pages/admin/AdminLayout'
+import { PricesConfigPage } from '@/pages/admin/PricesConfigPage'
+import { WalletAdminPage } from '@/pages/admin/WalletAdminPage'
+import { Dashboard } from '@/pages/Dashboard'
 import { DeleteDataPage } from '@/pages/DeleteDataPage'
-import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
+import { GenerateReportPage } from '@/pages/GenerateReportPage'
+import { HomePage } from '@/pages/HomePage'
+import { LoginPage } from '@/pages/LoginPage'
 import { MetaReviewDemo } from '@/pages/MetaReviewDemo'
+import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
 import { PaymentSuccessPage } from '@/pages/PaymentSuccessPage'
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage'
+import { ReportSuccessPage } from '@/pages/ReportSuccessPage'
+import { ReportsPage } from '@/pages/ReportsPage'
+import { SettingsPage } from '@/pages/SettingsPage'
+import { TemplatesPage } from '@/pages/TemplatesPage'
 import { TermsOfServicePage } from '@/pages/TermsOfServicePage'
-import { HomePage } from '@/pages/HomePage'
+import { TransactionsPage } from '@/pages/TransactionsPage'
+
+const AdminDashboardPage = lazy(() =>
+  import('@/pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage }))
+)
 
 function App() {
   return (
@@ -61,18 +69,8 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route 
-                path="/auth/google-ads/callback" 
-                element={
-                  <OAuthCallbackPage />
-                } 
-              />
-              <Route 
-                path="/auth/meta-ads/callback" 
-                element={
-                  <OAuthCallbackPage />
-                } 
-              />
+              <Route path="/auth/google-ads/callback" element={<OAuthCallbackPage />} />
+              <Route path="/auth/meta-ads/callback" element={<OAuthCallbackPage />} />
               <Route
                 path="/templates"
                 element={
@@ -113,13 +111,13 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route 
-                path="/privacy/delete-data" 
+              <Route
+                path="/privacy/delete-data"
                 element={
                   <PrivateRoute>
                     <DeleteDataPage />
                   </PrivateRoute>
-                } 
+                }
               />
               {/* Temporariamente mantido para demonstração Meta - remover após aprovação */}
               <Route
@@ -133,11 +131,25 @@ function App() {
               <Route
                 path="/admin"
                 element={
-                  <PrivateRoute>
-                    <AdminPanel />
-                  </PrivateRoute>
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
                 }
-              />
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route
+                  path="dashboard"
+                  element={
+                    <Suspense fallback={null}>
+                      <AdminDashboardPage />
+                    </Suspense>
+                  }
+                />
+                <Route path="prices" element={<PricesConfigPage />} />
+                <Route path="wallet" element={<WalletAdminPage />} />
+                {/* Catch unknown /admin/* (e.g. legacy /admin/security bookmarks). */}
+                <Route path="*" element={<Navigate to="dashboard" replace />} />
+              </Route>
               {/* Public Pages */}
               <Route path="/" element={<HomePage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />

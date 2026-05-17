@@ -1,47 +1,43 @@
-import { useState, useEffect } from 'react'
+import { AdAccountSchema } from '@adsmart/shared'
+import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore'
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Link2,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { MainLayout } from '@/components/layout/MainLayout'
+import { TemplateGrid } from '@/components/templates/TemplateGrid'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { MainLayout } from '@/components/layout/MainLayout'
-import { useNavigate } from 'react-router-dom'
-import { Search, RefreshCw, Link2, Trash2, FileText, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
-import { TemplateGrid } from '@/components/templates/TemplateGrid'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { collection, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
+import { useReports } from '@/hooks/useReports'
+import { zodConverter } from '@/schemas/firestore-converter'
 import type { AdAccount } from '@/types'
-
-// Mock data para demonstração
-const mockReports = [
-  {
-    id: '1',
-    name: 'Dashboard Google Ads - Lançamento',
-    platform: 'google_ads',
-    createdAt: new Date('2025-01-10'),
-    accountName: 'Minha Conta'
-  },
-  {
-    id: '2',
-    name: 'Dashboard Meta Ads - Janeiro',
-    platform: 'meta_ads',
-    createdAt: new Date('2025-01-08'),
-    accountName: 'Conta de Anúncio'
-  },
-  {
-    id: '3',
-    name: 'Análise de Performance Q1',
-    platform: 'google_ads',
-    createdAt: new Date('2025-01-05'),
-    accountName: 'Conta Principal'
-  }
-]
 
 // Componente para ícone do Google Ads
 const GoogleAdsIcon = () => (
   <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <path d="m57.193 15.502c-7.021-4.054-15.985-1.653-20.039 5.37l-25.162 43.583c-6.494 11.247 3.912 24.878 16.501 21.504 3.785-1.014 6.948-3.442 8.907-6.835l25.162-43.583c4.045-7.005 1.636-15.994-5.369-20.039z" fill="#fabc04"/>
-    <path d="m88.038 64.455-25.163-43.583c-1.959-3.393-5.123-5.821-8.907-6.835-12.593-3.375-22.991 10.262-16.501 21.504l25.163 43.583c4.053 7.019 13.015 9.425 20.039 5.37 7.004-4.045 9.413-13.034 5.369-20.039z" fill="#3c8bd9"/>
-    <path d="m38.865 67.993c-2.098-7.831-10.134-12.472-17.966-10.373-12.593 3.374-14.78 20.383-3.538 26.874 11.216 6.475 24.897-3.84 21.504-16.501z" fill="#34a852"/>
+    <path
+      d="m57.193 15.502c-7.021-4.054-15.985-1.653-20.039 5.37l-25.162 43.583c-6.494 11.247 3.912 24.878 16.501 21.504 3.785-1.014 6.948-3.442 8.907-6.835l25.162-43.583c4.045-7.005 1.636-15.994-5.369-20.039z"
+      fill="#fabc04"
+    />
+    <path
+      d="m88.038 64.455-25.163-43.583c-1.959-3.393-5.123-5.821-8.907-6.835-12.593-3.375-22.991 10.262-16.501 21.504l25.163 43.583c4.053 7.019 13.015 9.425 20.039 5.37 7.004-4.045 9.413-13.034 5.369-20.039z"
+      fill="#3c8bd9"
+    />
+    <path
+      d="m38.865 67.993c-2.098-7.831-10.134-12.472-17.966-10.373-12.593 3.374-14.78 20.383-3.538 26.874 11.216 6.475 24.897-3.84 21.504-16.501z"
+      fill="#34a852"
+    />
   </svg>
 )
 
@@ -49,14 +45,24 @@ const GoogleAdsIcon = () => (
 const MetaAdsIcon = () => (
   <svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="meta-gradient" x1="5.3" x2="506.8" y1="255.9" y2="255.9" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stopColor="#0064e0"/>
-        <stop offset=".1" stopColor="#0075f0"/>
-        <stop offset=".8" stopColor="#007df6"/>
-        <stop offset="1" stopColor="#0082fc"/>
+      <linearGradient
+        id="meta-gradient"
+        x1="5.3"
+        x2="506.8"
+        y1="255.9"
+        y2="255.9"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop offset="0" stopColor="#0064e0" />
+        <stop offset=".1" stopColor="#0075f0" />
+        <stop offset=".8" stopColor="#007df6" />
+        <stop offset="1" stopColor="#0082fc" />
       </linearGradient>
     </defs>
-    <path d="m149.4 89.4c-81.6 0-144.1 106.2-144.1 218.5 0 70.3 34 114.7 91 114.7 41 0 70.5-19.3 123-111 0 0 21.9-38.6 36.9-65.2l31.2-52.8c26.5-40.9 48.4-61.3 74.4-61.3 54 0 97.2 79.5 97.2 177.2 0 37.2-12.2 58.8-37.5 58.8-24.2 0-35.8-16-81.8-90l-42.3 36.9c47.9 80.2 74.6 107.4 123 107.4 55.5 0 86.4-45.1 86.4-116.9 0-117.7-63.9-216.5-141.6-216.5-41.1 0-73.3 31-102.4 70.3l-32.3 47.4c-31.9 49-51.3 79.7-51.3 79.7-42.5 66.7-57.2 81.6-80.9 81.6-24.4 0-38.8-21.4-38.8-59.5 0-81.6 40.7-165 89.2-165z" fill="url(#meta-gradient)"/>
+    <path
+      d="m149.4 89.4c-81.6 0-144.1 106.2-144.1 218.5 0 70.3 34 114.7 91 114.7 41 0 70.5-19.3 123-111 0 0 21.9-38.6 36.9-65.2l31.2-52.8c26.5-40.9 48.4-61.3 74.4-61.3 54 0 97.2 79.5 97.2 177.2 0 37.2-12.2 58.8-37.5 58.8-24.2 0-35.8-16-81.8-90l-42.3 36.9c47.9 80.2 74.6 107.4 123 107.4 55.5 0 86.4-45.1 86.4-116.9 0-117.7-63.9-216.5-141.6-216.5-41.1 0-73.3 31-102.4 70.3l-32.3 47.4c-31.9 49-51.3 79.7-51.3 79.7-42.5 66.7-57.2 81.6-80.9 81.6-24.4 0-38.8-21.4-38.8-59.5 0-81.6 40.7-165 89.2-165z"
+      fill="url(#meta-gradient)"
+    />
   </svg>
 )
 
@@ -64,8 +70,8 @@ export function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useLanguage()
+  const { reports, loading: reportsLoading } = useReports()
   const [searchReport, setSearchReport] = useState('')
-  const [reports] = useState(mockReports)
   const [connections, setConnections] = useState<AdAccount[]>([])
   const [connectionsLoading, setConnectionsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
@@ -75,16 +81,13 @@ export function Dashboard() {
   useEffect(() => {
     if (!user) return
 
-    const accountsRef = collection(db, 'users', user.uid, 'adAccounts')
+    const accountsRef = collection(db, 'users', user.uid, 'adAccounts').withConverter(
+      zodConverter(AdAccountSchema, 'AdAccount')
+    )
     const q = query(accountsRef, where('isActive', '==', true))
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const accountsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as AdAccount))
-      
-      setConnections(accountsData)
+      setConnections(snapshot.docs.map((doc) => doc.data()))
       setConnectionsLoading(false)
     })
 
@@ -92,7 +95,7 @@ export function Dashboard() {
   }, [user])
 
   // Filtrar relatórios pela pesquisa
-  const filteredReports = reports.filter(report =>
+  const filteredReports = reports.filter((report) =>
     report.name.toLowerCase().includes(searchReport.toLowerCase())
   )
 
@@ -108,7 +111,7 @@ export function Dashboard() {
 
   const handleDeleteConnection = async (accountId: string) => {
     if (!user) return
-    
+
     if (confirm(t('dashboard.deleteConfirm'))) {
       try {
         await deleteDoc(doc(db, 'users', user.uid, 'adAccounts', accountId))
@@ -137,7 +140,9 @@ export function Dashboard() {
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <FileText className="w-5 h-5 flex-shrink-0" />
-                        <CardTitle className="text-lg md:text-xl">{t('dashboard.myReports')}</CardTitle>
+                        <CardTitle className="text-lg md:text-xl">
+                          {t('dashboard.myReports')}
+                        </CardTitle>
                       </div>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -149,7 +154,7 @@ export function Dashboard() {
                           className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
                         />
                       </div>
-                      <Button 
+                      <Button
                         onClick={() => navigate('/templates')}
                         className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                       >
@@ -159,7 +164,12 @@ export function Dashboard() {
                     </div>
                   </CardHeader>
                   <CardContent className="px-4 md:px-6">
-                    {filteredReports.length === 0 ? (
+                    {reportsLoading ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="w-12 h-12 mx-auto mb-3 opacity-50 animate-pulse" />
+                        <p>{t('common.general.loading')}</p>
+                      </div>
+                    ) : filteredReports.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                         <p>{t('dashboard.noReportsFound')}</p>
@@ -167,27 +177,27 @@ export function Dashboard() {
                     ) : (
                       <div className="space-y-3">
                         {filteredReports.slice(0, 3).map((report) => (
-                          <div 
+                          <div
                             key={report.id}
                             className="flex items-center justify-between p-3 md:p-4 bg-white dark:bg-gray-700 rounded-lg border border-[#EDEDED] dark:border-gray-600 hover:shadow-md transition-shadow cursor-pointer"
                             onClick={() => navigate(`/report-success?id=${report.id}`)}
                           >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                {report.platform === 'google_ads' ? (
-                                  <GoogleAdsIcon />
-                                ) : (
-                                  <MetaAdsIcon />
-                                )}
+                                {report.type === 'google_ads' ? <GoogleAdsIcon /> : <MetaAdsIcon />}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
                                   {report.name}
                                 </h3>
                                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                  <span className="truncate">{report.createdAt.toLocaleDateString('pt-BR')}</span>
+                                  <span className="truncate">
+                                    {report.createdAt.toLocaleDateString('pt-BR')}
+                                  </span>
                                   <span>•</span>
-                                  <span className="truncate">{report.accountName}</span>
+                                  <span className="truncate">
+                                    {report.type === 'google_ads' ? 'Google Ads' : 'Meta Ads'}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -204,9 +214,11 @@ export function Dashboard() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <Link2 className="w-5 h-5 flex-shrink-0" />
-                        <CardTitle className="text-lg md:text-xl truncate">{t('dashboard.integrations')}</CardTitle>
+                        <CardTitle className="text-lg md:text-xl truncate">
+                          {t('dashboard.integrations')}
+                        </CardTitle>
                       </div>
-                      <Button 
+                      <Button
                         onClick={() => navigate('/accounts')}
                         className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 flex-shrink-0"
                         size="sm"
@@ -230,7 +242,7 @@ export function Dashboard() {
                     ) : (
                       <div className="space-y-3">
                         {currentConnections.map((account) => (
-                          <div 
+                          <div
                             key={account.id}
                             className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 bg-white dark:bg-gray-700 rounded-lg border border-[#EDEDED] dark:border-gray-600 gap-3"
                           >
@@ -253,10 +265,12 @@ export function Dashboard() {
                                   <p className="text-xs text-gray-400 dark:text-gray-500">
                                     {t('common.general.synced')}: {(() => {
                                       try {
-                                        const date = (account.lastSyncAt as any).toDate ? (account.lastSyncAt as any).toDate() : new Date(account.lastSyncAt as any);
-                                        return date.toLocaleDateString('pt-BR');
+                                        const date = (account.lastSyncAt as any).toDate
+                                          ? (account.lastSyncAt as any).toDate()
+                                          : new Date(account.lastSyncAt as any)
+                                        return date.toLocaleDateString('pt-BR')
                                       } catch {
-                                        return t('common.general.recently');
+                                        return t('common.general.recently')
                                       }
                                     })()}
                                   </p>
@@ -264,7 +278,7 @@ export function Dashboard() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1 ml-12 md:ml-0 flex-shrink-0">
-                              <button 
+                              <button
                                 onClick={() => handleRefreshConnection(account.id)}
                                 className="p-1.5 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
                                 title={t('common.button.refresh')}
@@ -272,14 +286,14 @@ export function Dashboard() {
                               >
                                 <RefreshCw className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => navigate('/accounts')}
                                 className="p-1.5 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
                                 title={t('common.button.manage')}
                               >
                                 <Link2 className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleDeleteConnection(account.id)}
                                 className="p-1.5 md:p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 rounded-lg transition-colors"
                                 title={t('common.button.delete')}
@@ -291,19 +305,19 @@ export function Dashboard() {
                         ))}
                       </div>
                     )}
-                    
+
                     {/* Paginação */}
                     {totalPages > 1 && (
                       <div className="flex items-center justify-center gap-1 mt-4">
                         <button
-                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                           disabled={currentPage === 1}
                           className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ChevronLeft className="w-4 h-4" />
                         </button>
                         <div className="flex gap-1">
-                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                             <button
                               key={page}
                               onClick={() => setCurrentPage(page)}
@@ -318,7 +332,7 @@ export function Dashboard() {
                           ))}
                         </div>
                         <button
-                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                           disabled={currentPage === totalPages}
                           className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         >

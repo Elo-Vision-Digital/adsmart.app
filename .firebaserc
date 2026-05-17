@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "adsmart-web"
+    "default": "adsmart-web-dev",
+    "dev": "adsmart-web-dev",
+    "production": "adsmart-web"
   }
 }

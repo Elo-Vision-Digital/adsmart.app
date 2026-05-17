@@ -1,0 +1,29 @@
+🔥 AdSmart Firebase context (auto-injected when prompt mentions deploy/rules/callable/process.env)
+
+Stack: Functions v2 (firebase-functions/v2/https + identity) · Admin SDK 12.7
+       · Firebase JS SDK 10 · Region us-central1 (default)
+
+Conventions you MUST follow:
+  • Secrets: defineSecret in functions/src/config/index.ts. NEVER process.env.X_SECRET.
+  • Auth: custom claim `admin === true` OR ADMIN_EMAILS allowlist.
+  • Schemas: Zod-first via @adsmart/shared (ADR-009). Types via z.infer.
+  • Server timestamps: admin.firestore.Timestamp.now(), never Date.now().
+  • Server-side state: bootstrapUser (Auth blocking trigger) seeds users/{uid}
+    and users/{uid}/wallet/current. Client must use updateDoc, never setDoc on
+    wallet or transactions paths.
+
+Phase 3 baseline (DO NOT relax):
+  • wallet/transactions: client write blocked by rules.
+  • rateLimits/securityLogs/backupMetadata: write-only via Admin SDK.
+  • userDocuments: CPF/CNPJ uniqueness index, write-only via reserveUserDocument.
+
+For live operations (queries/logs/rules deploy/secrets/Auth):
+  → use the firebase-operations skill.
+
+For new artifacts:
+  → /functions-new-callable    (security-aligned scaffold)
+  → /firestore-new-query       (composite index + selectivity check)
+  → /firestore-rules-test      (emulator + vitest)
+  → /firebase-deploy           (multi-target safe deploy)
+
+References: AGENTS.md · CLAUDE.md · docs/SECURITY.md · docs/Decisions.md (ADR-009/010/012)

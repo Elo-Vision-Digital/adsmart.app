@@ -19,22 +19,42 @@ service cloud.firestore {
       return request.resource.data.keys().hasAll(fields);
     }
     
-    // Dados do usuário - mais restritivo
+    // Dados do usuário — doc é seedado pelo bootstrapUser trigger (ADR-010);
+    // updates do client passam por updateDoc preservando email/createdAt e
+    // não podendo alterar documentType/documentNumber se já preenchidos.
+    function documentLocked() {
+      return resource.data.documentNumber is string
+        && resource.data.documentNumber != ''
+        && (
+          request.resource.data.documentNumber != resource.data.documentNumber
+          || request.resource.data.documentType != resource.data.documentType
+        );
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && 
+      allow create: if isOwner(userId) &&
         hasRequiredFields(['email', 'createdAt']) &&
         isValidEmail(request.resource.data.email) &&
         request.resource.data.createdAt == request.time;
       allow update: if isOwner(userId) &&
-        request.resource.data.email == resource.data.email && // Email não pode mudar
-        request.resource.data.createdAt == resource.data.createdAt; // CreatedAt não pode mudar
-      allow delete: if false; // Usuários não podem deletar suas contas diretamente
+        request.resource.data.email == resource.data.email && // email imutável
+        request.resource.data.createdAt == resource.data.createdAt && // createdAt imutável
+        !documentLocked(); // documentType/documentNumber imutáveis após reservados (ADR-012)
+      allow delete: if false; // exclusão apenas via Cloud Function
     }
     
-    // Subcoleções do usuário
-    match /users/{userId}/{document=**} {
-      allow read, write: if isOwner(userId);
+    // Subcoleções do usuário — the wildcard MUST NOT cover the parent doc
+    // (otherwise it would override the strict rules on /users/{userId}).
+    // The required {subcollection} segment ensures this rule only matches
+    // documents at path /users/{userId}/{subcollection}/{docId}/...
+    match /users/{userId}/{subcollection}/{docId=**} {
+      // Wallet and transactions are system-managed — writes only via
+      // Cloud Functions using the Admin SDK. Reads are owner-only.
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId)
+        && subcollection != 'wallet'
+        && subcollection != 'transactions';
     }
     
     // Campanhas publicitárias
@@ -76,6 +96,14 @@ service cloud.firestore {
       allow write: if false; // Apenas admins via Admin SDK/Cloud Functions
     }
     
+    // CPF/CNPJ uniqueness index (ADR-012) — write-only via reserveUserDocument
+    // callable. Reads are owner-checked via the userId field on each doc so the
+    // owner can recover their own reservation if needed.
+    match /userDocuments/{documentId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
     // Templates de relatórios
     match /reportTemplates/{template} {
       allow read: if isAuthenticated();
@@ -99,10 +127,11 @@ service cloud.firestore {
     }
     
     // Rate limiting (contador de requisições)
+    // Writes only via Cloud Functions (Admin SDK). Reads are owner-only
+    // so client UIs can surface their own current counter if needed.
     match /rateLimits/{userId} {
       allow read: if isOwner(userId);
-      allow write: if isOwner(userId) &&
-        request.resource.data.count <= 1000; // Max 1000 requisições
+      allow write: if false;
     }
     
     // ✅ Logs de segurança (apenas leitura via Cloud Functions)

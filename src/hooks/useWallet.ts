@@ -1,30 +1,33 @@
-import { useState, useEffect } from 'react'
-import { doc, onSnapshot, setDoc, collection, addDoc, query, orderBy, limit } from 'firebase/firestore'
-import { db } from '@/firebase/config'
+import type { Transaction, UserWallet } from '@adsmart/shared'
+import { TransactionSchema, UserWalletSchema } from '@adsmart/shared'
+import {
+  addDoc,
+  collection,
+  doc,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+} from 'firebase/firestore'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { db } from '@/firebase/config'
+import { zodConverter } from '@/schemas/firestore-converter'
 
-interface Wallet {
-  balance: number // em centavos
-  currency: 'BRL'
-  updatedAt: Date
-}
-
-interface Transaction {
-  id?: string
-  type: 'credit' | 'debit'
-  amount: number // em centavos
-  description: string
-  status: 'pending' | 'completed' | 'failed'
-  createdAt: Date
+const EMPTY_WALLET: UserWallet = {
+  id: 'current',
+  balance: 0,
+  currency: 'BRL',
+  updatedAt: new Date(0),
 }
 
 export function useWallet() {
   const { user } = useAuth()
-  const [wallet, setWallet] = useState<Wallet | null>(null)
+  const [wallet, setWallet] = useState<UserWallet | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Observar saldo da carteira
   useEffect(() => {
     if (!user) {
       setWallet(null)
@@ -32,21 +35,15 @@ export function useWallet() {
       return
     }
 
-    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current')
-    
-    const unsubscribe = onSnapshot(walletRef, async (doc) => {
-      if (doc.exists()) {
-        setWallet(doc.data() as Wallet)
-      } else {
-        // Criar carteira se não existir
-        const newWallet: Wallet = {
-          balance: 0,
-          currency: 'BRL',
-          updatedAt: new Date()
-        }
-        await setDoc(walletRef, newWallet)
-        setWallet(newWallet)
-      }
+    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current').withConverter(
+      zodConverter(UserWalletSchema, 'UserWallet')
+    )
+
+    const unsubscribe = onSnapshot(walletRef, (snap) => {
+      // Doc is seeded server-side by the bootstrapUserWallet Auth trigger.
+      // Until it materializes (or for legacy users who pre-date the trigger),
+      // surface a virtual balance:0 wallet — never write from the client.
+      setWallet(snap.exists() ? snap.data() : EMPTY_WALLET)
       setLoading(false)
     })
 
@@ -57,50 +54,50 @@ export function useWallet() {
   useEffect(() => {
     if (!user) return
 
-    const transactionsRef = collection(db, 'users', user.uid, 'transactions')
-    const q = query(
-      transactionsRef,
-      orderBy('createdAt', 'desc'),
-      limit(50)
+    const transactionsRef = collection(db, 'users', user.uid, 'transactions').withConverter(
+      zodConverter(TransactionSchema, 'Transaction')
     )
-    
-    // Usar onSnapshot para atualizações em tempo real
+    const q = query(transactionsRef, orderBy('createdAt', 'desc'), limit(50))
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const trans = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Transaction))
-      
-      setTransactions(trans)
+      setTransactions(snapshot.docs.map((doc) => doc.data()))
     })
 
     return () => unsubscribe()
-  }, [user]) // Removido wallet das dependências
+  }, [user])
 
   // Adicionar créditos
   const addCredits = async (amount: number) => {
     if (!user) throw new Error('Usuário não autenticado')
 
-    const transaction: Transaction = {
+    const transaction: Omit<Transaction, 'id'> = {
       type: 'credit',
       amount,
       description: 'Adição de créditos',
       status: 'completed',
-      createdAt: new Date()
+      createdAt: new Date(),
     }
 
-    // Adicionar transação
+    // NOTE: blocked by firestore.rules (Phase 3 — client write to `transactions`
+    // is rejected). Kept until this flow moves to a callable function.
     await addDoc(collection(db, 'users', user.uid, 'transactions'), transaction)
 
     // Atualizar saldo
-    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current')
+    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current').withConverter(
+      zodConverter(UserWalletSchema, 'UserWallet')
+    )
     const newBalance = (wallet?.balance || 0) + amount
-    
-    await setDoc(walletRef, {
-      balance: newBalance,
-      currency: 'BRL',
-      updatedAt: new Date()
-    }, { merge: true })
+
+    await setDoc(
+      walletRef,
+      {
+        id: 'current',
+        balance: newBalance,
+        currency: 'BRL',
+        updatedAt: new Date(),
+      },
+      { merge: true }
+    )
   }
 
   // Debitar valor (para relatórios)
@@ -108,38 +105,42 @@ export function useWallet() {
     if (!user) throw new Error('Usuário não autenticado')
     if (!wallet || wallet.balance < amount) throw new Error('Saldo insuficiente')
 
-    const transaction: any = {
+    const transaction: Omit<Transaction, 'id'> = {
       type: 'debit',
       amount,
       description,
       status: 'completed',
-      createdAt: new Date()
+      createdAt: new Date(),
+      ...(reportId ? { reportId } : {}),
     }
 
-    // Só adicionar reportId se for fornecido
-    if (reportId) {
-      transaction.reportId = reportId
-    }
-
-    // Adicionar transação
+    // NOTE: blocked by firestore.rules (Phase 3 — client write to `transactions`
+    // is rejected). Kept until this flow moves to a callable function.
     await addDoc(collection(db, 'users', user.uid, 'transactions'), transaction)
 
     // Atualizar saldo
-    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current')
+    const walletRef = doc(db, 'users', user.uid, 'wallet', 'current').withConverter(
+      zodConverter(UserWalletSchema, 'UserWallet')
+    )
     const newBalance = wallet.balance - amount
-    
-    await setDoc(walletRef, {
-      balance: newBalance,
-      currency: 'BRL',
-      updatedAt: new Date()
-    }, { merge: true })
+
+    await setDoc(
+      walletRef,
+      {
+        id: 'current',
+        balance: newBalance,
+        currency: 'BRL',
+        updatedAt: new Date(),
+      },
+      { merge: true }
+    )
   }
 
   // Formatar valor para exibição
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(cents / 100)
   }
 
@@ -151,6 +152,6 @@ export function useWallet() {
     debitAmount,
     formatCurrency,
     balance: wallet?.balance || 0,
-    formattedBalance: formatCurrency(wallet?.balance || 0)
+    formattedBalance: formatCurrency(wallet?.balance || 0),
   }
 }

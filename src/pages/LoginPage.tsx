@@ -1,16 +1,13 @@
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { LanguageSelector } from '@/components/common/LanguageSelector'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { LanguageSelector } from '@/components/common/LanguageSelector'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '@/firebase/config'
-import ReCAPTCHA from 'react-google-recaptcha'
-import { validatePassword } from '@/utils/validation'
 import { useRateLimit } from '@/hooks/useRateLimit'
 import { sanitizeEmail, sanitizeInput } from '@/utils/sanitize'
-import { getDevConfig } from '@/utils/development'
-
+import { validatePassword } from '@/utils/validation'
 
 export function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -20,25 +17,19 @@ export function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [recaptchaValue, setRecaptchaValue] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  
+
   const { signInWithGoogle, signInWithFacebook, signInWithEmail } = useAuth()
   const { t } = useLanguage()
   const navigate = useNavigate()
-  const devConfig = getDevConfig()
 
   // Rate limiting
   const loginRateLimit = useRateLimit({
     maxAttempts: 5,
     windowMs: 15 * 60 * 1000, // 15 minutos
-    message: t('common.error.tooManyAttempts')
+    message: t('common.error.tooManyAttempts'),
   })
-
-  // TEMPORÁRIO: Verificar se é o usuário de teste
-  const isTestUser = email.toLowerCase().trim() === 'review.user@adsmart.app'
-  const skipRecaptcha = devConfig.skipRecaptcha || isTestUser
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,23 +49,8 @@ export function LoginPage() {
 
     try {
       if (isLogin) {
-        // Verificar ReCAPTCHA no login - apenas se não for desenvolvimento ou usuário de teste
-        if (!skipRecaptcha && !recaptchaValue) {
-          throw new Error(t('common.validation.completeRecaptcha'))
-        }
-        
-        // Passa o token do ReCAPTCHA para validação (ou 'test-user' se for usuário de teste)
-        await signInWithEmail(
-          sanitizedEmail, 
-          password, 
-          skipRecaptcha ? (isTestUser ? 'test-user' : devConfig.devRecaptchaToken) : (recaptchaValue || undefined)
-        )
+        await signInWithEmail(sanitizedEmail, password)
       } else {
-        // Verificar ReCAPTCHA no registro também
-        if (!skipRecaptcha && !recaptchaValue) {
-          throw new Error(t('common.validation.completeRecaptcha'))
-        }
-
         // Validar senha no registro
         const passwordErrors = validatePassword(password)
         if (passwordErrors.length > 0) {
@@ -96,7 +72,7 @@ export function LoginPage() {
       navigate('/dashboard')
     } catch (error: any) {
       let errorMessage = t('common.error.generic')
-      
+
       // Mensagens de erro mais amigáveis
       if (error.code === 'auth/user-not-found') {
         errorMessage = t('loginPage.error.invalidCredentials')
@@ -111,7 +87,7 @@ export function LoginPage() {
       } else if (error.message) {
         errorMessage = error.message
       }
-      
+
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -121,7 +97,7 @@ export function LoginPage() {
   const handleGoogleSignIn = async () => {
     try {
       setError('')
-      
+
       // Verificar rate limit também para login social
       if (!loginRateLimit.checkLimit()) {
         setError(loginRateLimit.message)
@@ -138,7 +114,7 @@ export function LoginPage() {
   const handleFacebookSignIn = async () => {
     try {
       setError('')
-      
+
       // Verificar rate limit também para login social
       if (!loginRateLimit.checkLimit()) {
         setError(loginRateLimit.message)
@@ -158,46 +134,33 @@ export function LoginPage() {
       <div className="absolute top-4 right-4">
         <LanguageSelector />
       </div>
-      
+
       <div className="w-full max-w-[480px]">
         {/* Header com logo */}
         <div className="text-center mb-0">
-          <img 
-            src="https://i.imgur.com/T6AehDg.png" 
-            alt="adsmart" 
+          <img
+            src="https://i.imgur.com/T6AehDg.png"
+            alt="adsmart"
             className="h-16 mx-auto mb-6 object-contain"
           />
           <h1 className="text-[40px] font-normal mb-[10px] text-black">
             {isLogin ? (
-              <>Entre na <span className="font-bold">ads</span>mart</>
+              <>
+                Entre na <span className="font-bold">ads</span>mart
+              </>
             ) : (
-              <>Crie sua conta <span className="font-bold">ads</span>mart</>
+              <>
+                Crie sua conta <span className="font-bold">ads</span>mart
+              </>
             )}
           </h1>
           <p className="text-base text-gray-600 mb-[15px]">
-            {isLogin ? 
-              t('loginPage.subtitle.login') : 
-              t('loginPage.subtitle.signUp')
-            }
+            {isLogin ? t('loginPage.subtitle.login') : t('loginPage.subtitle.signUp')}
           </p>
         </div>
 
         {/* Card de login */}
         <div className="bg-white rounded-xl p-8 shadow-sm">
-          {/* Aviso de desenvolvimento */}
-          {devConfig.skipRecaptcha && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-blue-600 text-sm">
-              {devConfig.devWarningMessage}
-            </div>
-          )}
-
-          {/* Aviso para usuário de teste */}
-          {isTestUser && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-600 text-sm">
-              {t('common.warning.testAccount')}
-            </div>
-          )}
-
           {/* Rate limit warning */}
           {loginRateLimit.isBlocked && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
@@ -207,7 +170,10 @@ export function LoginPage() {
 
           {loginRateLimit.remainingAttempts < 3 && !loginRateLimit.isBlocked && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-sm">
-              {t('common.warning.rateLimitRemaining').replace('{attempts}', loginRateLimit.remainingAttempts.toString())}
+              {t('common.warning.rateLimitRemaining').replace(
+                '{attempts}',
+                loginRateLimit.remainingAttempts.toString()
+              )}
             </div>
           )}
 
@@ -225,19 +191,37 @@ export function LoginPage() {
               disabled={loading || loginRateLimit.isBlocked}
               className="w-full h-11 flex items-center justify-center gap-3 bg-[#A7A8AE] hover:bg-[#919298] text-white rounded transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <svg width="20" height="20" viewBox="0 0 27 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 14C0 6.5561 6.0561 0.5 13.5 0.5C16.5064 0.5 19.3519 1.46724 21.7291 3.2972L18.5919 7.3724C17.1221 6.24097 15.3613 5.64286 13.5 5.64286C8.89187 5.64286 5.14286 9.39187 5.14286 14C5.14286 18.6081 8.89187 22.3571 13.5 22.3571C17.2115 22.3571 20.3655 19.9255 21.4524 16.5714H13.5V11.4286H27V14C27 21.4439 20.9439 27.5 13.5 27.5C6.0561 27.5 0 21.4439 0 14Z" fill="black"/>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 27 28"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M0 14C0 6.5561 6.0561 0.5 13.5 0.5C16.5064 0.5 19.3519 1.46724 21.7291 3.2972L18.5919 7.3724C17.1221 6.24097 15.3613 5.64286 13.5 5.64286C8.89187 5.64286 5.14286 9.39187 5.14286 14C5.14286 18.6081 8.89187 22.3571 13.5 22.3571C17.2115 22.3571 20.3655 19.9255 21.4524 16.5714H13.5V11.4286H27V14C27 21.4439 20.9439 27.5 13.5 27.5C6.0561 27.5 0 21.4439 0 14Z"
+                  fill="black"
+                />
               </svg>
               {t('common.button.loginWithGoogle')}
             </button>
-            
-            <button 
+
+            <button
               onClick={handleFacebookSignIn}
               disabled={loading || loginRateLimit.isBlocked}
               className="w-full h-11 flex items-center justify-center gap-3 bg-[#A7A8AE] hover:bg-[#919298] text-white rounded transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <svg width="12" height="20" viewBox="0 0 15 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9.64738 27.8633V15.2167H13.8906L14.5272 10.2867H9.64738V7.13954C9.64738 5.71262 10.042 4.74019 12.0905 4.74019L14.699 4.73912V0.329495C14.2479 0.270874 12.6994 0.136475 10.8972 0.136475C7.13383 0.136475 4.55737 2.43359 4.55737 6.65127V10.2867H0.30127V15.2167H4.55737V27.8633H9.64738Z" fill="black"/>
+              <svg
+                width="12"
+                height="20"
+                viewBox="0 0 15 28"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M9.64738 27.8633V15.2167H13.8906L14.5272 10.2867H9.64738V7.13954C9.64738 5.71262 10.042 4.74019 12.0905 4.74019L14.699 4.73912V0.329495C14.2479 0.270874 12.6994 0.136475 10.8972 0.136475C7.13383 0.136475 4.55737 2.43359 4.55737 6.65127V10.2867H0.30127V15.2167H4.55737V27.8633H9.64738Z"
+                  fill="black"
+                />
               </svg>
               {t('common.button.loginWithFacebook')}
             </button>
@@ -313,7 +297,10 @@ export function LoginPage() {
 
             {!isLogin && (
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   {t('common.form.confirmPassword')}
                 </label>
                 <input
@@ -343,22 +330,9 @@ export function LoginPage() {
                     {t('common.form.rememberMe')}
                   </label>
                 </div>
-                <Link 
-                  to="/forgot-password"
-                  className="text-sm text-black hover:underline"
-                >
+                <Link to="/forgot-password" className="text-sm text-black hover:underline">
                   {t('common.button.forgotPassword')}
                 </Link>
-              </div>
-            )}
-
-            {/* ReCAPTCHA */}
-            {!skipRecaptcha && (
-              <div className="flex justify-center my-4">
-                <ReCAPTCHA
-                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LdPKVQqAAAAAB8i0jKKdChElAE1yrQgi0g_3B5s'}
-                  onChange={(value) => setRecaptchaValue(value)}
-                />
               </div>
             )}
 
@@ -367,7 +341,11 @@ export function LoginPage() {
               disabled={loading || loginRateLimit.isBlocked}
               className="w-full h-11 bg-black text-white rounded font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? t('common.loading') : (isLogin ? t('common.button.login') : t('common.button.signUp'))}
+              {loading
+                ? t('common.loading')
+                : isLogin
+                  ? t('common.button.login')
+                  : t('common.button.signUp')}
             </button>
           </form>
 
@@ -380,7 +358,6 @@ export function LoginPage() {
                   onClick={() => {
                     setIsLogin(false)
                     setError('')
-                    setRecaptchaValue(null)
                   }}
                   className="text-black font-semibold hover:underline"
                   disabled={loading || loginRateLimit.isBlocked}
@@ -395,7 +372,6 @@ export function LoginPage() {
                   onClick={() => {
                     setIsLogin(true)
                     setError('')
-                    setRecaptchaValue(null)
                   }}
                   className="text-black font-semibold hover:underline"
                   disabled={loading || loginRateLimit.isBlocked}

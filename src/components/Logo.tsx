@@ -6,11 +6,11 @@ interface LogoProps {
 export function Logo({ variant = 'black', className = '' }: LogoProps) {
   const logoUrls = {
     black: 'https://i.imgur.com/T6AehDg.png',
-    white: 'https://i.imgur.com/CPDcfYm.png'
+    white: 'https://i.imgur.com/CPDcfYm.png',
   }
-  
+
   return (
-    <img 
+    <img
       src={logoUrls[variant]}
       alt="adsmart"
       className={className}

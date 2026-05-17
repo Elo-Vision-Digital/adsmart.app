@@ -1,6 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
+import { CampaignSchema } from '@adsmart/shared'
+import { googleAdsClientSecret } from './config'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -16,17 +18,16 @@ const OAuthEventType = {
   OAUTH_ERROR: 'oauth_error' as SecurityEventType
 }
 
-// Configurações OAuth do Google Ads (usando apenas process.env)
+// Configurações OAuth do Google Ads (client secret via defineSecret; demais valores via process.env)
 const GOOGLE_ADS_CONFIG = {
   clientId: process.env.GOOGLE_ADS_CLIENT_ID || '422483165860-npdsq44121mh4chg2gers6qade02bo5l.apps.googleusercontent.com',
-  clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET || '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',
   developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN || 'wRhu9OHLIWdbht2HY3B9yw',
   redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
   redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
   // ALTERAÇÃO IMPORTANTE: Adicionar todos os escopos necessários
   scope: [
     'https://www.googleapis.com/auth/userinfo.profile',
-    'https://www.googleapis.com/auth/userinfo.email', 
+    'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/adwords'
   ].join(' '),
   authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -45,7 +46,7 @@ interface GoogleAdsTokens {
 /**
  * Gera a URL de autorização OAuth para Google Ads
  */
-export const getGoogleAdsAuthUrl = onCall(async (request) => {
+export const getGoogleAdsAuthUrl = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -106,7 +107,7 @@ export const getGoogleAdsAuthUrl = onCall(async (request) => {
  * Processa o callback OAuth e troca o código por tokens
  * NOTA: Esta função agora redireciona para a v2 automaticamente
  */
-export const handleGoogleAdsCallback = onCall(async (request) => {
+export const handleGoogleAdsCallback = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -182,7 +183,7 @@ export const handleGoogleAdsCallback = onCall(async (request) => {
 /**
  * Busca campanhas do Google Ads
  */
-export const getGoogleAdsCampaigns = onCall(async (request) => {
+export const getGoogleAdsCampaigns = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -212,7 +213,7 @@ export const getGoogleAdsCampaigns = onCall(async (request) => {
         .collection('campaigns')
         .doc(`google_ads_${campaign.id}`)
 
-      batch.set(campaignRef, {
+      const validated = CampaignSchema.omit({ id: true, lastSyncAt: true }).parse({
         accountId,
         platform: 'google_ads',
         campaignId: campaign.id.toString(),
@@ -222,7 +223,11 @@ export const getGoogleAdsCampaigns = onCall(async (request) => {
         spend: campaign.spend || 0,
         impressions: campaign.impressions || 0,
         clicks: campaign.clicks || 0,
-        lastSyncAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+
+      batch.set(campaignRef, {
+        ...validated,
+        lastSyncAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true })
     }
 
@@ -293,7 +298,7 @@ async function refreshGoogleAdsToken(refreshToken: string): Promise<GoogleAdsTok
   const response = await axios.post(GOOGLE_ADS_CONFIG.tokenUrl, {
     refresh_token: refreshToken,
     client_id: GOOGLE_ADS_CONFIG.clientId,
-    client_secret: GOOGLE_ADS_CONFIG.clientSecret,
+    client_secret: googleAdsClientSecret.value(),
     grant_type: 'refresh_token'
   })
 

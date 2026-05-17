@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  push:
+    branches: [develop, main]
+
+jobs:
+  deploy-dev:
+    name: Deploy → adsmart-web-dev (develop)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-deploy-dev-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-deploy-dev-
+
+      - name: Build all (web + functions)
+        run: bun run build:all
+
+      - name: Deploy to dev
+        run: bunx firebase-tools deploy --only hosting,functions --project adsmart-web-dev --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+  deploy-prod:
+    name: Deploy → adsmart-web (main)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-deploy-prod-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-deploy-prod-
+
+      - name: Build all (web + functions)
+        run: bun run build:all
+
+      - name: Deploy to production
+        run: bunx firebase-tools deploy --only hosting,functions --project adsmart-web --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

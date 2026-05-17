@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom'
 import { Instagram, Linkedin, Mail, MapPin } from 'lucide-react'
-import { useTheme } from '@/contexts/ThemeContext'
+import { Link } from 'react-router-dom'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useTheme } from '@/contexts/ThemeContext'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -34,26 +34,24 @@ export function Footer() {
   ]
 
   return (
-    <footer className={`${
-      theme === 'dark' 
-        ? 'bg-white text-black' 
-        : 'bg-black text-white'
-    }`}>
+    <footer className={`${theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <img 
-                src={theme === 'dark' ? "https://i.imgur.com/T6AehDg.png" : "https://i.imgur.com/CPDcfYm.png"}
-                alt="Adsmart" 
+              <img
+                src={
+                  theme === 'dark'
+                    ? 'https://i.imgur.com/T6AehDg.png'
+                    : 'https://i.imgur.com/CPDcfYm.png'
+                }
+                alt="Adsmart"
                 className="h-8 object-contain"
               />
             </div>
-            <p className={`text-sm ${
-              theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
-            }`}>
+            <p className={`text-sm ${theme === 'dark' ? 'text-gray-700' : 'text-gray-300'}`}>
               {t('footer.tagline')}
             </p>
             {/* Social Links */}
@@ -79,9 +77,11 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
-              theme === 'dark' ? 'text-black' : 'text-white'
-            }`}>
+            <h4
+              className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
+                theme === 'dark' ? 'text-black' : 'text-white'
+              }`}
+            >
               {t('footer.quickLinks')}
             </h4>
             <ul className="space-y-2">
@@ -104,9 +104,11 @@ export function Footer() {
 
           {/* Legal Links */}
           <div>
-            <h4 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
-              theme === 'dark' ? 'text-black' : 'text-white'
-            }`}>
+            <h4
+              className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
+                theme === 'dark' ? 'text-black' : 'text-white'
+              }`}
+            >
               {t('footer.legal')}
             </h4>
             <ul className="space-y-2">
@@ -129,16 +131,20 @@ export function Footer() {
 
           {/* Contact Info */}
           <div>
-            <h4 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
-              theme === 'dark' ? 'text-black' : 'text-white'
-            }`}>
+            <h4
+              className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
+                theme === 'dark' ? 'text-black' : 'text-white'
+              }`}
+            >
               {t('footer.contact')}
             </h4>
             <ul className="space-y-3">
               <li className="flex items-start gap-2">
-                <Mail className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                  theme === 'dark' ? 'text-gray-600' : 'text-gray-400'
-                }`} />
+                <Mail
+                  className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                    theme === 'dark' ? 'text-gray-600' : 'text-gray-400'
+                  }`}
+                />
                 <a
                   href="mailto:support@adsmart.app"
                   className={`text-sm transition-colors ${
@@ -151,12 +157,12 @@ export function Footer() {
                 </a>
               </li>
               <li className="flex items-start gap-2">
-                <MapPin className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                  theme === 'dark' ? 'text-gray-600' : 'text-gray-400'
-                }`} />
-                <span className={`text-sm ${
-                  theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
-                }`}>
+                <MapPin
+                  className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                    theme === 'dark' ? 'text-gray-600' : 'text-gray-400'
+                  }`}
+                />
+                <span className={`text-sm ${theme === 'dark' ? 'text-gray-700' : 'text-gray-300'}`}>
                   {t('footer.location')}
                 </span>
               </li>
@@ -167,14 +173,18 @@ export function Footer() {
         {/* Bottom Bar - sem borda */}
         <div className="pt-8 pb-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className={`text-sm text-center sm:text-left ${
-              theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
-            }`}>
+            <p
+              className={`text-sm text-center sm:text-left ${
+                theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
+              }`}
+            >
               © {currentYear} Adsmart - {t('footer.allRightsReserved')}.
             </p>
-            <div className={`flex flex-wrap items-center gap-4 text-sm ${
-              theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
-            }`}>
+            <div
+              className={`flex flex-wrap items-center gap-4 text-sm ${
+                theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
+              }`}
+            >
               <span>{t('footer.developedBy')}</span>
             </div>
           </div>

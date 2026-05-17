@@ -1,0 +1,22 @@
+---
+description: Payment gateway is Asaas — SuitPay deprecated, do not extend
+globs: functions/src/suitpay*.ts, functions/src/asaas*.ts, src/services/payments/**, src/components/payment/**, docs/PAYMENTS.md
+alwaysApply: false
+---
+
+# Payments: Asaas only (SuitPay deprecated)
+
+AdSmart is migrating from SuitPay to Asaas. SuitPay code in `functions/src/suitpay*` and elsewhere is FROZEN — do not extend, do not harden.
+
+## Rules
+
+- New payment features → Asaas integration only.
+- Bug reports on SuitPay → triage but no fix unless customer-impacting AND a fix is cheap.
+- Don't import from `suitpay*` modules in new code.
+- Webhook handlers for SuitPay (`suitpayWebhook`) stay running until cutover, but no new logic.
+
+## Reference
+
+- docs/PAYMENTS.md (read before touching anything payment-related)
+- AGENTS.md → "What NOT to do" (SuitPay)
+- Memory: suitpay_deprecated.md

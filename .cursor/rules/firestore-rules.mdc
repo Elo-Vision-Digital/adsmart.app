@@ -1,0 +1,38 @@
+---
+description: AdSmart Firestore Security Rules conventions (Phase 3 baseline)
+globs: firestore.rules
+alwaysApply: false
+---
+
+# Firestore Security Rules (AdSmart, Phase 3)
+
+Rules deny by default. Every collection has explicit allow rules.
+
+## Patterns to use
+
+- **Helper functions**: `isAuthenticated()`, `isOwner(userId)`, `isValidEmail(email)`, `hasRequiredFields([...])`, `documentLocked()` (immutability for CPF/CNPJ).
+- **Owner-only creates**: `request.resource.data.userId == request.auth.uid`.
+- **Immutability**: `request.resource.data.<field> == resource.data.<field>` for fields that can't change.
+- **Required fields**: `request.resource.data.keys().hasAll(['email', 'createdAt', ...])`.
+- **Server-time pinning**: `request.resource.data.createdAt == request.time`.
+
+## Phase 3 invariants (DO NOT relax)
+
+| Path | Read | Write |
+|---|---|---|
+| `users/{uid}/wallet/**` | owner | DENY (Admin SDK only) |
+| `users/{uid}/transactions/**` | owner | DENY |
+| `rateLimits/{userId}` | owner | DENY |
+| `securityLogs/{logId}` | DENY | DENY |
+| `backupMetadata/{backupId}` | DENY | DENY |
+| `userDocuments/{documentId}` | owner-by-userId-field | DENY (via reserveUserDocument callable) |
+
+## Test before deploy
+
+ALWAYS run `bash scripts/firebase/test-rules.sh` (or `/firestore-rules-test`) before deploying. Hook `rules-no-direct-deploy` enforces this.
+
+## References
+
+- docs/SECURITY.md
+- docs/Decisions.md → ADR-010, ADR-012
+- Firebase docs: rules-conditions
