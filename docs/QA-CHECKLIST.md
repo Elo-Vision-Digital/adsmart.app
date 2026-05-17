@@ -56,7 +56,7 @@ Routes (post-Subprojeto 2 + ADR-014 Security Logs removal): `/admin` → `/admin
 - [ ] Sub-nav has three tabs in order: Dashboard, Configuração de Preços, Gestão de Saldo
 - [ ] Active tab matches the URL (clicking tabs updates URL; pasting a sub-route URL highlights the right tab)
 - [ ] Refreshing on `/admin/prices` or `/admin/wallet` stays on that route (does not redirect to `/admin/dashboard`)
-- [ ] Navigating to `/admin/security` (legacy URL) resolves to `/admin/dashboard` via the parent's default child redirect — no 404, no white screen
+- [ ] Navigating to `/admin/security` (legacy URL) resolves to `/admin/dashboard` via the admin block's `<Route path="*" element={<Navigate to="dashboard" replace />}>` catch-all — no 404, no white screen, no "No routes matched" console warning
 - [ ] Non-admin cannot access any `/admin/*` route (each redirects to `/dashboard`)
 - [ ] Switching language re-renders the admin panel labels (no raw `admin.*` keys visible)
 

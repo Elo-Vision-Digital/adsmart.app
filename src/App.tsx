@@ -147,6 +147,8 @@ function App() {
                 />
                 <Route path="prices" element={<PricesConfigPage />} />
                 <Route path="wallet" element={<WalletAdminPage />} />
+                {/* Catch unknown /admin/* (e.g. legacy /admin/security bookmarks). */}
+                <Route path="*" element={<Navigate to="dashboard" replace />} />
               </Route>
               {/* Public Pages */}
               <Route path="/" element={<HomePage />} />
