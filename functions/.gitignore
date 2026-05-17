@@ -42,10 +42,8 @@ tests/
 coverage/   
 # Firebase functions build artifacts
 build/
-# Firebase functions configuration files
-config/
 # Firebase functions secrets
-secrets/                
+secrets/
 # Firebase functions local emulator files       
 .emulator/
 # Firebase functions local emulator logs
