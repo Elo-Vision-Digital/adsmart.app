@@ -25,13 +25,6 @@ const OAuthEventType = {
   OAUTH_ERROR: 'oauth_error' as SecurityEventType
 }
 
-// Legacy v1 OAuth handlers — kept exported for compatibility while v2
-// (googleAdsOAuthV2.ts) stabilizes. This file does NOT call the Google Ads
-// data API, so `developer-token` is not needed; client secret is bound via
-// defineSecret on each handler.
-//
-// clientId / redirectUri / redirectUriDev come from defineString params in
-// ./config (ADR 2026-05-18). Read via .value() inside handlers.
 const GOOGLE_ADS_CONFIG = {
   scope: [
     'https://www.googleapis.com/auth/userinfo.profile',

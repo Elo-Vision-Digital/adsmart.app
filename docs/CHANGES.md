@@ -10,6 +10,30 @@ Format conventions:
 
 ---
 
+## [2026-05-18] — Hard rules: no hardcoded environment values, no unnecessary comments
+
+User-elevated conventions to hard rules after a self-audit of the same-day defineString migration revealed two violations the prior commit had introduced:
+
+1. **`default:` literals on `defineString`** for `GOOGLE_ADS_CLIENT_ID`, `META_ADS_APP_ID`, redirect URIs. The defaults inlined the production OAuth IDs — that is hardcoding by another name. CLI deploy-block on missing params is the safety; a default circumvents it.
+2. **Decorative comment banners** (`// ===========`) and ADR-referencing narrative comments in `config/index.ts`, the four OAuth files, and `prepare-deploy.mjs`. Restated what code already said.
+
+**Changes:**
+- `functions/src/config/index.ts`: defaults removed from all 6 defineString exports. Deadcode pruned (`config.urls`, `config.project.id`, `config.project.environment`, `isProduction()`). Decorative banners deleted. Net result: file dropped from 73 → 31 lines.
+- `functions/src/googleAdsOAuth.ts`, `metaAdsOAuth.ts`, `metaAdsOAuthV2.ts`: removed comments I added in the prior commit (ADR refs, defineString notes). Pre-existing narrative comments in these files were left alone — out of scope.
+- `functions/scripts/prepare-deploy.mjs`: removed three banner blocks + multi-line JSDoc + multi-line inline narrative. Behavior unchanged; 7 tests still green.
+- `functions/.env.example`: rewritten. Pre-existing file contained the real `GOOGLE_ADS_DEVELOPER_TOKEN=wRhu...` as an "example" (real secret committed to a public-facing template), real client IDs as samples, and stale SuitPay / RECAPTCHA references. New version has empty placeholders + comment explaining the rules. **Leaked token still in git history**; rotation deferred (repo is private; documented in memory `env_example_leaked_token.md`).
+
+**Conventions surfaced:**
+- [AGENTS.md](../AGENTS.md) "Conventions" — two new lead bullets: "No hardcoded config values" + "No unnecessary comments". Litmus test: *"if this repo were open-sourced today, would any environment-specific value leak?"*
+- [CLAUDE.md](../CLAUDE.md) — new top-level "Code quality — non-negotiable" section before stack reference.
+- [.claude/agents/functions-security-reviewer.md](../.claude/agents/functions-security-reviewer.md) — review-blocker rules: no `default:` on production `defineString`, no decorative banners, no narrative WHAT-comments, no ADR-referencing source comments.
+- [.cursor/rules/functions-config.mdc](../.cursor/rules/functions-config.mdc) — mirror for Cursor.
+- Memory `feedback_no_hardcoded_no_unnecessary_comments.md` — both rules with origin + how-to-apply.
+
+**Where pre-existing narrative comments still live:** `googleAdsOAuthV2.ts`, `metaAdsOAuthV2.ts`, `googleAdsOAuth.ts`, `metaAdsOAuth.ts`, several others. Not cleaned in this commit — would be scope creep. Future refactors touching these files should remove on contact.
+
+---
+
 ## [2026-05-18] — Functions config modernization: defineString for non-secret app config + prepare-deploy regression suite
 
 **Status:** Conventions + spec + plan shipped on `develop`. Code execution pending in the same session (see [plan](superpowers/plans/2026-05-18-functions-config-modernization-plan.md)).

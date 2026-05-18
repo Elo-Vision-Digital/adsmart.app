@@ -28,13 +28,37 @@ calibrated against the project's REAL patterns, not generic Firebase advice.
 
 #### Non-secret config (post-2026-05-18 convention)
 
-App-level config values (OAuth client IDs, redirect URIs, public API endpoints) flow through `defineString('NAME', { default: '...' })` in `functions/src/config/index.ts`, consumed via `.value()`. **Do NOT read these directly from `process.env`** in `functions/src/*` — go through the param export.
+App-level config values (OAuth client IDs, redirect URIs, public API endpoints) flow through `defineString('NAME')` in `functions/src/config/index.ts`, consumed via `.value()`. **Do NOT read these directly from `process.env`** in `functions/src/*` — go through the param export.
+
+**Do NOT add a `default:` option to `defineString` for production values.** The missing-value deploy block is the safety mechanism — a default circumvents it. Defaults are only acceptable for non-production-impacting params (e.g., test fixtures, local-only flags) and even then are usually a smell.
 
 `process.env` reads inside `functions/src/` are limited to this allowlist:
 - Cloud Run built-ins: `GCLOUD_PROJECT`, `FUNCTION_REGION`, `FUNCTION_TARGET`, `NODE_ENV`
 - Test/debug flags: `*_TEST_MODE`, `FIREBASE_DEBUG_MODE`
 
-Anything else is a review blocker — propose a `defineString` migration instead. See [docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md](../../docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md) for rationale.
+Anything else is a review blocker — propose a `defineString` migration instead.
+
+#### No hardcoded environment-specific values
+
+Block the review on any of:
+- Inline literals as fallbacks: `process.env.X || 'real-value-here'`
+- Hardcoded URLs (other than protocol constants like `oauth2.googleapis.com`)
+- Hardcoded project IDs, app IDs, client IDs
+- Hardcoded host/port combinations (other than canonical defaults like `localhost:5173` inside test fixtures)
+
+Protocol constants (Google/Meta OAuth URLs, API versions, scope strings) are NOT config and stay in code. Litmus test: "if this repo were open-sourced today, would this value leak?"
+
+#### Code quality
+
+Block the review on:
+- Decorative comment banners: `// ============`, ASCII section dividers
+- Comments that restate what well-named code already does (e.g. `// Verificar autenticação` above `if (!request.auth)`)
+- Comments referencing the current ADR/task/commit/PR — those belong in `docs/CHANGES.md` and `docs/Decisions.md`, not in source
+- Multi-line narrative comments inside function bodies
+
+Allowed: a single-line comment explaining a non-obvious WHY (hidden constraint, workaround, subtle invariant). Reference a doc by file path if needed for deeper context.
+
+See [docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md](../../docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md) for rationale.
 
 #### HttpsError codes
 

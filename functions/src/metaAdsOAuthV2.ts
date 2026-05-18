@@ -650,8 +650,6 @@ async function getAdAccountDetails(accessToken: string, accountIds: string[]): P
  * Obter configurações do Meta Ads
  */
 async function getMetaAdsConfig() {
-  // App secret via defineSecret (Secret Manager); non-secret values via
-  // defineString params from ./config (ADR 2026-05-18).
   return {
     appId: metaAdsAppId.value(),
     appSecret: metaAdsAppSecret.value(),

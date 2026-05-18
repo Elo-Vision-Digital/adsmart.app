@@ -4,6 +4,12 @@ This file supplements AGENTS.md with Claude Code-specific guidance and inline de
 
 Read [AGENTS.md](AGENTS.md) first. This file adds what's unique to Claude Code sessions.
 
+## Code quality — non-negotiable
+
+**No hardcoded environment-specific values.** Anything that varies between environments — OAuth client IDs, redirect URIs, app IDs, project identifiers, non-protocol endpoints — flows through `defineString` (non-secret) or `defineSecret` (sensitive) in `functions/src/config/index.ts`. **Never** inline `process.env.X || 'literal'`. **Never** set a `default:` on `defineString` for values that should be provisioned per-environment — the missing-value deploy block is the safety mechanism. Protocol constants (OAuth URLs, scope strings, API versions) stay in code. The 12-factor litmus test: *if this repo were open-sourced today, would any environment-specific value leak?*
+
+**No unnecessary comments.** Write zero comments by default. Only add one when the WHY is non-obvious — a hidden constraint, a workaround for a specific bug, surprising behavior. Never write decorative banners (`// =====`), section dividers, ASCII art, or narrative annotations referencing the current task/ADR/commit. Identifiers + `docs/` carry that load.
+
 ## Stack (quick reference)
 
 React 18 · TypeScript · Vite · Tailwind 3 · shadcn/ui · react-router-dom v6 · Firebase SDK 10 · framer-motion 12 · Biome · Vitest · Firebase Functions v2 (Node 22) · firebase-admin 12 · Zod 4 (`@adsmart/shared`)
@@ -60,7 +66,7 @@ Every new callable follows the pattern in [functions/src/reserveUserDocument.ts]
 - `onCall` from `firebase-functions/v2/https` (never v1 `functions.https.onCall`)
 - `region: config.project.region` explicit in options
 - `secrets: [...]` declared in options when the function needs them
-- Non-secret app config (OAuth client IDs, redirect URIs, public endpoints) read via `defineString(...).value()` from `config/index.ts` — never `process.env.X` directly. `process.env` reads in `functions/src/` are limited to Cloud Run built-ins + `*_TEST_MODE` flags. See [docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md](docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md).
+- Non-secret app config (OAuth client IDs, redirect URIs, public endpoints) read via `defineString('NAME').value()` from `config/index.ts` — never `process.env.X` directly, never with a `default:`. `process.env` reads in `functions/src/` are limited to Cloud Run built-ins + `*_TEST_MODE` flags. Provision per-project via `functions/.env` (gitignored). See [docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md](docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md).
 - Auth check first, `HttpsError('unauthenticated', ...)` if missing
 - `isAdminUser(...)` for admin-only callables
 - Zod input validation via `safeParse(MyInputSchema)` from `@adsmart/shared`; `HttpsError('invalid-argument', issues[0]?.message)` on failure

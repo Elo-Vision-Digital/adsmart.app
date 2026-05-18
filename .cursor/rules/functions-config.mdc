@@ -11,13 +11,16 @@ Non-secret app config (OAuth client IDs, redirect URIs, public endpoints) goes t
 ## Canonical pattern
 
 ```typescript
-// functions/src/config/index.ts
 import { defineString } from 'firebase-functions/params'
 
-export const googleAdsClientId = defineString('GOOGLE_ADS_CLIENT_ID', {
-  default: '422483165860-npdsq...apps.googleusercontent.com',
-})
+export const googleAdsClientId = defineString('GOOGLE_ADS_CLIENT_ID')
 ```
+
+**No `default:` for production values.** The missing-value deploy block is the safety mechanism. Provision per-project via `functions/.env` (gitignored), `functions/.env.<project>`, or `firebase functions:params:set`.
+
+## No hardcoded environment-specific values
+
+Block on any of: inline literals as fallbacks (`process.env.X || 'literal'`), hardcoded URLs (except protocol constants), hardcoded project IDs / app IDs / client IDs. Protocol constants (OAuth URLs, scope strings, API versions) stay in code. Litmus test: "if this repo were open-sourced today, would this value leak?"
 
 ```typescript
 // functions/src/googleAdsOAuthV2.ts

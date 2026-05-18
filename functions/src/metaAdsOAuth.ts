@@ -25,10 +25,6 @@ const OAuthEventType = {
   OAUTH_ERROR: 'oauth_error' as SecurityEventType
 }
 
-// Configurações OAuth do Meta Ads. appId / redirectUri / redirectUriDev
-// come from defineString params in ./config (ADR 2026-05-18) and are read
-// via .value() inside handlers. App secret is bound via defineSecret on
-// each onCall options.
 const META_ADS_CONFIG = {
   scope: 'ads_read,ads_management,business_management,read_insights',
   authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
