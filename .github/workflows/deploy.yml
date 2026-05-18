@@ -10,6 +10,7 @@ jobs:
     name: Deploy → adsmart-web-dev (develop)
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop'
+    environment: dev
     steps:
       - uses: actions/checkout@v4
 
@@ -42,11 +43,18 @@ jobs:
         run: bunx firebase-tools deploy --only hosting,functions,firestore:rules,firestore:indexes --project adsmart-web-dev --non-interactive
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_ADS_CLIENT_ID: ${{ vars.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_REDIRECT_URI: ${{ vars.GOOGLE_ADS_REDIRECT_URI }}
+          GOOGLE_ADS_REDIRECT_URI_DEV: ${{ vars.GOOGLE_ADS_REDIRECT_URI_DEV }}
+          META_ADS_APP_ID: ${{ vars.META_ADS_APP_ID }}
+          META_ADS_REDIRECT_URI: ${{ vars.META_ADS_REDIRECT_URI }}
+          META_ADS_REDIRECT_URI_DEV: ${{ vars.META_ADS_REDIRECT_URI_DEV }}
 
   deploy-prod:
     name: Deploy → adsmart-web (main)
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    environment: prod
     steps:
       - uses: actions/checkout@v4
 
@@ -79,3 +87,9 @@ jobs:
         run: bunx firebase-tools deploy --only hosting,functions,firestore:rules,firestore:indexes --project adsmart-web --non-interactive
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_ADS_CLIENT_ID: ${{ vars.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_REDIRECT_URI: ${{ vars.GOOGLE_ADS_REDIRECT_URI }}
+          GOOGLE_ADS_REDIRECT_URI_DEV: ${{ vars.GOOGLE_ADS_REDIRECT_URI_DEV }}
+          META_ADS_APP_ID: ${{ vars.META_ADS_APP_ID }}
+          META_ADS_REDIRECT_URI: ${{ vars.META_ADS_REDIRECT_URI }}
+          META_ADS_REDIRECT_URI_DEV: ${{ vars.META_ADS_REDIRECT_URI_DEV }}
