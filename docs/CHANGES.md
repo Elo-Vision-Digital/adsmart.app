@@ -10,6 +10,22 @@ Format conventions:
 
 ---
 
+## [2026-05-18] — Docs drift sweep: SuitPay residue + OAuth token encryption claim
+
+Post-merge cleanup of three stale claims in the canonical docs that survived the ADR-019/021 ship cycle. Pure documentation correction — no code change.
+
+**Fixes:**
+
+- `docs/Integrations.md`: SuitPay row was "Deprecated — do not extend" pointing at `functions/src/suitpayPayment.ts` (deleted). Now: "Removed (ADR-021, 2026-05-18) — do not restore" with no entry-point file.
+- `docs/API-CONTRACTS.md`: 3 SuitPay callable sections (`suitpayWebhook`, `createPixPayment`, `checkPaymentStatus`) described callables that no longer exist. Replaced with one pointer to ADR-021 + PAYMENTS.md.
+- `docs/DATA-MODEL.md`: (a) SuitPay-era payment collections no longer carry `(deprecated)` labels — they are legacy artifacts of a removed integration; (b) wallet write-path documentation dropped a dead link to the removed `suitpayWebhook`; (c) `users/{uid}/oauth_tokens/google_ads` was documented as "base64-encoded (not truly encrypted)" — production is AES-256-GCM via `oauthCrypto` since ADR-019. Field comments updated.
+
+**REFACTOR-PLAN.md kept.** Audited (177 lines, status `Completed (Phases A–E)`). It still has 4 live references (DATA-MODEL.md follow-up note, Decisions.md ADR-009 references, index.md historical entry). Deleting would create 4 broken links and remove the work product that justified ADR-009/010. Marked historical in `docs/index.md` (harness modernization) — that is the correct treatment.
+
+**Why this matters:** drift in DATA-MODEL.md claiming "not truly encrypted" while production runs AES-256-GCM is exactly the kind of stale doc that makes AI agents hallucinate about the actual security posture.
+
+---
+
 ## [2026-05-18] — Harness modernization: AGENTS.md canonical, CLAUDE.md slim, CHANGES.md rotated
 
 Aligned the AI harness with 2026-Q2 best practices to reduce per-turn token cost and eliminate drift between agent-facing files.
