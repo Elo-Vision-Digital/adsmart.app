@@ -21,9 +21,9 @@ Live log of the execution of [the implementation plan](../plans/2026-05-17-auth-
 | B2 — App Check gated init | ✅ | `78d6e3b` | Approved. Sem chunk app-check no bundle quando env-var vazia (gating funciona). |
 | B3 — auth error map + type guards | ✅ | `0e4c58d` | Approved. 7 vitest passing. |
 | B4 — AuthContext refactor | ✅ | `d9547e5` | Approved with follow-ups (issues #1 e #5 abaixo). |
-| C1 — AuthLoadingFallback component | ⏳ pending | — | Next. |
-| C2 — loading-aware route guards + tests | ⏳ pending | — | |
-| C3 — EmailVerificationBanner | ⏳ pending | — | |
+| C1 — AuthLoadingFallback component | ✅ | `5c6283d` | Approved. 13 lines. |
+| C2 — loading-aware route guards + tests | ✅ | `e917d96` | Approved. Replaced pre-existing `AdminRoute.test.tsx` (3 spyOn tests) with new context-provider pattern (4 tests). PrivateRoute.test.tsx novo (3 tests). Total +4 tests. Plan body tinha typo no `renderWithAuth` da AdminRoute test (dois `</AuthContext.Provider>`) — corrigido pelo implementer. |
+| C3 — EmailVerificationBanner | ✅ | `86250ee` | Approved. Mounted como first child do `<main>` em MainLayout. 5 i18n keys novas em `common.emailVerification.*` em 3 idiomas + types.ts. Cuidado: `settingsPage.emailVerification` pré-existente continua intocado. |
 | D1 — LoginPage refactor | ⏳ pending | — | |
 | D2 — ForgotPasswordPage | ⏳ pending | — | |
 | D3 — SettingsPage password change | ⏳ pending | — | |
@@ -64,10 +64,26 @@ Reportados pelo code-quality reviewer de B4. Endereçar em Phase G ou follow-up 
 
 ## Sanity check a cada N tasks
 
-Após B4, todos os 6 commits empilhados em `develop`. Estado:
+### Após Phase A+B (commits 1–6 + follow-up `62e0e60`)
 - `bun run typecheck` ✅
-- `bun run lint` ✅ (115 warnings pré-existentes em arquivos não-tocados, 0 errors)
-- `bun run test --run` ✅ 68/68 passing (14 test files)
+- `bun run lint` ✅ (115 warnings pré-existentes, 0 errors)
+- `bun run test --run` ✅ 68/68 passing
 - `cd functions && bun run test` ❌ pré-existente — depende de emulators offline. Não bloqueia.
 
-Próximo dispatch: Task C1 (AuthLoadingFallback).
+### Após Phase C (commits `5c6283d`, `e917d96`, `86250ee`)
+- `bun run typecheck` ✅
+- `bun run lint` ✅ (warnings pré-existentes intactos, novos arquivos clean)
+- `bun run test --run` ✅ 72/72 passing (15 test files, +4 tests novos de C2)
+- App Check init em `src/firebase/config.ts` removido pelo usuário (paralelamente, **ADR-019**) — Task B2 fica marcada como superseded. Plan G1-G6 precisa reconciliar.
+
+**Compromissos abertos endereçados no checkpoint Phase C:**
+- B4 issue #5 (silent catch) → `console.warn` adicionado em `62e0e60`.
+- B2 minor (sem .catch no App Check) → endereçado em `62e0e60`; ficou moot porque ADR-019 removeu App Check inteiro.
+- B4 issue #1 (public pages flash) → ainda em aberto. Phase G1/G2 decidirá: documentar como aceitável ou wrap public pages com fallback.
+
+### Notas operacionais
+- Após **6 tarefas + 1 checkpoint**, esta é a segunda atualização do log (cadência ~3 tarefas como pedido).
+- Próxima auditoria: após D3 ou início de Phase E.
+- ADR-019 (App Check removal) precisa ser referenciado em ADR-016 quando ele for escrito em G1.
+
+Próximo dispatch: Task D1 (LoginPage refactor).
