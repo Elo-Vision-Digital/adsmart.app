@@ -35,6 +35,32 @@ export const auth = initializeAuth(app, {
   popupRedirectResolver: browserPopupRedirectResolver,
 })
 
+// App Check (reCAPTCHA Enterprise) — gated by VITE_APPCHECK_SITE_KEY.
+// Without a site key set, App Check is NOT initialized at all (no silent
+// fallback). Identity Toolkit enforcement starts in monitor mode in the
+// Firebase Console; see docs/DEPLOYMENT.md Phase H for the rollout plan.
+//
+// Dev: set `self.FIREBASE_APPCHECK_DEBUG_TOKEN = true` in DevTools BEFORE
+// the page initializes Firebase, then copy the debug token printed in the
+// console into Firebase Console → App Check → Debug tokens. Validated
+// against /firebase/firebase-js-sdk via Context7 (2026-05-17).
+const appCheckSiteKey = import.meta.env.VITE_APPCHECK_SITE_KEY
+if (appCheckSiteKey && typeof window !== 'undefined') {
+  if (import.meta.env.DEV) {
+    ;(
+      self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }
+    ).FIREBASE_APPCHECK_DEBUG_TOKEN = true
+  }
+  // Dynamic import keeps the App Check chunk out of the initial bundle
+  // when the env var is unset (most dev environments today).
+  void import('firebase/app-check').then(({ initializeAppCheck, ReCaptchaEnterpriseProvider }) => {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
+      isTokenAutoRefreshEnabled: true,
+    })
+  })
+}
+
 export const db = getFirestore(app)
 export const functions = getFunctions(app, 'us-central1')
 
