@@ -1,5 +1,7 @@
 # Harness Modernization Implementation Plan
 
+> **Status (2026-05-18):** ✅ **Executed and archived.** All 49 task-level checkboxes were never marked, but a code+filesystem audit on 2026-05-18 confirmed every intended outcome shipped: `docs/UI-DESIGN.md`, `docs/FIREBASE-CONVENTIONS.md`, `docs/changelog/2026-Q1.md`, `docs/superpowers/archive/` populated, CLAUDE.md trimmed to 63 lines (target <150), AGENTS.md at 108 lines (target ≤200), all named obsolete specs/plans/notes moved to archive. Plan was executed by parallel agent sessions; box-checking was skipped. Plan moved to archive after that audit confirmed completeness.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Reduce token cost and entropy of the AI harness by consolidating AGENTS.md as canonical, slimming CLAUDE.md, rotating CHANGES.md, eliminating drift-prone Cursor rules, and archiving obsolete specs/plans/memories — all aligned with 2026-Q2 best practices (InfoQ Mar 2026 AGENTS.md research; Karaca 83% cost cut; Linux Foundation AGENTS.md standard).
