@@ -1,5 +1,4 @@
-import { deleteUser } from 'firebase/auth'
-import { deleteDoc, doc } from 'firebase/firestore'
+import { httpsCallable } from 'firebase/functions'
 import { AlertTriangle, ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -7,21 +6,24 @@ import { MainLayout } from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
-import { db } from '@/firebase/config'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { functions } from '@/firebase/config'
+import { authErrorToTKey } from '@/lib/auth/errorMessages'
 
 export function DeleteDataPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
+  const { t } = useLanguage()
   const [isDeleting, setIsDeleting] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [error, setError] = useState('')
 
-  const handleDeleteAccount = async () => {
-    if (confirmText !== 'EXCLUIR MINHA CONTA') {
-      setError('Digite exatamente "EXCLUIR MINHA CONTA" para confirmar')
-      return
-    }
+  const userEmail = user?.email ?? ''
+  // Case-insensitive email comparison (users type emails in various cases).
+  const canDelete = !!userEmail && confirmText.trim().toLowerCase() === userEmail.toLowerCase()
 
+  const handleDeleteAccount = async () => {
+    if (!canDelete) return
     if (!user) {
       setError('Você precisa estar logado para excluir sua conta')
       return
@@ -31,25 +33,20 @@ export function DeleteDataPage() {
       setIsDeleting(true)
       setError('')
 
-      // 1. Deletar dados do Firestore
-      await deleteDoc(doc(db, 'users', user.uid))
+      // Backend (deleteUserData callable) cascades through Firestore +
+      // userDocuments index + Firebase Auth user. Once it returns, the
+      // caller's auth token is invalidated.
+      const deleteUserDataFn = httpsCallable<
+        Record<string, never>,
+        { success: boolean; deletedAt: number; counts: Record<string, number> }
+      >(functions, 'deleteUserData')
+      await deleteUserDataFn({})
 
-      // 2. Deletar subcoleções (se existirem)
-      // TODO: Implementar exclusão de subcoleções via Cloud Function
-
-      // 3. Deletar conta de autenticação
-      await deleteUser(user)
-
-      // Redirecionar para página inicial
-      navigate('/')
-    } catch (error: any) {
-      console.error('Erro ao excluir conta:', error)
-
-      if (error.code === 'auth/requires-recent-login') {
-        setError('Por segurança, faça login novamente antes de excluir sua conta')
-      } else {
-        setError('Erro ao excluir conta. Tente novamente mais tarde.')
-      }
+      // Clean up client auth state and redirect.
+      await signOut()
+      navigate('/login', { replace: true })
+    } catch (err) {
+      setError(t(authErrorToTKey(err)))
     } finally {
       setIsDeleting(false)
     }
@@ -87,16 +84,21 @@ export function DeleteDataPage() {
               </div>
 
               <div className="space-y-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Para confirmar a exclusão, digite <strong>EXCLUIR MINHA CONTA</strong> no campo
-                  abaixo:
-                </p>
+                <label
+                  htmlFor="confirm-email"
+                  className="text-sm text-red-700 dark:text-red-300 font-medium block"
+                >
+                  Para confirmar, digite seu email{' '}
+                  <code className="bg-red-50 dark:bg-red-900/30 px-1 rounded">{userEmail}</code>:
+                </label>
 
                 <input
+                  id="confirm-email"
                   type="text"
                   value={confirmText}
                   onChange={(e) => setConfirmText(e.target.value)}
-                  placeholder="Digite EXCLUIR MINHA CONTA"
+                  placeholder={userEmail}
+                  autoComplete="off"
                   className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   disabled={isDeleting}
                 />
@@ -110,10 +112,10 @@ export function DeleteDataPage() {
                 <Button
                   variant="destructive"
                   onClick={handleDeleteAccount}
-                  disabled={isDeleting || confirmText !== 'EXCLUIR MINHA CONTA'}
+                  disabled={!canDelete || isDeleting}
                   className="w-full"
                 >
-                  {isDeleting ? 'Excluindo...' : 'Excluir Permanentemente'}
+                  {isDeleting ? 'Excluindo...' : 'Excluir minha conta permanentemente'}
                 </Button>
               </div>
 
