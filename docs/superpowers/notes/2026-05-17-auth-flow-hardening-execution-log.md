@@ -34,7 +34,13 @@ Live log of the execution of [the implementation plan](../plans/2026-05-17-auth-
 | E4 — DeleteDataPage double-confirm | ✅ | `7326e89` | Approved. Email-typed confirmation (case-insensitive) substitui literal "EXCLUIR MINHA CONTA". Chama `httpsCallable('deleteUserData')` em vez de delete client-side. signOut + navigate('/login', replace) após sucesso. |
 | E5 — unify ADMIN_EMAILS server-side | ✅ | `42a2af5` (amended) | Implementer original (`192c9f3`) puxou um refactor pré-existente de `priceManager.ts` do parallel chat (357 linhas mudadas) que dependia de `@adsmart/shared` exports untracked. **Rollback**: restaurado pre-E5 priceManager.ts + aplicado só o swap ADMIN_EMAILS (3 sites). Commit amended para `42a2af5`. Final diff: 3 files, +11/-26. Zero `const ADMIN_EMAILS` em todo o repo (exceto packages/shared). |
 | F1 — COOP downgrade | ✅ | `a011e4d` | DONE inline. `same-origin` → `same-origin-allow-popups` em firebase.json. Trade-off documentado em ADR-016 (Phase G). |
-| G1-G6 — docs sweep | ⏳ in progress | — | Next. Reconciliar ADR-016 com ADR-019 (App Check removido). |
+| G1 — ADR-020 em Decisions.md | ✅ | `f0dae2a` | 309 linhas. ADR-016 conflict resolvido (outro chat já usa ADR-016 para admin/priceManager); meu vira ADR-020. Trade-off ADR-021 ida-e-volta com SuitPay removal — estável agora. |
+| G2 — SECURITY.md | ✅ | `eb48441` | "Password policy" + "Auth error messaging" sections. COOP downgrade notado. Admin granting sem mais "sign out + sign in". |
+| G3 — QA-CHECKLIST.md | ✅ | `cd9c74f` | Auth section expandida com 6 sub-sections: Sign-in/sign-up, Route guards, Forgot password, Email verification, Password change, Account deletion. |
+| G4 — ERROR-HANDLING.md | ✅ | `7508cd0` | Tabela completa Firebase Auth code → i18n key (15 codes). Split catch pattern documentado com bugfix `f0fc264` story. |
+| G5 — AGENTS.md + CLAUDE.md | ✅ | `957cf11` | Read-first map row expandida. 3 novas Conventions + 4 novas What-NOT-to-do em AGENTS. Nova "Auth flow conventions (post-ADR-020)" section em CLAUDE. |
+| G6 — CHANGES.md entry | ✅ | `bb1582a` | Entry [2026-05-18] auth flow hardening. Numbering note explica ADR-020 vs ADR-021 do parallel chat. |
+| Handoff prompt | ✅ | `<this commit>` | docs/superpowers/notes/2026-05-18-auth-hardening-handoff.md + memory `auth_hardening_continuation_2026_05_18.md`. Outdated memory `auth_hardening_execution_2026_05_17.md` deletada. |
 
 ## Decisões / desvios do plano
 
