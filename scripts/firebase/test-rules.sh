@@ -21,7 +21,7 @@ if ! grep -q '@firebase/rules-unit-testing' functions/package.json; then
 fi
 
 # Run rules tests inside the firestore emulator
-bunx firebase emulators:exec --only firestore --project demo-adsmart \
+bunx firebase-tools emulators:exec --only firestore --project demo-adsmart \
   "cd functions && bunx vitest run firestore-rules"
 
 # Stamp success — consumed by check-rules-tested.sh hook helper
