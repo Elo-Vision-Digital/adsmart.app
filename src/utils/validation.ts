@@ -1,36 +1,9 @@
-export const passwordSchema = {
-  minLength: 8,
-  requireUppercase: true,
-  requireLowercase: true,
-  requireNumbers: true,
-  requireSpecialChars: true,
-}
+// Legacy module: validatePassword moved to @adsmart/shared/auth/password
+// (single source of truth, ADR-016). Re-exported here for stability of any
+// external import path; new code should import directly from @adsmart/shared.
+// getPasswordStrength stays local — used by SettingsPage password meter.
 
-export function validatePassword(password: string): string[] {
-  const errors: string[] = []
-
-  if (password.length < passwordSchema.minLength) {
-    errors.push(`Senha deve ter no mínimo ${passwordSchema.minLength} caracteres`)
-  }
-
-  if (passwordSchema.requireUppercase && !/[A-Z]/.test(password)) {
-    errors.push('Senha deve conter pelo menos uma letra maiúscula')
-  }
-
-  if (passwordSchema.requireLowercase && !/[a-z]/.test(password)) {
-    errors.push('Senha deve conter pelo menos uma letra minúscula')
-  }
-
-  if (passwordSchema.requireNumbers && !/\d/.test(password)) {
-    errors.push('Senha deve conter pelo menos um número')
-  }
-
-  if (passwordSchema.requireSpecialChars && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Senha deve conter pelo menos um caractere especial')
-  }
-
-  return errors
-}
+export { PASSWORD_MIN_LENGTH as passwordSchemaMinLength, validatePassword } from '@adsmart/shared'
 
 export function getPasswordStrength(password: string): {
   score: number
@@ -38,7 +11,6 @@ export function getPasswordStrength(password: string): {
   color: string
 } {
   let score = 0
-
   if (password.length >= 8) score++
   if (password.length >= 12) score++
   if (/[a-z]/.test(password)) score++
