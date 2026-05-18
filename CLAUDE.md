@@ -1,83 +1,12 @@
 # CLAUDE.md — AdSmart
 
-This file supplements AGENTS.md with Claude Code-specific guidance and inline design system reference.
+Claude Code-specific guidance. Tool-agnostic project rules live in [AGENTS.md](AGENTS.md) — read it first.
 
-Read [AGENTS.md](AGENTS.md) first. This file adds what's unique to Claude Code sessions.
+## Quick references
 
-## Code quality — non-negotiable
-
-**No hardcoded environment-specific values.** Anything that varies between environments — OAuth client IDs, redirect URIs, app IDs, project identifiers, non-protocol endpoints — flows through `defineString` (non-secret) or `defineSecret` (sensitive) in `functions/src/config/index.ts`. **Never** inline `process.env.X || 'literal'`. **Never** set a `default:` on `defineString` for values that should be provisioned per-environment — the missing-value deploy block is the safety mechanism. Protocol constants (OAuth URLs, scope strings, API versions) stay in code. The 12-factor litmus test: *if this repo were open-sourced today, would any environment-specific value leak?*
-
-**No unnecessary comments.** Write zero comments by default. Only add one when the WHY is non-obvious — a hidden constraint, a workaround for a specific bug, surprising behavior. Never write decorative banners (`// =====`), section dividers, ASCII art, or narrative annotations referencing the current task/ADR/commit. Identifiers + `docs/` carry that load.
-
-## Stack (quick reference)
-
-React 18 · TypeScript · Vite · Tailwind 3 · shadcn/ui · react-router-dom v6 · Firebase SDK 10 · framer-motion 12 · Biome · Vitest · Firebase Functions v2 (Node 22) · firebase-admin 12 · Zod 4 (`@adsmart/shared`)
-
-## Editing Firestore document shapes
-
-For any change to a Firestore document shape (adding a field, tightening a type, renaming, deprecating), edit **`packages/shared/src/schemas/`** first — it is the source of truth for both persisted document shapes AND callable I/O contracts. Types in `src/types/index.ts` and inside Cloud Functions are derived (`z.infer`) and re-exported; do not hand-write a parallel interface.
-
-Coverage as of ADR-018: `User`, `UserClientUpdate`, `UserDocument`, `UserWallet`, `Transaction`, `Report`, `Campaign`, `AdAccount`, `DashboardMetrics`, `ProductPrice`, `OAuthState`, `TemporaryOAuthToken`, `RateLimit`, plus callable I/O for `getDashboardMetrics`, `reserveUserDocument`, `updateProductPrices`.
-
-### Zod 4 idioms (Sprint 2 onwards)
-
-Use the top-level format validators, not the deprecated method forms:
-
-| Use | Not |
-|---|---|
-| `z.email()` | `z.string().email()` |
-| `z.url()` | `z.string().url()` |
-| `z.iso.datetime()` | `z.string().datetime()` |
-| `zTimestamp()` (from `@adsmart/shared`) | `z.unknown()` for Firestore timestamps |
-
-### Pair persisted-shape with strict client-update
-
-When a doc is partially client-writable, also export a `.strict()` subset that mirrors `firestore.rules`. Example: `UserClientUpdateSchema` alongside `UserSchema` rejects payloads containing `email`, `createdAt`, `documentType`, or `documentNumber` — matching the rule-layer immutability checks at the type layer.
-
-### After changing a schema
-
-1. Update or add a Vitest case in the matching `*.test.ts` (co-located with the schema file).
-2. Run `cd packages/shared && bun run test` and `bun run typecheck` from the root — Turbo will re-validate web and functions consumers.
-3. Update [docs/DATA-MODEL.md](docs/DATA-MODEL.md) — the schema is executable; the markdown is human-facing and must follow.
-4. Add a dated entry to [docs/CHANGES.md](docs/CHANGES.md) explaining the field-level drift you fixed (or introduced).
-
-The architectural rationale lives in [docs/Decisions.md](docs/Decisions.md) — ADR-009 (umbrella), ADR-016 (ProductPrice + ADMIN_EMAILS centralization + priceManager v1→v2), ADR-018 (User / UserDocument / OAuthState / RateLimit lift + Zod 4 migration).
-
-## Admin access (post-ADR-016)
-
-Admin authority comes from a **single source**: `isAdminUser(claims, email)` exported from [packages/shared/src/auth/admin.ts](packages/shared/src/auth/admin.ts) and re-exported via `@adsmart/shared`. Custom claim `admin === true` is authoritative; the email allowlist is a transition fallback so existing admins are not locked out. Five hand-maintained copies of `ADMIN_EMAILS` were consolidated in ADR-016 — do not reintroduce them.
-
-```ts
-// ✅ canonical
-import { isAdminUser } from '@adsmart/shared'
-if (!isAdminUser(request.auth.token, request.auth.token.email)) {
-  throw new HttpsError('permission-denied', '...')
-}
-
-// ❌ never re-declare
-const ADMIN_EMAILS = ['agency.elovisiondigital@gmail.com', 'admin@adsmart.app']
-```
-
-## Cloud Function v2 baseline (post-ADR-016)
-
-Every new callable follows the pattern in [functions/src/reserveUserDocument.ts](functions/src/reserveUserDocument.ts), [functions/src/priceManager.ts](functions/src/priceManager.ts), and [functions/src/getDashboardMetrics.ts](functions/src/getDashboardMetrics.ts):
-
-- `onCall` from `firebase-functions/v2/https` (never v1 `functions.https.onCall`)
-- `region: config.project.region` explicit in options
-- `secrets: [...]` declared in options when the function needs them
-- Non-secret app config (OAuth client IDs, redirect URIs, public endpoints) read via `defineString('NAME').value()` from `config/index.ts` — never `process.env.X` directly, never with a `default:`. `process.env` reads in `functions/src/` are limited to Cloud Run built-ins + `*_TEST_MODE` flags. Provision per-project via `functions/.env` (gitignored). See [docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md](docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md).
-- Auth check first, `HttpsError('unauthenticated', ...)` if missing
-- `isAdminUser(...)` for admin-only callables
-- Zod input validation via `safeParse(MyInputSchema)` from `@adsmart/shared`; `HttpsError('invalid-argument', issues[0]?.message)` on failure
-- Typed output via `Promise<MyOutput>` from the inferred Zod type
-- Do NOT set `enforceAppCheck` — Firebase App Check was removed end-to-end in ADR-019. Re-introduction requires a new ADR.
-
-The slash command `/functions-new-callable` scaffolds the right pattern.
-
-## Design system
-
-See [docs/UI-DESIGN.md](docs/UI-DESIGN.md).
+- Design system → [docs/UI-DESIGN.md](docs/UI-DESIGN.md)
+- Firebase Conventions Pack (slash commands, agents, hooks, cursor mirror) → [docs/FIREBASE-CONVENTIONS.md](docs/FIREBASE-CONVENTIONS.md)
+- Decision history → [docs/Decisions.md](docs/Decisions.md)
 
 ## Contexts
 
@@ -89,25 +18,13 @@ See [docs/UI-DESIGN.md](docs/UI-DESIGN.md).
 
 Provider nesting order in `App.tsx`: `LanguageProvider → ThemeProvider → AuthProvider`.
 
-## Route guard components
-
-- `PrivateRoute` (`src/components/PrivateRoute.tsx`): redirects unauthenticated users to `/login`.
-- `AdminRoute` (`src/components/AdminRoute.tsx`): redirects non-admins to `/dashboard`. Wraps `PrivateRoute` logic internally.
-
 ## Testing in Claude sessions
 
 ```bash
-# Run all web tests
-bun run test
-
-# Run all functions tests (from functions/)
+bun run test              # web
 cd functions && bun run test
-
-# Run all tests across workspaces (via Turbo)
-bun run test:all
-
-# Run with coverage (web)
-bun run test:coverage
+bun run test:all          # all workspaces via Turbo
+bun run test:coverage     # web with coverage
 ```
 
 Tests live in `*.test.tsx` / `*.test.ts` next to the files they test (web) or in `functions/test/` (functions).
@@ -121,103 +38,26 @@ Tests live in `*.test.tsx` / `*.test.ts` next to the files they test (web) or in
 
 ## Code review router
 
-Three review paths exist; pick the right one for the situation:
+| Situation | Use |
+|---|---|
+| Reviewing a real GitHub PR (already pushed) | `/code-review` slash command |
+| Local working tree, before push | `superpowers:requesting-code-review` skill |
+| Inside a `feature-dev:feature-dev` flow | `feature-dev:code-reviewer` agent |
 
-| Situation | Use | Why |
-|---|---|---|
-| Reviewing a real GitHub PR (already pushed) | `/code-review` (code-review plugin) | Operates on PR diff via `gh`; produces PR-level summary |
-| Mid-implementation, want a sanity check on code in the working tree | `superpowers:requesting-code-review` | Returns Strengths / Issues / Assessment for unpushed work |
-| Inside a `feature-dev:feature-dev` flow that produced architecture + code | `feature-dev:code-reviewer` agent | Knows the feature-dev plan and reviews against its blueprint |
+Default for local changes: `superpowers:requesting-code-review`. After push: `/code-review`.
 
-Default: when in doubt and reviewing local changes before push → `superpowers:requesting-code-review`. After push, on the open PR → `/code-review`.
+## Skills available
 
-## Firebase operations
-
-When operating Firebase live (queries, logs, rules, secrets, Auth), invoke `firebase-operations` skill. It documents when to use the MCP plugin vs `bunx firebase-tools` vs editing local files like `firestore.rules`.
-
-## Docs hygiene
-
-To audit documentation drift after a migration or before a release, invoke `docs-lint` skill. It checks for stale commands, broken cross-doc links, orphan docs, undated CHANGES entries, and contradictions vs AGENTS.md / CLAUDE.md.
+- `firebase-operations` — operating Firebase live (queries, logs, rules, secrets, Auth). Documents when to use MCP vs `bunx firebase-tools` vs editing local files.
+- `docs-lint` — audit documentation drift before a release. Checks stale commands, broken links, orphan docs, undated CHANGES entries, contradictions vs AGENTS.md.
 
 ## Memory system
 
-This project has a memory system at `.claude/projects/.../memory/`. Key memories:
-- `admin_claim_policy.md` — admin access uses custom claims + email fallback
-- `firebase_secrets.md` — all secrets via `defineSecret` from `functions/src/config/index.ts`
-- `suitpay_deprecated.md` — do NOT harden SuitPay; Asaas replaces it
-- `phase_ordering.md` — Phase 1 → 3 → 4 → 2
+Project memories at `.claude/projects/.../memory/`. Key entries:
 
-## What changed in Phase 3 (security baseline)
+- `admin_claim_policy.md` — custom claims authoritative, email fallback
+- `firebase_secrets.md` — all secrets via `defineSecret` in `functions/src/config/index.ts`
+- `suitpay_deprecated.md` — SuitPay removed (ADR-021); do not restore; Asaas replaces it
+- `firebase_deploy_workflow_rules.md` — hard rules from real deploy incidents
 
-Before Phase 2 upgrades, these security fixes are in place:
-- Firestore rules: `wallet`/`transactions` write-blocked client-side; `rateLimits` write-only via Admin SDK
-- CSP/HSTS/COOP/CORP headers in `firebase.json`
-- GTM moved to `src/lib/gtm.ts` (no inline script)
-- AdminRoute guards `/admin` with custom claim check
-- All secrets via `defineSecret` (no `process.env.XXX_SECRET`)
-- securityLogger re-entrancy guard prevents infinite loops on SUSPICIOUS_ACTIVITY events
-
-## Per-user state bootstrap (post-Phase-3 invariant)
-
-Both `users/{uid}` (profile doc) and `users/{uid}/wallet/current` are seeded server-side at signup by the `bootstrapUser` Auth blocking trigger ([functions/src/bootstrapUser.ts](functions/src/bootstrapUser.ts)) — `beforeUserCreated` from `firebase-functions/v2/identity`, single batched Admin SDK write. By the time the client sees a successful sign-in both docs exist.
-
-Client code that reads either path can assume it exists and use `updateDoc` directly (e.g. [SettingsPage.handleSaveProfile](src/pages/SettingsPage.tsx)). Client code that *writes* to either path must not re-introduce `setDoc` with merge:true — Phase 3 [firestore.rules](firestore.rules) reject client wallet writes outright, and reject `users/{uid}` writes that fail the `email`/`createdAt` immutability checks.
-
-`useWallet` keeps a defensive virtual `EMPTY_WALLET` for the snapshot-missing case (e.g. dev/test scenarios where the trigger didn't fire), but in production every signup arrives with a real doc. See [ADR-010](docs/Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for the full rationale.
-
-## CPF/CNPJ uniqueness + immutability (ADR-012)
-
-`documentType` and `documentNumber` on `users/{uid}` are **immutable after first write** and the value must be unique across all users. The mechanism:
-
-- Reservation goes through the [`reserveUserDocument`](functions/src/reserveUserDocument.ts) callable. It validates the format (CPF/CNPJ check digits) and runs a Firestore transaction over `userDocuments/{normalizedDoc}` + `users/{uid}` — atomic uniqueness guarantee.
-- Direct client writes to `users/{uid}` that touch those two fields after they were set are rejected by [firestore.rules](firestore.rules) via the `documentLocked()` helper. Updates to `name`/`phone`/`updatedAt` continue to work via plain `updateDoc`.
-- The `userDocuments/{normalizedDoc}` collection is the uniqueness index — write-only via Admin SDK. The doc ID is `cpf.replace(/\D/g, '')` so two callers cannot both win the path.
-
-Client UX in [SettingsPage](src/pages/SettingsPage.tsx) flips a `documentLocked` boolean from `loadUserProfile`. When locked, the radio buttons + the document text input are `disabled + readOnly` and `handleSaveProfile` skips the callable entirely (only `name`/`phone` go through `updateDoc`). Friendly mapping for `functions/already-exists` ("CPF/CNPJ já cadastrado em outra conta") and `functions/failed-precondition`.
-
-## Password vs OAuth providers
-
-`AuthContext` exposes `hasPasswordProvider` derived from `user.providerData.some(p => p.providerId === 'password')`. Use it to branch UI between "alterar senha" (existing password account — needs `currentPassword` + `reauthenticateWithCredential` + `updatePassword`) and "criar senha" (OAuth-only account, e.g. signed in with Google or Facebook — uses `linkWithCredential(user, EmailAuthProvider.credential(email, newPassword))` and only requires `newPassword` + `confirm`).
-
-After a successful link, `providerData` includes both providers and `hasPasswordProvider` flips true on the next snapshot — the same form then defaults to the "alterar senha" flow.
-
-## Auth flow conventions (post-ADR-020)
-
-Every sign-in / sign-up / link path in `AuthContext` ends with `refreshAuthState(user)` which calls `getIdToken(true)` + `user.reload()`. This guarantees that custom claims provisioned server-side (e.g. `setCustomUserClaims(uid, { admin: true })`) appear in the next render without requiring the user to manually sign out and sign back in. The `onAuthStateChanged` listener also passes `forceRefresh: true` to `getIdTokenResult` for the same reason.
-
-**Single sources of truth:**
-
-- `packages/shared/src/auth/admin.ts` → `ADMIN_EMAILS` + `isAdminUser(claims, email)`. Consumed by both client (`AuthContext`) and 3 Cloud Functions. Custom claim wins; email allowlist is transition fallback.
-- `packages/shared/src/auth/password.ts` → `PasswordPolicy` + `validatePassword(pwd): { valid, errors[i18n_key] }`. Both `LoginPage` signup and `SettingsPage` change-password use it. Errors are i18n keys like `passwordPolicy.tooShort` for the caller to `t()`.
-- `src/lib/auth/errors.ts` → `isAuthError(err): err is FirebaseError` type guard.
-- `src/lib/auth/errorMessages.ts` → `authErrorToTKey(err)` mapping 15 Firebase Auth codes to i18n keys with intentional privacy collapse (`user-not-found` = `wrong-password` = `invalid-credential` = `loginPage.error.invalidCredentials`).
-
-**Catch pattern in handlers that mix local `throw new Error(t('...'))` with Firebase calls:**
-
-```ts
-} catch (err) {
-  if (isAuthError(err)) {
-    setError(t(authErrorToTKey(err)))         // Firebase auth/* code
-  } else if (err instanceof Error && err.message) {
-    setError(err.message)                       // local pre-validation throw — already translated
-  } else {
-    setError(t('common.error.generic'))          // unknown
-  }
-}
-```
-
-Routing local `Error` through `authErrorToTKey` was a real bug (caught via browser smoke test, fixed in commit `f0fc264`) — those errors carry pre-translated messages that the map would mask as `common.error.generic`. See `docs/ERROR-HANDLING.md` for the full table.
-
-**Route guards own the loading state.** `PrivateRoute` and `AdminRoute` render `<AuthLoadingFallback />` (centered spinner with `aria-label="Carregando"`) while `useAuth().loading === true`. The `AuthProvider` no longer gates children on loading — that coupling was implicit and broke any guard placed outside the provider.
-
-**Persistence is explicit.** `src/firebase/config.ts` uses `initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence], popupRedirectResolver: browserPopupRedirectResolver })`. Same behavior as `getAuth(app)` defaults, but written so Safari ITP / iframe-blocked scenarios can be reasoned about explicitly.
-
-**COOP = `same-origin-allow-popups`.** `signInWithPopup` requires it — `same-origin` breaks the `window.opener.postMessage` closing handshake in some browsers. Documented in ADR-020.
-
-## Adding Firestore queries
-
-Any new query that combines `where(...)` with `orderBy(...)` (or two range filters on different fields) needs a composite index in [firestore.indexes.json](firestore.indexes.json). The Firebase SDK throws `FirebaseError: The query requires an index. You can create it here: ...` with the auto-create link, but committing the index in source is required so dev/prod stay in sync. After editing the file, run `firebase deploy --only firestore:indexes --project <target>` for each environment — index builds are async (1–3 min) so the query stays red until status flips to `Enabled`. See [DEPLOYMENT.md → Firestore rules and indexes](docs/DEPLOYMENT.md).
-
-## Firebase Conventions Pack
-
-Enforcement tooling (slash commands, agents, hooks, cursor mirror). See [docs/FIREBASE-CONVENTIONS.md](docs/FIREBASE-CONVENTIONS.md).
+`MEMORY.md` indexes the full set; consult it when continuing prior work.
