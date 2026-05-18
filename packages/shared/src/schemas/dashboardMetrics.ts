@@ -4,8 +4,8 @@ const MAX_RANGE_DAYS = 365
 
 export const GetDashboardMetricsInputSchema = z
   .object({
-    startDate: z.string().datetime(),
-    endDate: z.string().datetime(),
+    startDate: z.iso.datetime(),
+    endDate: z.iso.datetime(),
   })
   .refine((v) => new Date(v.endDate).getTime() >= new Date(v.startDate).getTime(), {
     message: 'endDate must be greater than or equal to startDate',
@@ -25,8 +25,8 @@ const PlatformSchema = z.enum(['google_ads', 'meta_ads'])
 
 export const GetDashboardMetricsOutputSchema = z.object({
   range: z.object({
-    startDate: z.string().datetime(),
-    endDate: z.string().datetime(),
+    startDate: z.iso.datetime(),
+    endDate: z.iso.datetime(),
     days: z.number().int().nonnegative(),
   }),
   revenue: z.object({
@@ -59,7 +59,7 @@ export const GetDashboardMetricsOutputSchema = z.object({
       })
     ),
   }),
-  generatedAt: z.string().datetime(),
+  generatedAt: z.iso.datetime(),
 })
 export type GetDashboardMetricsOutput = z.infer<typeof GetDashboardMetricsOutputSchema>
 

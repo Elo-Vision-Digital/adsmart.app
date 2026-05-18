@@ -12,7 +12,7 @@ export declare const AdAccountSchema: z.ZodObject<{
     }>;
     accountId: z.ZodString;
     accountName: z.ZodString;
-    email: z.ZodOptional<z.ZodString>;
+    email: z.ZodOptional<z.ZodEmail>;
     currency: z.ZodString;
     timezone: z.ZodOptional<z.ZodString>;
     isActive: z.ZodBoolean;

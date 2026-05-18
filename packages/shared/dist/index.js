@@ -2,7 +2,7 @@
 // @adsmart/shared — Zod schemas for Firestore documents shared between
 // apps/web (frontend) and functions/ (Cloud Functions).
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validatePassword = exports.PasswordSchema = exports.PasswordPolicy = exports.PASSWORD_MAX_LENGTH = exports.PASSWORD_MIN_LENGTH = exports.isAdminUser = exports.ADMIN_EMAILS = exports.DASHBOARD_METRICS_MAX_RANGE_DAYS = exports.GetDashboardMetricsOutputSchema = exports.GetDashboardMetricsInputSchema = exports.TransactionTypeSchema = exports.TransactionStatusSchema = exports.TransactionSchema = exports.UserWalletSchema = exports.CampaignSchema = exports.AdPlatformSchema = exports.AdAccountSchema = exports.DateRangeSchema = exports.ReportTypeSchema = exports.ReportStatusSchema = exports.ReportSchema = exports.zTimestamp = void 0;
+exports.validatePassword = exports.PasswordSchema = exports.PasswordPolicy = exports.PASSWORD_MAX_LENGTH = exports.PASSWORD_MIN_LENGTH = exports.isAdminUser = exports.ADMIN_EMAILS = exports.RateLimitSchema = exports.TemporaryOAuthTokenSchema = exports.OAuthStateSchema = exports.OAuthPlatformSchema = exports.UserDocumentSchema = exports.ReserveUserDocumentOutputSchema = exports.ReserveUserDocumentInputSchema = exports.UserSchema = exports.UserClientUpdateSchema = exports.DocumentTypeSchema = exports.UpdateProductPricesInputSchema = exports.UpdateProductPriceInputSchema = exports.ProductPriceTypeSchema = exports.ProductPriceSchema = exports.ProductPriceCategorySchema = exports.DEFAULT_PRODUCT_PRICES = exports.DASHBOARD_METRICS_MAX_RANGE_DAYS = exports.GetDashboardMetricsOutputSchema = exports.GetDashboardMetricsInputSchema = exports.TransactionTypeSchema = exports.TransactionStatusSchema = exports.TransactionSchema = exports.UserWalletSchema = exports.CampaignSchema = exports.AdPlatformSchema = exports.AdAccountSchema = exports.DateRangeSchema = exports.ReportTypeSchema = exports.ReportStatusSchema = exports.ReportSchema = exports.zTimestamp = void 0;
 var firestore_1 = require("./firestore");
 Object.defineProperty(exports, "zTimestamp", { enumerable: true, get: function () { return firestore_1.zTimestamp; } });
 var report_1 = require("./schemas/report");
@@ -25,6 +25,27 @@ var dashboardMetrics_1 = require("./schemas/dashboardMetrics");
 Object.defineProperty(exports, "GetDashboardMetricsInputSchema", { enumerable: true, get: function () { return dashboardMetrics_1.GetDashboardMetricsInputSchema; } });
 Object.defineProperty(exports, "GetDashboardMetricsOutputSchema", { enumerable: true, get: function () { return dashboardMetrics_1.GetDashboardMetricsOutputSchema; } });
 Object.defineProperty(exports, "DASHBOARD_METRICS_MAX_RANGE_DAYS", { enumerable: true, get: function () { return dashboardMetrics_1.DASHBOARD_METRICS_MAX_RANGE_DAYS; } });
+var productPrice_1 = require("./schemas/productPrice");
+Object.defineProperty(exports, "DEFAULT_PRODUCT_PRICES", { enumerable: true, get: function () { return productPrice_1.DEFAULT_PRODUCT_PRICES; } });
+Object.defineProperty(exports, "ProductPriceCategorySchema", { enumerable: true, get: function () { return productPrice_1.ProductPriceCategorySchema; } });
+Object.defineProperty(exports, "ProductPriceSchema", { enumerable: true, get: function () { return productPrice_1.ProductPriceSchema; } });
+Object.defineProperty(exports, "ProductPriceTypeSchema", { enumerable: true, get: function () { return productPrice_1.ProductPriceTypeSchema; } });
+Object.defineProperty(exports, "UpdateProductPriceInputSchema", { enumerable: true, get: function () { return productPrice_1.UpdateProductPriceInputSchema; } });
+Object.defineProperty(exports, "UpdateProductPricesInputSchema", { enumerable: true, get: function () { return productPrice_1.UpdateProductPricesInputSchema; } });
+var user_1 = require("./schemas/user");
+Object.defineProperty(exports, "DocumentTypeSchema", { enumerable: true, get: function () { return user_1.DocumentTypeSchema; } });
+Object.defineProperty(exports, "UserClientUpdateSchema", { enumerable: true, get: function () { return user_1.UserClientUpdateSchema; } });
+Object.defineProperty(exports, "UserSchema", { enumerable: true, get: function () { return user_1.UserSchema; } });
+var userDocument_1 = require("./schemas/userDocument");
+Object.defineProperty(exports, "ReserveUserDocumentInputSchema", { enumerable: true, get: function () { return userDocument_1.ReserveUserDocumentInputSchema; } });
+Object.defineProperty(exports, "ReserveUserDocumentOutputSchema", { enumerable: true, get: function () { return userDocument_1.ReserveUserDocumentOutputSchema; } });
+Object.defineProperty(exports, "UserDocumentSchema", { enumerable: true, get: function () { return userDocument_1.UserDocumentSchema; } });
+var oauthState_1 = require("./schemas/oauthState");
+Object.defineProperty(exports, "OAuthPlatformSchema", { enumerable: true, get: function () { return oauthState_1.OAuthPlatformSchema; } });
+Object.defineProperty(exports, "OAuthStateSchema", { enumerable: true, get: function () { return oauthState_1.OAuthStateSchema; } });
+Object.defineProperty(exports, "TemporaryOAuthTokenSchema", { enumerable: true, get: function () { return oauthState_1.TemporaryOAuthTokenSchema; } });
+var rateLimit_1 = require("./schemas/rateLimit");
+Object.defineProperty(exports, "RateLimitSchema", { enumerable: true, get: function () { return rateLimit_1.RateLimitSchema; } });
 var admin_1 = require("./auth/admin");
 Object.defineProperty(exports, "ADMIN_EMAILS", { enumerable: true, get: function () { return admin_1.ADMIN_EMAILS; } });
 Object.defineProperty(exports, "isAdminUser", { enumerable: true, get: function () { return admin_1.isAdminUser; } });

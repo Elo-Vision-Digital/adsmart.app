@@ -23,7 +23,7 @@ export const ReportSchema = z.object({
   campaignIds: z.array(z.string()).optional(),
   allCampaigns: z.boolean().default(false),
   dateRange: DateRangeSchema.default({ startDate: '', endDate: '' }),
-  lookerStudioUrl: z.string().url().optional(),
+  lookerStudioUrl: z.url().optional(),
   cost: z.number().int().nonnegative().default(0),
   paidAt: zTimestamp().optional(),
   createdAt: zTimestamp(),

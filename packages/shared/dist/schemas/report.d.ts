@@ -37,7 +37,7 @@ export declare const ReportSchema: z.ZodObject<{
         startDate: z.ZodString;
         endDate: z.ZodString;
     }, z.core.$strip>>;
-    lookerStudioUrl: z.ZodOptional<z.ZodString>;
+    lookerStudioUrl: z.ZodOptional<z.ZodURL>;
     cost: z.ZodDefault<z.ZodNumber>;
     paidAt: z.ZodOptional<z.ZodPipe<z.ZodTransform<unknown, unknown>, z.ZodDate>>;
     createdAt: z.ZodPipe<z.ZodTransform<unknown, unknown>, z.ZodDate>;

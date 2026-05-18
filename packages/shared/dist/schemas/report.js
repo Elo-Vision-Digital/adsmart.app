@@ -52,7 +52,7 @@ exports.ReportSchema = z.object({
     campaignIds: z.array(z.string()).optional(),
     allCampaigns: z.boolean().default(false),
     dateRange: exports.DateRangeSchema.default({ startDate: '', endDate: '' }),
-    lookerStudioUrl: z.string().url().optional(),
+    lookerStudioUrl: z.url().optional(),
     cost: z.number().int().nonnegative().default(0),
     paidAt: (0, firestore_1.zTimestamp)().optional(),
     createdAt: (0, firestore_1.zTimestamp)(),

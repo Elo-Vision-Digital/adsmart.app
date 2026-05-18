@@ -38,8 +38,8 @@ const z = __importStar(require("zod"));
 const MAX_RANGE_DAYS = 365;
 exports.GetDashboardMetricsInputSchema = z
     .object({
-    startDate: z.string().datetime(),
-    endDate: z.string().datetime(),
+    startDate: z.iso.datetime(),
+    endDate: z.iso.datetime(),
 })
     .refine((v) => new Date(v.endDate).getTime() >= new Date(v.startDate).getTime(), {
     message: 'endDate must be greater than or equal to startDate',
@@ -52,8 +52,8 @@ exports.GetDashboardMetricsInputSchema = z
 const PlatformSchema = z.enum(['google_ads', 'meta_ads']);
 exports.GetDashboardMetricsOutputSchema = z.object({
     range: z.object({
-        startDate: z.string().datetime(),
-        endDate: z.string().datetime(),
+        startDate: z.iso.datetime(),
+        endDate: z.iso.datetime(),
         days: z.number().int().nonnegative(),
     }),
     revenue: z.object({
@@ -80,7 +80,7 @@ exports.GetDashboardMetricsOutputSchema = z.object({
             distinctUserCount: z.number().int().nonnegative(),
         })),
     }),
-    generatedAt: z.string().datetime(),
+    generatedAt: z.iso.datetime(),
 });
 exports.DASHBOARD_METRICS_MAX_RANGE_DAYS = MAX_RANGE_DAYS;
 //# sourceMappingURL=dashboardMetrics.js.map

@@ -24,7 +24,9 @@ export const TransactionSchema = z.object({
   adminReason: z.string().optional(),
   adminIP: z.string().optional(),
 
-  // SuitPay PIX payer metadata — deprecated, removed when Asaas migration lands.
+  // PIX payer metadata — kept on the schema for legacy transactions written
+  // by the pre-ADR-021 SuitPay flow. Will be re-purposed for Asaas when
+  // payment lands again.
   payerName: z.string().optional(),
   payerCpf: z.string().optional(),
 })

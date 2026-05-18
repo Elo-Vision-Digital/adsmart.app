@@ -1,13 +1,13 @@
 import * as z from 'zod';
 export declare const GetDashboardMetricsInputSchema: z.ZodObject<{
-    startDate: z.ZodString;
-    endDate: z.ZodString;
+    startDate: z.ZodISODateTime;
+    endDate: z.ZodISODateTime;
 }, z.core.$strip>;
 export type GetDashboardMetricsInput = z.infer<typeof GetDashboardMetricsInputSchema>;
 export declare const GetDashboardMetricsOutputSchema: z.ZodObject<{
     range: z.ZodObject<{
-        startDate: z.ZodString;
-        endDate: z.ZodString;
+        startDate: z.ZodISODateTime;
+        endDate: z.ZodISODateTime;
         days: z.ZodNumber;
     }, z.core.$strip>;
     revenue: z.ZodObject<{
@@ -37,7 +37,7 @@ export declare const GetDashboardMetricsOutputSchema: z.ZodObject<{
             distinctUserCount: z.ZodNumber;
         }, z.core.$strip>>;
     }, z.core.$strip>;
-    generatedAt: z.ZodString;
+    generatedAt: z.ZodISODateTime;
 }, z.core.$strip>;
 export type GetDashboardMetricsOutput = z.infer<typeof GetDashboardMetricsOutputSchema>;
 export declare const DASHBOARD_METRICS_MAX_RANGE_DAYS = 365;
