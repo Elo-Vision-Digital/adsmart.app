@@ -12,7 +12,7 @@ Format conventions:
 
 ## [2026-05-18] — Auth flow hardening: surgical refactor of Google/Facebook/Email-Password flows (ADR-020)
 
-**Status:** Shipped on `develop` in 27 commits (`621bfab` … `957cf11`). Plan executed via `superpowers:subagent-driven-development`. Browser-validated via Playwright + Chrome DevTools end-to-end. Two real bugs detected via browser validation and fixed in commit `f0fc264` (catch handlers + stale i18n key). Decision recorded in [ADR-020](Decisions.md#adr-020-auth-flow-hardening-2026-05-approach-a--surgical-refactor).
+**Status:** Shipped on `develop` in 28 commits (`621bfab` … `957cf11`). Plan executed via `superpowers:subagent-driven-development`. Browser-validated via Playwright + Chrome DevTools end-to-end. Two real bugs detected via browser validation and fixed in commit `f0fc264` (catch handlers + stale i18n key). Decision recorded in [ADR-020](Decisions.md#adr-020-auth-flow-hardening-2026-05-approach-a--surgical-refactor).
 
 **Numbering note:** This work landed first in `Decisions.md` as ADR-020; a parallel chat shipped a SuitPay-removal ADR (entry directly below) and renumbered theirs to ADR-021.
 
