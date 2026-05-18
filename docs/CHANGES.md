@@ -10,7 +10,87 @@ Format conventions:
 
 ---
 
-## [2026-05-17] — Security Logs admin tab removed (logger primitive kept)
+## [2026-05-17] — Full Firestore + Auth + Storage wipe across dev and prod; Identity Platform blocking trigger fix (dev)
+
+**Status:** Shipped. No code changes; this is an operational + infra-config record. Decision documented in [Decisions.md ADR-015](Decisions.md#adr-015-register-identity-platform-blocking-trigger-after-total-firestore--auth-wipe).
+
+After the same-day reCAPTCHA + Security Logs removals (above), the project owner requested a full reset of historical data in both Firebase projects to graduate to a clean state where code + schemas + rules are the only source of truth. There are no production users; the wipe was a low-risk YAGNI cleanup to drop noise (orphan OAuth states, expired webhook logs, stale rate-limit counters, dev test accounts) before formalising the API contract surface.
+
+**Firestore (irreversible — PITR is OFF on both projects, confirmed via `firestore:databases:get`):**
+
+- `bunx firebase-tools firestore:delete --all-collections --recursive --force --project adsmart-web-dev` → wiped `adminActivity, productPrices, rateLimits, securityLogs, users` (5 top-level collections, including all `users/{uid}/wallet/{current,transactions}` subcollections).
+- `bunx firebase-tools firestore:delete --all-collections --recursive --force --project adsmart-web` → wiped `adminActivity, backupMetadata, oauth_states, payments, pendingPayments, productPrices, rateLimits, reports, temporary_oauth_tokens, users, webhook_logs` (11 top-level collections, same recursive semantics).
+- `firestore:list_collections` confirms `{}` on both projects post-wipe.
+
+**Firebase Auth + Cloud Storage:**
+
+- Auth wipe done by the project owner via Firebase Console (Authentication → Users → Delete account, batched). User initially preserved a small admin set, then re-wiped after the `bootstrapUser` fix landed — see next bullet.
+- Storage wipe done by the project owner via Firebase Console on each project's default bucket.
+
+**Functions / Rules / Indexes / Secrets — UNCHANGED.** The wipe was data-only.
+
+- `firebase functions:list` returns the 20 deployed functions on prod (and the same set in dev minus the dev-only deltas), same as before the wipe. No code regression in the codebase or in deployed revisions.
+- `firestore.rules` (Phase 3 baseline) and `firestore.indexes.json` (composite indexes for `getDashboardMetrics`) unchanged in source and on the wire.
+- Secret Manager: `RECAPTCHA_SECRET_KEY` version 1 destroyed in prod earlier today (see reCAPTCHA entry); no other secret destruction performed. All active secrets (`asaasApiKey`, `metaAdsAppSecret`, `googleAdsClientSecret`, `suitpaySecret`) remain enabled.
+
+**Identity Platform blocking trigger fix (dev):**
+
+First post-wipe signup against `adsmart-web-dev` succeeded at Auth layer (user appeared in IndexedDB) but produced **no `users/{uid}` and no `users/{uid}/wallet/current`** in Firestore — the `bootstrapUser` blocking trigger never executed. Root cause: dev's Identity Platform config had `blockingFunctions: {}` (empty) — the Cloud Function `bootstrapUser` was deployed and ACTIVE, but Identity Platform had no registration pointing at it as a `beforeCreate` trigger. Prod was already correctly registered from the 2026-04-26 deploy (`bootstrapuser-2ocqwqseya-uc.a.run.app`); dev was not. The CLI `firebase deploy --only functions:bootstrapUser --project adsmart-web-dev --force` rebuilt the function but did **not** re-attempt the Identity Platform registration — a silent failure in firebase-tools' blocking-function deploy path.
+
+First attempt to register the trigger used the legacy Cloud Functions URL (`https://us-central1-adsmart-web-dev.cloudfunctions.net/bootstrapUser`) and produced (in function logs at severity ERROR):
+```
+FirebaseAuthError: Firebase Auth Blocking token has incorrect "aud" (audience) claim.
+Expected "run.app" but got
+"https://us-central1-adsmart-web-dev.cloudfunctions.net/bootstrapUser".
+```
+The signup surfaced as Firebase error code `-47` (`auth/internal-error`) on the client. Functions v2 are backed by Cloud Run, and Identity Platform validates the OIDC `aud` claim against the actual Cloud Run service URL.
+
+Fix:
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "x-goog-user-project: adsmart-web-dev" \
+  -H "Content-Type: application/json" \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/adsmart-web-dev/config?updateMask=blockingFunctions" \
+  -d '{
+    "blockingFunctions": {
+      "triggers": {
+        "beforeCreate": {
+          "functionUri": "https://bootstrapuser-nnhhnhk2wa-uc.a.run.app"
+        }
+      }
+    }
+  }'
+```
+
+`functionUri` is the Cloud Run service URL — visible in `firebase functions:list` output or `serviceConfig.uri` from a deploy response. Validated: second signup attempt by the same email created `users/{uid}` and `users/{uid}/wallet/current` correctly (visible via Firebase MCP `firestore_get_document` on both paths immediately after signup). Prod was not modified — its registration was already correct.
+
+**Admin claim setup (dev):**
+
+After the working signup, granted the admin custom claim to the test account via Identity Toolkit REST API (no script, no Admin SDK boilerplate):
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "x-goog-user-project: adsmart-web-dev" \
+  -H "Content-Type: application/json" \
+  "https://identitytoolkit.googleapis.com/v1/projects/adsmart-web-dev/accounts:update" \
+  -d '{"localId":"<UID>","customAttributes":"{\"admin\":true}"}'
+```
+Verified via `accounts:lookup` that `customAttributes` returns `{"admin":true}`. ID token refresh required on the client (sign out + sign in) for the claim to land in the active session.
+
+**What was NOT done (deferred / out of scope):**
+
+- Prod re-cadastro to re-validate the trigger end-to-end — deferred. Prod's `blockingFunctions` registration is intact (verified via the same admin API GET), and the owner has not yet attempted a fresh signup. If signup ever fails in prod, the same fix shape applies, with `functionUri: https://bootstrapuser-2ocqwqseya-uc.a.run.app` (the prod Cloud Run URL, stable since 2026-04-26).
+- Automated emulator test for the registration. The check could be a single GET in `/firebase-deploy` flow that asserts `blockingFunctions.triggers.beforeCreate.functionUri.endsWith('.run.app')` — tracked as a possible future enhancement to the deploy guard scripts, not in this entry.
+- `productPrices` re-seed. Left to organic re-creation by the existing `initializeDefaultPrices` callable, which the admin panel invokes when the collection is missing. No manual seed via MCP or scripts — keeps a single seed path (the callable + admin-only auth check), avoiding seed drift.
+
+**Process notes:**
+
+- Auth wipe and Storage wipe were both performed by the project owner via Firebase Console rather than CLI scripts. This was intentional: those operations are irreversible and benefit from the visual confirmation a Console action provides over a one-shot scripted batch. Documented here so the same split (CLI → Firestore; Console → Auth/Storage) can be reused if the wipe ever repeats.
+- The Identity Platform PATCH was used in preference to redeploying or clicking through Firebase Console. The Console path also works (Authentication → Settings → Blocking functions → Save) but produces no reviewable artifact and is silent about the underlying URL it registers. The REST PATCH leaves the exact request body in the operator's history, which is what landed in ADR-015 verbatim.
+
+
 
 **Status:** Shipped (client + functions code). Deploy + zombie delete: pending the next deploy step. Decision documented in [Decisions.md ADR-014](Decisions.md#adr-014-remove-security-logs-admin-tab-keep-logger-primitive).
 

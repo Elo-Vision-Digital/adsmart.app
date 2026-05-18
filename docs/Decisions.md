@@ -478,3 +478,109 @@ If audit volume grows past the point where Cloud Logging filtering becomes frict
 - [src/App.tsx](../src/App.tsx) — admin route block after removal.
 - [functions/src/securityLogger.ts](../functions/src/securityLogger.ts) — logger primitive that stays (5 writers depend on it).
 - [firestore.rules](../firestore.rules) — `match /securityLogs/{logId}` block (unchanged: `allow read/write: if false`).
+
+---
+
+## ADR-015: Register Identity Platform blocking trigger after total Firestore + Auth wipe
+
+**Date:** 2026-05-17
+**Status:** Accepted
+
+**Context:**
+
+After the same-day Firestore + Auth wipe across both projects ("limpeza completa" — see CHANGES.md for that day), the first new signup against `adsmart-web-dev` succeeded at the Auth layer but produced **no `users/{uid}` doc** and **no `users/{uid}/wallet/current`** doc. The frontend rendered correctly because [useWallet](../src/hooks/useWallet.ts) has the defensive `EMPTY_WALLET` fallback from [ADR-010](#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger), but `bootstrapUser` (the [beforeUserCreated](../functions/src/bootstrapUser.ts) blocking trigger that should have written both docs) never executed.
+
+Three observations pinpointed the root cause:
+
+1. `firebase functions:list --project adsmart-web-dev` showed `bootstrapUser` as `ACTIVE` (v2, `providers/cloud.auth/eventTypes/user.beforeCreate`, `us-central1`).
+2. `firebase functions:log --only bootstrapUser --project adsmart-web-dev` returned **only deploy audit entries** — zero execution rows for the new signup.
+3. The Identity Platform admin API confirmed the config gap:
+   ```
+   GET /admin/v2/projects/adsmart-web-dev/config
+   → blockingFunctions: {}
+   ```
+   The Cloud Function existed, but Identity Platform had no registration that pointed at it as a `beforeCreate` blocking trigger, so no signup ever invoked it.
+
+Prod (`adsmart-web`) had the trigger correctly registered from the original 2026-04-26 deploy (`bootstrapuser-2ocqwqseya-uc.a.run.app`, `updateTime: 2026-04-26T17:02:24Z`). Dev did not. The CLI `firebase deploy --only functions:bootstrapUser` re-ran successfully but did **not** re-attempt the Identity Platform registration — the silent-failure mode documented in firebase-tools' blocking-function deploy path.
+
+Initial fix attempt used the obvious URI shape (`https://us-central1-adsmart-web-dev.cloudfunctions.net/bootstrapUser`) and surfaced a second issue: Cloud Functions v2 are backed by Cloud Run, and Identity Platform validates the OIDC `aud` claim on the blocking token against the actual Cloud Run service URL. The first signup attempt with the wrong URI produced (in the function logs, severity ERROR):
+```
+FirebaseAuthError: Firebase Auth Blocking token has incorrect "aud" (audience) claim.
+Expected "run.app" but got
+"https://us-central1-adsmart-web-dev.cloudfunctions.net/bootstrapUser".
+```
+The correct URI was the Cloud Run service URL: `https://bootstrapuser-nnhhnhk2wa-uc.a.run.app` (visible in `firebase functions:list` and in the function deploy response under `serviceConfig.uri`).
+
+**Decision:**
+
+When the blocking trigger registration on Identity Platform is empty or stale, register it explicitly via the admin REST API rather than re-running deploy and hoping the CLI does it. The PATCH is:
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "x-goog-user-project: <PROJECT_ID>" \
+  -H "Content-Type: application/json" \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/<PROJECT_ID>/config?updateMask=blockingFunctions" \
+  -d '{
+    "blockingFunctions": {
+      "triggers": {
+        "beforeCreate": {
+          "functionUri": "https://<cloud-run-service-url>.run.app"
+        }
+      }
+    }
+  }'
+```
+
+Two rules for `functionUri`:
+
+1. **Must be the Cloud Run URL** (`*-uc.a.run.app`), not the legacy Cloud Functions URL (`us-central1-<project>.cloudfunctions.net/<name>`). Functions v2 = Cloud Run. The Identity Platform OIDC `aud` claim validation enforces this.
+2. **Get the URL from `firebase functions:list`** or from the deploy response (`serviceConfig.uri`). Do not construct it from the function name — the random subdomain segment is unique per project + revision generation.
+
+Verify the registration landed (and persists) with a follow-up GET on the same endpoint without `?updateMask`. Confirm by performing one new signup and asserting `firestore.get('users/{newUid}')` and `firestore.get('users/{newUid}/wallet/current')` both return non-empty.
+
+**Why not "just redeploy" or "click in Console"?**
+
+- Redeploy was tried first (`firebase deploy --only functions:bootstrapUser --project adsmart-web-dev --force`). It re-uploaded the function but did not modify `blockingFunctions`. The CLI registration path requires `identitytoolkit.config.update` on the deploying principal, and silently no-ops when missing — there is no error surfaced to the operator.
+- Firebase Console (Authentication → Settings → Blocking functions) is a valid path and does the same PATCH under the hood, but it is interactive-only — not scriptable, not reviewable in PRs, and the option does not always render in projects where Identity Platform was upgrade-d via a different code path. The REST call works regardless and produces an artifact (the curl command) reviewable in this ADR.
+
+**When this matters:**
+
+- Any project that pre-dated the `bootstrapUser` deploy and was later wiped (the dev case here).
+- Any project where Identity Platform was upgraded after the function was first deployed.
+- Any rotation of the trigger to a new Cloud Run revision URL (rare — the URL is stable across revisions of the same function).
+
+**Trade-offs:**
+
+- The PATCH bypasses the CLI's own state model. Subsequent `firebase deploy` runs will see the trigger as present and leave it alone (correct behavior). If the function is ever renamed or relocated, the operator must re-run the PATCH with the new URL — the CLI will not auto-migrate. Documented here so future deploys do not silently break the signup path.
+- Setting `blockingFunctions: {}` (empty) via the same endpoint with `updateMask=blockingFunctions` is the disable path, also irreversible from CLI alone.
+
+**Alternatives considered:**
+
+- **Wait for the CLI to fix this upstream.** Tracked but no ETA; firebase-tools deploy semantics for blocking triggers are stable and not converging on idempotent reconciliation. Not viable for this incident.
+- **Workaround: skip `bootstrapUser` and write `users/{uid}` + `wallet/current` directly from a client-side `setDoc` on first login.** Rejected — re-introduces the exact bug class ADR-010 was written to eliminate (client-controlled writes to wallet path, blocked by Phase 3 rules). The temptation was real because it would have unblocked validation immediately; the cost would have been silent drift from the ADR-010 invariant.
+- **Workaround: seed `users/{uid}` + `wallet/current` manually via MCP for the existing test account, leave the trigger broken for new accounts.** Rejected — hides the root cause and ensures every future signup hits the same silent-failure path. The operator who runs into it next would have no signal pointing at Identity Platform config.
+
+**Defense in depth:**
+
+If the trigger ever silently un-registers again, the `EMPTY_WALLET` fallback in [useWallet](../src/hooks/useWallet.ts) means the user can still log in and see a zero balance, and the `documentLocked()` rule in [firestore.rules](../firestore.rules) prevents client writes from poisoning the doc. The failure mode is observable (no `users/{uid}` in Firestore for a known active session) rather than data-corrupting. Add the `blockingFunctions` GET to the QA checklist if the issue recurs — currently out of scope.
+
+**Reversal:**
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "x-goog-user-project: <PROJECT_ID>" \
+  -H "Content-Type: application/json" \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/<PROJECT_ID>/config?updateMask=blockingFunctions" \
+  -d '{"blockingFunctions": {}}'
+```
+
+Disables the trigger registration without removing the Cloud Function. Same caveat as the registration: the CLI is unaware.
+
+**References:**
+- [functions/src/bootstrapUser.ts](../functions/src/bootstrapUser.ts) — the trigger source (unchanged by this ADR).
+- [ADR-010](#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) — original decision to use a blocking trigger and the `users/{uid}` + `wallet/current` contract it enforces.
+- [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) — defensive `EMPTY_WALLET` that masked the failure (intentional — supports first-render before snapshot).
+- Identity Platform docs: [Blocking functions](https://cloud.google.com/identity-platform/docs/blocking-functions). The OIDC `aud` claim validation rule is documented here.
+- Google Cloud docs: [Functions v2 = Cloud Run](https://cloud.google.com/functions/docs/concepts/version-comparison). The `*-uc.a.run.app` URL pattern follows from this.
