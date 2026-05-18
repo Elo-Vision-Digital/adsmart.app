@@ -106,7 +106,7 @@ Commit messages should reference the spec path. Three small commits beats one me
 
 - [ ] Validate Fase 2 gate (push + prod deploy) is now ready — confirm 4 prod secrets still ENABLED via `firebase functions:secrets:access ... --project adsmart-web` if more than 24h passed since last check.
 - [ ] If user authorizes Fase 2: push develop → origin/develop, then run the documented `functions:delete` + `firebase deploy --project adsmart-web` sequence.
-- [ ] Update [docs/superpowers/notes/2026-05-18-auth-hardening-handoff.md](../notes/2026-05-18-auth-hardening-handoff.md) only if anything in the harness section overlaps with new conventions (it shouldn't; that work is ortogonal).
+- [ ] Update [docs/superpowers/archive/notes/2026-05-18-auth-hardening-handoff.md](../archive/notes/2026-05-18-auth-hardening-handoff.md) only if anything in the harness section overlaps with new conventions (it shouldn't; that work is ortogonal).
 
 ---
 

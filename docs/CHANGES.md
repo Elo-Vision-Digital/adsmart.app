@@ -72,7 +72,7 @@ Post-audit follow-up after Sprints 1–3 + ADR-021 surfaced two residual gaps:
 
 **Numbering note:** This work landed first in `Decisions.md` as ADR-020; a parallel chat shipped a SuitPay-removal ADR (entry directly below) and renumbered theirs to ADR-021.
 
-The pre-refactor surface had twelve concrete drift / latent-bug problems documented in [the design spec](superpowers/specs/2026-05-17-auth-flow-hardening-design.md) §1. Chosen response: **Approach A — surgical refactor**. Approaches B (extract `AuthService`) and C (`signInWithRedirect` + MFA TOTP) considered and rejected — see ADR-020.
+The pre-refactor surface had twelve concrete drift / latent-bug problems documented in [the design spec](superpowers/archive/specs/2026-05-17-auth-flow-hardening-design.md) §1. Chosen response: **Approach A — surgical refactor**. Approaches B (extract `AuthService`) and C (`signInWithRedirect` + MFA TOTP) considered and rejected — see ADR-020.
 
 **Shared modules (single source of truth):**
 - `packages/shared/src/auth/admin.ts` — `ADMIN_EMAILS` + `isAdminUser(claims, email)`. Consumed by client `AuthContext` AND 3 Cloud Functions. `const ADMIN_EMAILS\b` now returns zero matches outside `packages/shared`.
@@ -507,8 +507,8 @@ Added enforcement tooling that moves AdSmart's Firebase conventions from passive
 
 Patterns validated against Firebase Functions v2 SDK + Firestore Security Rules + index docs (Context7) AND against actual project code (`reserveUserDocument.ts`, `getDashboardMetrics.ts`, `bootstrapUser.ts`, `config/index.ts`).
 
-Spec: [docs/superpowers/specs/2026-05-01-firebase-conventions-design.md](superpowers/specs/2026-05-01-firebase-conventions-design.md).
-Plan: [docs/superpowers/plans/2026-05-01-firebase-conventions-pack-plan.md](superpowers/plans/2026-05-01-firebase-conventions-pack-plan.md).
+Spec: [docs/superpowers/archive/specs/2026-05-01-firebase-conventions-design.md](superpowers/archive/specs/2026-05-01-firebase-conventions-design.md).
+Plan: [docs/superpowers/archive/plans/2026-05-01-firebase-conventions-pack-plan.md](superpowers/archive/plans/2026-05-01-firebase-conventions-pack-plan.md).
 
 ---
 

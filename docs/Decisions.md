@@ -799,7 +799,7 @@ After rotation, existing v1 records written with the OLD key fail to decrypt. Th
 
 **Context:**
 
-The authentication surface (Google / Facebook / Email-Password sign-in, sign-up, password change, password reset, email verification, account deletion, route guards, admin gating, blocking trigger) had accumulated drift and latent bugs since Phase 3 landed and through ADRs 013–019. A code-level audit (see [docs/superpowers/specs/2026-05-17-auth-flow-hardening-design.md](./superpowers/specs/2026-05-17-auth-flow-hardening-design.md) §1) identified twelve concrete problems:
+The authentication surface (Google / Facebook / Email-Password sign-in, sign-up, password change, password reset, email verification, account deletion, route guards, admin gating, blocking trigger) had accumulated drift and latent bugs since Phase 3 landed and through ADRs 013–019. A code-level audit (see [docs/superpowers/archive/specs/2026-05-17-auth-flow-hardening-design.md](./superpowers/archive/specs/2026-05-17-auth-flow-hardening-design.md) §1) identified twelve concrete problems:
 
 1. `LoginPage.handleSubmit` called `createUserWithEmailAndPassword(auth, ...)` directly, bypassing the `signUp` method exposed by `AuthContext` — meaning the Context's `signUp` was dead code, and any future change to the signup flow (e.g., post-signup hooks, telemetry) wouldn't reach this path.
 2. Password policy was inconsistent: `LoginPage` enforced 8 chars + complexity (`src/utils/validation.ts`), `SettingsPage` change-password enforced 6 chars (local inline check). Two surfaces, two rules.
@@ -875,9 +875,9 @@ Smoke-tested end-to-end on `localhost:5173` against `adsmart-web-dev`:
 
 **References:**
 
-- [docs/superpowers/specs/2026-05-17-auth-flow-hardening-design.md](./superpowers/specs/2026-05-17-auth-flow-hardening-design.md) — design + alternatives matrix.
-- [docs/superpowers/plans/2026-05-17-auth-flow-hardening-plan.md](./superpowers/plans/2026-05-17-auth-flow-hardening-plan.md) — implementation plan.
-- [docs/superpowers/notes/2026-05-17-auth-flow-hardening-execution-log.md](./superpowers/notes/2026-05-17-auth-flow-hardening-execution-log.md) — live execution log with all per-task commit SHAs and the E5 scope-creep amend lesson.
+- [docs/superpowers/archive/specs/2026-05-17-auth-flow-hardening-design.md](./superpowers/archive/specs/2026-05-17-auth-flow-hardening-design.md) — design + alternatives matrix.
+- [docs/superpowers/archive/plans/2026-05-17-auth-flow-hardening-plan.md](./superpowers/archive/plans/2026-05-17-auth-flow-hardening-plan.md) — implementation plan.
+- [docs/superpowers/archive/notes/2026-05-17-auth-flow-hardening-execution-log.md](./superpowers/archive/notes/2026-05-17-auth-flow-hardening-execution-log.md) — live execution log with all per-task commit SHAs and the E5 scope-creep amend lesson.
 - [packages/shared/src/auth/admin.ts](../packages/shared/src/auth/admin.ts) + [password.ts](../packages/shared/src/auth/password.ts) — single source of truth for admin allowlist and password policy.
 - [src/lib/auth/errors.ts](../src/lib/auth/errors.ts) + [errorMessages.ts](../src/lib/auth/errorMessages.ts) — `isAuthError` type guard and `authErrorToTKey` Firebase Auth code → i18n key map.
 - [src/firebase/config.ts](../src/firebase/config.ts) — `initializeAuth` with explicit persistence + popupRedirectResolver.

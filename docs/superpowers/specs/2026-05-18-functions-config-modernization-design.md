@@ -124,7 +124,7 @@ Revisit if drift recurs.
 ## Out of scope
 
 - New schemas, new callables, new collections.
-- Auth flow harness (separate handoff in [docs/superpowers/notes/2026-05-18-auth-hardening-handoff.md](../notes/2026-05-18-auth-hardening-handoff.md)).
+- Auth flow harness (separate handoff in [docs/superpowers/archive/notes/2026-05-18-auth-hardening-handoff.md](../archive/notes/2026-05-18-auth-hardening-handoff.md)).
 - Production deploy. Pre-requisites already confirmed; awaits explicit operator authorization in a separate step.
 
 ## Acceptance criteria
