@@ -48,7 +48,7 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 | Add a translation key | `docs/I18N.md`, `src/locales/pt-BR.json` (then en.json and es.json) |
 | Write tests | `docs/TESTING.md`, `vitest.config.ts` (root + functions/) |
 | Deploy | `docs/DEPLOYMENT.md`, `firebase.json`, `.github/workflows/ci.yml` |
-| Run a one-shot data migration | `scripts/migrations/`, `docs/REFACTOR-PLAN.md` |
+| Run a one-shot data migration | `scripts/migrations/` — follow Admin SDK + BulkWriter pattern; dry-run first, idempotent, `--write` explicit |
 
 ## Commit scopes
 

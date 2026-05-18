@@ -59,7 +59,7 @@ Single map of every documentation file. Organized by category. Update this file 
 
 | Path | Purpose |
 |---|---|
-| [REFACTOR-PLAN.md](REFACTOR-PLAN.md) | Schema standardization plan (Zod + FirestoreDataConverter) — phases A→E |
+| [REFACTOR-PLAN.md](REFACTOR-PLAN.md) | Historical: schema standardization plan (Phases A–E, completed 2026-04-26 → ADR-009/016/018) |
 | [superpowers/specs/](superpowers/specs/) | Active design specs (work-in-progress) |
 | [superpowers/plans/](superpowers/plans/) | Active implementation plans (work-in-progress) |
 | [superpowers/archive/](superpowers/archive/) | Concluded specs/plans/notes — historical reference |
