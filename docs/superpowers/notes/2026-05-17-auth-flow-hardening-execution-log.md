@@ -24,12 +24,12 @@ Live log of the execution of [the implementation plan](../plans/2026-05-17-auth-
 | C1 — AuthLoadingFallback component | ✅ | `5c6283d` | Approved. 13 lines. |
 | C2 — loading-aware route guards + tests | ✅ | `e917d96` | Approved. Replaced pre-existing `AdminRoute.test.tsx` (3 spyOn tests) with new context-provider pattern (4 tests). PrivateRoute.test.tsx novo (3 tests). Total +4 tests. Plan body tinha typo no `renderWithAuth` da AdminRoute test (dois `</AuthContext.Provider>`) — corrigido pelo implementer. |
 | C3 — EmailVerificationBanner | ✅ | `86250ee` | Approved. Mounted como first child do `<main>` em MainLayout. 5 i18n keys novas em `common.emailVerification.*` em 3 idiomas + types.ts. Cuidado: `settingsPage.emailVerification` pré-existente continua intocado. |
-| D1 — LoginPage refactor | ⏳ pending | — | |
-| D2 — ForgotPasswordPage | ⏳ pending | — | |
-| D3 — SettingsPage password change | ⏳ pending | — | |
-| D4 — validation.ts shim | ⏳ pending | — | |
-| E1 — bootstrapUser fallback | ⏳ pending | — | |
-| E2 — USER_DELETION enum | ⏳ pending | — | |
+| D1 — LoginPage refactor | ✅ | `c937d26` | Approved. signUp via Context (não mais direct call), shared validatePassword, shared error map. 12 i18n keys novas (3 common.error + 4 loginPage.error + 5 passwordPolicy). |
+| D2 — ForgotPasswordPage | ✅ | `0cfdc7a` | Approved. Rota `/forgot-password` real. Privacy collapse: user-not-found também mostra success (sem enumeration). |
+| D3 — SettingsPage password change | ✅ | `df2f5bc` | Approved. Shared validatePassword (era 6 chars; agora 8 + complexity). `authErrorToTKey` no catch. Conhecida regressão UX: `auth/wrong-password` agora colapsa para "credenciais inválidas" (privacy). |
+| D4 — validation.ts shim | ✅ | `9cda1ee` | DONE inline (não dispatchado). Deletou `src/utils/validation.test.ts` (10 tests legacy, mesma cobertura no shared password.test.ts). `getPasswordStrength` mantido local. |
+| E1 — bootstrapUser fallback | ✅ | `0dc4517` | Approved. Email fallback `event.data.email → providerData[].email → null`. Sem mais `email: ''` no Firestore. Telemetria estruturada JSON. |
+| E2 — USER_DELETION enum | ✅ | `98fd369` | DONE inline. 1 valor enum adicionado para E3 consumir. |
 | E3 — deleteUserData real | ⏳ pending | — | |
 | E4 — DeleteDataPage double-confirm | ⏳ pending | — | |
 | E5 — unify ADMIN_EMAILS server-side | ⏳ pending | — | |
@@ -69,6 +69,14 @@ Reportados pelo code-quality reviewer de B4. Endereçar em Phase G ou follow-up 
 - `bun run lint` ✅ (115 warnings pré-existentes, 0 errors)
 - `bun run test --run` ✅ 68/68 passing
 - `cd functions && bun run test` ❌ pré-existente — depende de emulators offline. Não bloqueia.
+
+### Após Phase D + E1+E2 (commits `c937d26`, `0cfdc7a`, `df2f5bc`, `9cda1ee`, `0dc4517`, `98fd369`)
+- `bun run typecheck` ✅
+- `bun run test --run` ✅ 62/62 passing (caiu de 72 → 62 porque D4 deletou os 10 tests legacy de `src/utils/validation.test.ts`; cobertura equivalente em `packages/shared/src/auth/password.test.ts`)
+- `cd functions && bun run typecheck` ✅
+- `cd functions && bun run build` ✅
+- 12 i18n keys novas em 3 idiomas (D1) + 6 forgot-password keys (D2). Types.ts atualizado.
+- Próximo: E3 (deleteUserData real) é a maior tarefa restante de Phase E. Cuidado.
 
 ### Após Phase C (commits `5c6283d`, `e917d96`, `86250ee`)
 - `bun run typecheck` ✅
