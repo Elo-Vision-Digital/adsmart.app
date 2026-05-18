@@ -10,6 +10,27 @@ Format conventions:
 
 ---
 
+## [2026-05-18] — Hygiene + firebase-functions v7 + priceManager v2 closure
+
+Three independent changes bundled for the same end-of-sprint hygiene window:
+
+**1. `packages/shared/dist/` untracked from git** (44 files). The `.gitignore` had covered `packages/*/dist` since the start, but those files had been committed earlier by mistake. Now matches Turborepo best practice ([turborepo.dev/docs/crafting-your-repository/structuring-a-repository](https://turborepo.dev/docs/crafting-your-repository/structuring-a-repository)): `dist/` is build output, ignored. Local files preserved via `git rm --cached -r`. Memory `admin_overhaul_roadmap.md` rewritten from code-verified state (Subprojeto 2 ✅ Done; Subprojeto 5 ⚠️ scope-changed — `SecurityLogsPage` was deleted, not improved, during 2026-04-27 cleanup). Plan `2026-05-18-harness-modernization.md` archived after filesystem audit confirmed every intended outcome shipped (CLAUDE.md 63 lines, AGENTS.md 108 lines, archive populated).
+
+**2. `priceManager.ts` migrated v1 → v2 baseline (ADR-016 follow-through).** Audit on 2026-05-18 surfaced that the 3 callables had remained on the v1 API (`functions.https.onCall`) even after ADR-016 / earlier CHANGES.md entries claimed they had been migrated. Drift correction:
+- Local `interface ProductPrice` and `DEFAULT_PRICES` literal removed — imports `@adsmart/shared` now (ADR-018 single-source-of-truth restored).
+- `onCall` from `firebase-functions/v2/https` with explicit `region` from `config.project.region`.
+- Zod `safeParse` via `UpdateProductPricesInputSchema`; `HttpsError` with semantic codes.
+- `ProductPriceSchema.parse()` to materialize valid documents before write.
+- 329 lines → 152 lines (–177).
+
+**3. `firebase-functions` 6.4.0 → 7.2.5.** v7 major bump. Only relevant breaking change is `functions.config()` removal, which doesn't affect us (we use `firebase-functions/params` exclusively since ADR-017/018). Suppresses the "outdated firebase-functions" CLI warning that surfaced on every deploy. Verified: 0 imports from `firebase-functions/v1`, 13 from `firebase-functions/v2/*`, 2 raw `firebase-functions` imports (priceManager migrated in this same sweep; `securityLogger.ts` uses `functions.https.Request` as a type — compatible with v7).
+
+Validated end-to-end: web typecheck + 62/62 tests; functions typecheck + build + 26/26 unit tests; shared 94/94. All green.
+
+Sources for the decisions: [Firebase Functions v7 release notes](https://github.com/firebase/firebase-functions/releases), Context7 `/firebase/firebase-functions` queried 2026-05-18. The Boy Scout Rule advice ([lawsofsoftwareengineering.com](https://lawsofsoftwareengineering.com/laws/boy-scout-rule/)) drove the scope discipline: pre-existing narrative comments in `googleAdsOAuthV2.ts` / V1 OAuth files were NOT touched — they fall outside this sweep's scope and are tracked for on-contact cleanup.
+
+---
+
 ## [2026-05-18] — Repo moved to Elo-Vision-Digital org + CI fully unblocked
 
 Repo transferred from `github.com/ZenniTTy/adsmart.app` to `github.com/Elo-Vision-Digital/adsmart.app`. GitHub preserves redirects so old clones still work, but local remote was updated to the canonical new URL. PR #2 (49-commit modernization sweep) was preserved as MERGED on the new org.
