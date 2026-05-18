@@ -27,6 +27,9 @@ jobs:
           key: ${{ runner.os }}-turbo-web-${{ github.sha }}
           restore-keys: ${{ runner.os }}-turbo-web-
 
+      - name: Build shared package (required for typecheck/build to resolve @adsmart/shared)
+        run: cd packages/shared && bun run build
+
       - name: Lint
         run: bun run lint
 
@@ -55,6 +58,9 @@ jobs:
           path: .turbo
           key: ${{ runner.os }}-turbo-functions-${{ github.sha }}
           restore-keys: ${{ runner.os }}-turbo-functions-
+
+      - name: Build shared package (required for functions to resolve @adsmart/shared)
+        run: cd packages/shared && bun run build
 
       # Non-blocking until Phase 2 ESLint 8→9 migration
       - name: Lint (non-blocking)
