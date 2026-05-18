@@ -10,16 +10,63 @@ React 18 · TypeScript · Vite · Tailwind 3 · shadcn/ui · react-router-dom v6
 
 ## Editing Firestore document shapes
 
-For any change to a Firestore document shape (adding a field, tightening a type, renaming, deprecating), edit **`packages/shared/src/schemas/`** first — it is the source of truth. Types in `src/types/index.ts` and inside Cloud Functions are derived (`z.infer`) and re-exported; do not hand-write a parallel interface.
+For any change to a Firestore document shape (adding a field, tightening a type, renaming, deprecating), edit **`packages/shared/src/schemas/`** first — it is the source of truth for both persisted document shapes AND callable I/O contracts. Types in `src/types/index.ts` and inside Cloud Functions are derived (`z.infer`) and re-exported; do not hand-write a parallel interface.
 
-After changing a schema:
+Coverage as of ADR-018: `User`, `UserClientUpdate`, `UserDocument`, `UserWallet`, `Transaction`, `Report`, `Campaign`, `AdAccount`, `DashboardMetrics`, `ProductPrice`, `OAuthState`, `TemporaryOAuthToken`, `RateLimit`, plus callable I/O for `getDashboardMetrics`, `reserveUserDocument`, `updateProductPrices`.
+
+### Zod 4 idioms (Sprint 2 onwards)
+
+Use the top-level format validators, not the deprecated method forms:
+
+| Use | Not |
+|---|---|
+| `z.email()` | `z.string().email()` |
+| `z.url()` | `z.string().url()` |
+| `z.iso.datetime()` | `z.string().datetime()` |
+| `zTimestamp()` (from `@adsmart/shared`) | `z.unknown()` for Firestore timestamps |
+
+### Pair persisted-shape with strict client-update
+
+When a doc is partially client-writable, also export a `.strict()` subset that mirrors `firestore.rules`. Example: `UserClientUpdateSchema` alongside `UserSchema` rejects payloads containing `email`, `createdAt`, `documentType`, or `documentNumber` — matching the rule-layer immutability checks at the type layer.
+
+### After changing a schema
 
 1. Update or add a Vitest case in the matching `*.test.ts` (co-located with the schema file).
 2. Run `cd packages/shared && bun run test` and `bun run typecheck` from the root — Turbo will re-validate web and functions consumers.
 3. Update [docs/DATA-MODEL.md](docs/DATA-MODEL.md) — the schema is executable; the markdown is human-facing and must follow.
 4. Add a dated entry to [docs/CHANGES.md](docs/CHANGES.md) explaining the field-level drift you fixed (or introduced).
 
-The architectural rationale lives in [docs/Decisions.md](docs/Decisions.md) — ADR-009.
+The architectural rationale lives in [docs/Decisions.md](docs/Decisions.md) — ADR-009 (umbrella), ADR-016 (ProductPrice + ADMIN_EMAILS centralization + priceManager v1→v2), ADR-018 (User / UserDocument / OAuthState / RateLimit lift + Zod 4 migration).
+
+## Admin access (post-ADR-016)
+
+Admin authority comes from a **single source**: `isAdminUser(claims, email)` exported from [packages/shared/src/auth/admin.ts](packages/shared/src/auth/admin.ts) and re-exported via `@adsmart/shared`. Custom claim `admin === true` is authoritative; the email allowlist is a transition fallback so existing admins are not locked out. Five hand-maintained copies of `ADMIN_EMAILS` were consolidated in ADR-016 — do not reintroduce them.
+
+```ts
+// ✅ canonical
+import { isAdminUser } from '@adsmart/shared'
+if (!isAdminUser(request.auth.token, request.auth.token.email)) {
+  throw new HttpsError('permission-denied', '...')
+}
+
+// ❌ never re-declare
+const ADMIN_EMAILS = ['agency.elovisiondigital@gmail.com', 'admin@adsmart.app']
+```
+
+## Cloud Function v2 baseline (post-ADR-016)
+
+Every new callable follows the pattern in [functions/src/reserveUserDocument.ts](functions/src/reserveUserDocument.ts), [functions/src/priceManager.ts](functions/src/priceManager.ts), and [functions/src/getDashboardMetrics.ts](functions/src/getDashboardMetrics.ts):
+
+- `onCall` from `firebase-functions/v2/https` (never v1 `functions.https.onCall`)
+- `region: config.project.region` explicit in options
+- `secrets: [...]` declared in options when the function needs them
+- Auth check first, `HttpsError('unauthenticated', ...)` if missing
+- `isAdminUser(...)` for admin-only callables
+- Zod input validation via `safeParse(MyInputSchema)` from `@adsmart/shared`; `HttpsError('invalid-argument', issues[0]?.message)` on failure
+- Typed output via `Promise<MyOutput>` from the inferred Zod type
+- Do NOT set `enforceAppCheck` — Firebase App Check was removed end-to-end in ADR-019. Re-introduction requires a new ADR.
+
+The slash command `/functions-new-callable` scaffolds the right pattern.
 
 ## Design system
 
@@ -164,6 +211,39 @@ Client UX in [SettingsPage](src/pages/SettingsPage.tsx) flips a `documentLocked`
 `AuthContext` exposes `hasPasswordProvider` derived from `user.providerData.some(p => p.providerId === 'password')`. Use it to branch UI between "alterar senha" (existing password account — needs `currentPassword` + `reauthenticateWithCredential` + `updatePassword`) and "criar senha" (OAuth-only account, e.g. signed in with Google or Facebook — uses `linkWithCredential(user, EmailAuthProvider.credential(email, newPassword))` and only requires `newPassword` + `confirm`).
 
 After a successful link, `providerData` includes both providers and `hasPasswordProvider` flips true on the next snapshot — the same form then defaults to the "alterar senha" flow.
+
+## Auth flow conventions (post-ADR-020)
+
+Every sign-in / sign-up / link path in `AuthContext` ends with `refreshAuthState(user)` which calls `getIdToken(true)` + `user.reload()`. This guarantees that custom claims provisioned server-side (e.g. `setCustomUserClaims(uid, { admin: true })`) appear in the next render without requiring the user to manually sign out and sign back in. The `onAuthStateChanged` listener also passes `forceRefresh: true` to `getIdTokenResult` for the same reason.
+
+**Single sources of truth:**
+
+- `packages/shared/src/auth/admin.ts` → `ADMIN_EMAILS` + `isAdminUser(claims, email)`. Consumed by both client (`AuthContext`) and 3 Cloud Functions. Custom claim wins; email allowlist is transition fallback.
+- `packages/shared/src/auth/password.ts` → `PasswordPolicy` + `validatePassword(pwd): { valid, errors[i18n_key] }`. Both `LoginPage` signup and `SettingsPage` change-password use it. Errors are i18n keys like `passwordPolicy.tooShort` for the caller to `t()`.
+- `src/lib/auth/errors.ts` → `isAuthError(err): err is FirebaseError` type guard.
+- `src/lib/auth/errorMessages.ts` → `authErrorToTKey(err)` mapping 15 Firebase Auth codes to i18n keys with intentional privacy collapse (`user-not-found` = `wrong-password` = `invalid-credential` = `loginPage.error.invalidCredentials`).
+
+**Catch pattern in handlers that mix local `throw new Error(t('...'))` with Firebase calls:**
+
+```ts
+} catch (err) {
+  if (isAuthError(err)) {
+    setError(t(authErrorToTKey(err)))         // Firebase auth/* code
+  } else if (err instanceof Error && err.message) {
+    setError(err.message)                       // local pre-validation throw — already translated
+  } else {
+    setError(t('common.error.generic'))          // unknown
+  }
+}
+```
+
+Routing local `Error` through `authErrorToTKey` was a real bug (caught via browser smoke test, fixed in commit `f0fc264`) — those errors carry pre-translated messages that the map would mask as `common.error.generic`. See `docs/ERROR-HANDLING.md` for the full table.
+
+**Route guards own the loading state.** `PrivateRoute` and `AdminRoute` render `<AuthLoadingFallback />` (centered spinner with `aria-label="Carregando"`) while `useAuth().loading === true`. The `AuthProvider` no longer gates children on loading — that coupling was implicit and broke any guard placed outside the provider.
+
+**Persistence is explicit.** `src/firebase/config.ts` uses `initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence], popupRedirectResolver: browserPopupRedirectResolver })`. Same behavior as `getAuth(app)` defaults, but written so Safari ITP / iframe-blocked scenarios can be reasoned about explicitly.
+
+**COOP = `same-origin-allow-popups`.** `signInWithPopup` requires it — `same-origin` breaks the `window.opener.postMessage` closing handshake in some browsers. Documented in ADR-020.
 
 ## Adding Firestore queries
 

@@ -36,13 +36,14 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 |---|---|
 | Add a new page | `src/App.tsx`, `src/components/PrivateRoute.tsx`, `src/components/AdminRoute.tsx` |
 | Add an admin sub-page | `src/pages/admin/AdminLayout.tsx` (tab list), `src/App.tsx` (admin nested routes), `src/locales/pt-BR.json` admin namespace, `src/locales/types.ts` `Admin` interface. Heavy pages (charts, etc.) follow the `React.lazy` pattern in `src/pages/admin/AdminDashboardPage.tsx` to keep transitive deps off first paint. |
-| Add an admin metrics callable | `functions/src/getDashboardMetrics.ts` (canonical: admin gate, Zod input from `@adsmart/shared`, `Promise.allSettled` over labelled reads, BRT-anchored day bucketing) |
+| Add an admin metrics callable | `functions/src/getDashboardMetrics.ts` (canonical: admin gate via `isAdminUser` from `@adsmart/shared`, Zod input from `@adsmart/shared`, `Promise.allSettled` over labelled reads, BRT-anchored day bucketing) |
 | Add a Cloud Function | `functions/src/index.ts`, `functions/src/config/index.ts`, `functions/AGENTS.md` |
-| Add a Cloud Function (callable) | `.claude/commands/functions-new-callable.md` (slash command), `functions/src/reserveUserDocument.ts` (canonical example) |
-| Change auth/admin logic | `src/contexts/AuthContext.tsx`, `src/components/AdminRoute.tsx`, `docs/SECURITY.md` |
+| Add a Cloud Function (callable) | `.claude/commands/functions-new-callable.md` (slash command), `functions/src/reserveUserDocument.ts` or `functions/src/priceManager.ts` (canonical v2 examples — Zod I/O from `@adsmart/shared`, `region` explicit, `isAdminUser` gate when admin-only) |
+| Change auth/admin logic | `src/contexts/AuthContext.tsx` (canonical: `refreshAuthState` after every sign-in, `getIdTokenResult(true)`, OAuth scopes + `prompt: 'select_account'`), `src/components/{PrivateRoute,AdminRoute,AuthLoadingFallback,EmailVerificationBanner}.tsx`, `src/lib/auth/{errors,errorMessages}.ts` (single source for `authErrorToTKey` + `isAuthError`), `packages/shared/src/auth/{admin,password}.ts` (single source for `ADMIN_EMAILS` + `isAdminUser` + `validatePassword`), `src/pages/{LoginPage,ForgotPasswordPage,SettingsPage,DeleteDataPage}.tsx`, `docs/SECURITY.md`, `docs/ERROR-HANDLING.md` (auth code→i18n map table). See ADR-020. |
 | Change Firestore rules | `firestore.rules`, `docs/DATA-MODEL.md`, `functions/test/firestore-rules.test.ts` |
-| Change wallet / billing | `docs/DOMAIN.md`, `functions/src/adminWalletManager.ts`, `src/hooks/useWallet.ts` |
-| Add OAuth provider | `docs/OAUTH.md`, `functions/src/googleAdsOAuthV2.ts`, `src/services/oauthServices.ts` |
+| Change wallet / billing | `docs/DOMAIN.md`, `functions/src/adminWalletManager.ts`, `src/hooks/useWallet.ts`, `packages/shared/src/schemas/userWallet.ts` + `transaction.ts` |
+| Change user profile shape | `packages/shared/src/schemas/user.ts` (source of truth: `UserSchema` + strict `UserClientUpdateSchema`), `functions/src/bootstrapUser.ts`, `functions/src/reserveUserDocument.ts`, `src/pages/SettingsPage.tsx` |
+| Add OAuth provider | `docs/OAUTH.md`, `functions/src/googleAdsOAuthV2.ts`, `src/services/oauthServices.ts`, `packages/shared/src/schemas/oauthState.ts` (state + temp token schemas), `functions/src/lib/oauthCrypto.ts` (AES-256-GCM for tokens at rest — ADR-019) |
 | Work on payments | `docs/PAYMENTS.md` — SuitPay is deprecated; read before touching |
 | Add a translation key | `docs/I18N.md`, `src/locales/pt-BR.json` (then en.json and es.json) |
 | Write tests | `docs/TESTING.md`, `vitest.config.ts` (root + functions/) |
@@ -70,15 +71,29 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 - **Path alias**: `@/` maps to `src/`. Always use `@/` instead of relative imports that go up more than one level.
 - **Currency**: All monetary values are stored in **centavos (BRL cents)**. Display as `amount / 100` in the UI.
 - **Timestamps**: All Firestore timestamps use `admin.firestore.Timestamp` (server-side) or `serverTimestamp()`.
-- **Secrets**: Never use `process.env.XXX_SECRET` in functions. Import from `functions/src/config/index.ts` which uses `defineSecret`. See `docs/SECURITY.md`.
-- **Admin check**: Use `token.admin === true || ADMIN_EMAILS.includes(email)` pattern. New admins → custom claims. See `docs/SECURITY.md`.
+- **Secrets**: Never use `process.env.XXX_SECRET` in functions. Declare via `defineSecret` in `functions/src/config/index.ts` and bind on each function via `options.secrets: [...]`. See `docs/SECURITY.md`.
+- **Admin check**: Use `isAdminUser(auth.token, email)` imported from `@adsmart/shared` (ADR-016). Custom claim `admin === true` is authoritative; email allowlist is a transition fallback (single source: `packages/shared/src/auth/admin.ts`). Do NOT redeclare `ADMIN_EMAILS` arrays — they were consolidated in ADR-016. Custom claims provisioned via `setCustomUserClaims` appear on the user's next sign-in automatically (ADR-020 — `AuthContext.refreshAuthState` calls `getIdToken(true)` + `user.reload()`).
+- **Password policy**: Use `validatePassword(pwd)` from `@adsmart/shared` (returns `{ valid, errors[i18n_key] }`). Single source: `packages/shared/src/auth/password.ts`. Both LoginPage signup and SettingsPage change-password consume it (ADR-020). Do NOT redeclare a local validator.
+- **Auth error mapping**: Use `authErrorToTKey(err)` from `src/lib/auth/errorMessages.ts` (returns an i18n key for `t()`). Pattern in catch blocks that mix local `Error` throws + Firebase calls: `if (isAuthError(err)) → t(authErrorToTKey(err))`; else if `err instanceof Error && err.message → err.message`; else fallback to `common.error.generic`. See `docs/ERROR-HANDLING.md` for the full code→key table.
+- **Schemas**: `packages/shared/src/schemas/` is the single source of truth for every Firestore document shape AND every callable I/O contract (ADR-009 / ADR-016 / ADR-018). Types via `z.infer`. Do NOT hand-write a parallel `interface` — it will drift.
+- **Zod 4 idioms**: `z.email()`, `z.url()`, `z.iso.datetime()` top-level — NOT the deprecated method forms `z.string().email()` etc.
+- **Timestamps in schemas**: use `zTimestamp()` from `@adsmart/shared` (duck-typed, works with both Admin and Web SDK). In server code, write `admin.firestore.Timestamp.now()` or `FieldValue.serverTimestamp()` — never `new Date()` raw.
 - **Rate limiting**: All sensitive functions call `checkRateLimit(userId, actionName)` before doing work.
 - **Security logging**: Sensitive events use `securityLogger.logEvent(eventType, userId, details, severity)`.
+- **Callable v2 baseline**: every new callable uses `onCall` from `firebase-functions/v2/https` with explicit `region`, Zod input via `safeParse`, typed output, and `HttpsError` for failures. `priceManager.ts` and `reserveUserDocument.ts` are the references.
 
 ## What NOT to do
 
-- Do not write `process.env.XXX_SECRET` in Cloud Functions — use `defineSecret`.
-- Do not invest time in SuitPay hardening — it is deprecated in favour of Asaas (see `docs/PAYMENTS.md`).
+- Do not write `process.env.XXX_SECRET` in Cloud Functions — use `defineSecret` and bind via `options.secrets`. Hook `secrets-no-process-env` already blocks this on pre-commit.
+- Do not redeclare `ADMIN_EMAILS` arrays anywhere — use `isAdminUser` from `@adsmart/shared` (ADR-016). Five copies existed pre-ADR-016; do not reintroduce drift.
+- Do not redeclare a local `validatePassword` — use the one from `@adsmart/shared` (ADR-020). Two surfaces had drifted (LoginPage 8 chars / SettingsPage 6 chars) — both now share one schema.
+- Do not write bespoke `if (error.code === 'auth/...')` chains in catch blocks. Use `authErrorToTKey(err)` from `src/lib/auth/errorMessages.ts` (ADR-020). Privacy-collapsed mappings prevent account enumeration — do not "fix" them by giving each code its own message.
+- Do not pass local `Error` instances (e.g., `throw new Error(t('...'))`) through `authErrorToTKey`. That maps them to `common.error.generic` and hides the real message. Use the split pattern documented in `docs/ERROR-HANDLING.md`.
+- Do not call `createUserWithEmailAndPassword(auth, ...)` directly from pages. Use `signUp` from `useAuth()` so future Context-level hooks (telemetry, post-signup steps) reach the path (ADR-020).
+- Do not hand-write `interface User` / `interface ProductPrice` / etc. — every Firestore document shape is in `packages/shared/src/schemas/`. Import the inferred type. Stale fields (`displayName`, `photoURL` on `User`) live on Firebase Auth, not Firestore.
+- Do not invest time in SuitPay hardening — it is deprecated in favour of Asaas (see `docs/PAYMENTS.md`). Keep current behaviour working until Asaas ships, then delete.
+- Do not re-introduce Firebase App Check without a new ADR (ADR-019 removed it end-to-end). Defense in depth is Firebase Auth + `checkRateLimit` + Firestore rules.
+- Do not re-implement OAuth token encryption inline. Import `encryptString` / `decryptField` / `detectAndDecrypt` from `functions/src/lib/oauthCrypto.ts` (single source of truth, ADR-019). Callables that touch OAuth tokens bind `encryptionKey` in `options.secrets`.
 - Do not add new routes without adding them to the route table in `src/App.tsx`.
 - Do not write raw SQL or use any SQL library — this project is Firestore-only.
 - Do not modify `docs/SECURITY.md` without updating the corresponding code.
