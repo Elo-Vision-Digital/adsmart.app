@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom'
+import { AuthLoadingFallback } from '@/components/AuthLoadingFallback'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface PrivateRouteProps {
@@ -6,7 +7,7 @@ interface PrivateRouteProps {
 }
 
 export function PrivateRoute({ children }: PrivateRouteProps) {
-  const { user } = useAuth()
-
-  return user ? <>{children}</> : <Navigate to="/login" />
+  const { user, loading } = useAuth()
+  if (loading) return <AuthLoadingFallback />
+  return user ? <>{children}</> : <Navigate to="/login" replace />
 }

@@ -2,7 +2,14 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
 import { CampaignSchema } from '@adsmart/shared'
-import { metaAdsAppSecret } from './config'
+import {
+  encryptionKey,
+  metaAdsAppId,
+  metaAdsAppSecret,
+  metaAdsRedirectUri,
+  metaAdsRedirectUriDev,
+} from './config'
+import { encryptString, detectAndDecrypt } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -18,15 +25,11 @@ const OAuthEventType = {
   OAUTH_ERROR: 'oauth_error' as SecurityEventType
 }
 
-// Configurações OAuth do Meta Ads (app secret via defineSecret; demais valores via process.env)
 const META_ADS_CONFIG = {
-  appId: process.env.META_ADS_APP_ID || '4052927898253765',
-  redirectUri: process.env.META_ADS_REDIRECT_URI || 'https://adsmart.app/auth/meta-ads/callback',
-  redirectUriDev: process.env.META_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/meta-ads/callback',
   scope: 'ads_read,ads_management,business_management,read_insights',
   authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
   tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token',
-  apiVersion: 'v18.0'
+  apiVersion: 'v18.0',
 }
 
 // Interface para os tokens armazenados
@@ -71,8 +74,8 @@ export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret] }, async (
 
   // Usar redirect URI correto baseado no ambiente
   const redirectUri = isLocalEnv 
-    ? META_ADS_CONFIG.redirectUriDev 
-    : META_ADS_CONFIG.redirectUri
+    ? metaAdsRedirectUriDev.value()
+    : metaAdsRedirectUri.value()
 
   console.log('OAuth URL sendo gerada:', {
     isLocalEnv,
@@ -82,7 +85,7 @@ export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret] }, async (
 
   // Construir URL de autorização
   const authUrl = new URL(META_ADS_CONFIG.authUrl)
-  authUrl.searchParams.append('client_id', META_ADS_CONFIG.appId)
+  authUrl.searchParams.append('client_id', metaAdsAppId.value())
   authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('response_type', 'code')
   authUrl.searchParams.append('scope', META_ADS_CONFIG.scope)
@@ -174,7 +177,9 @@ export const handleMetaAdsCallback = onCall({ secrets: [metaAdsAppSecret] }, asy
 /**
  * Busca campanhas do Meta Ads
  */
-export const getMetaAdsCampaigns = onCall({ secrets: [metaAdsAppSecret] }, async (request) => {
+export const getMetaAdsCampaigns = onCall(
+  { secrets: [metaAdsAppSecret, encryptionKey] },
+  async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -258,16 +263,46 @@ async function getValidTokens(userId: string): Promise<MetaAdsTokens> {
     throw new HttpsError('not-found', 'Tokens não encontrados. Reconecte sua conta.')
   }
 
-  const encryptedTokens = tokenDoc.data()!
-  const tokens = await decryptTokens(encryptedTokens)
+  const raw = tokenDoc.data() as {
+    accessToken: unknown
+    expiresAt: number
+    scope: string
+    tokenType?: string
+  }
 
-  // Meta Ads tokens de longo prazo duram 60 dias
-  // Verificar se está próximo de expirar (menos de 7 dias)
+  // detectAndDecrypt accepts both the v1 EncryptedField (ADR-019) and the
+  // pre-Sprint-3 legacy Base64 string. Legacy tokens are migrated below.
+  const secret = encryptionKey.value()
+  const tokens: MetaAdsTokens = {
+    accessToken: detectAndDecrypt(raw.accessToken, secret),
+    expiresAt: raw.expiresAt,
+    scope: raw.scope,
+    tokenType: raw.tokenType || 'bearer',
+  }
+
+  // Meta long-lived tokens last 60 days. Warn at 7 days remaining;
+  // there is no automated refresh — the user must re-connect.
   const daysUntilExpiry = (tokens.expiresAt - Date.now()) / (1000 * 60 * 60 * 24)
-  
   if (daysUntilExpiry < 7) {
-    console.warn(`Token Meta Ads expirando em ${daysUntilExpiry.toFixed(0)} dias para usuário ${userId}`)
-    // TODO: Implementar notificação para o usuário renovar a conexão
+    console.warn(
+      `Token Meta Ads expirando em ${daysUntilExpiry.toFixed(0)} dias para usuário ${userId}`
+    )
+  }
+
+  // Opportunistic migration of legacy Base64-stored tokens to AES-GCM
+  // on the next read after ADR-019 ships. Fire-and-forget — the
+  // plaintext is already in `tokens`.
+  if (typeof raw.accessToken === 'string') {
+    await admin
+      .firestore()
+      .collection('users')
+      .doc(userId)
+      .collection('oauth_tokens')
+      .doc('meta_ads')
+      .update({
+        accessToken: encryptString(tokens.accessToken, secret),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      })
   }
 
   return tokens
@@ -297,27 +332,4 @@ async function fetchMetaAdsCampaigns(accessToken: string, accountId: string): Pr
   }
 }
 
-/**
- * Funções de criptografia (simplificadas)
- * TODO: Implementar criptografia real com crypto-js ou similar
- */
-async function encryptTokens(tokens: MetaAdsTokens): Promise<any> {
-  return {
-    accessToken: Buffer.from(tokens.accessToken).toString('base64'),
-    expiresAt: tokens.expiresAt,
-    scope: tokens.scope,
-    tokenType: tokens.tokenType
-  }
-}
-
-async function decryptTokens(encryptedTokens: any): Promise<MetaAdsTokens> {
-  return {
-    accessToken: Buffer.from(encryptedTokens.accessToken, 'base64').toString(),
-    expiresAt: encryptedTokens.expiresAt,
-    scope: encryptedTokens.scope,
-    tokenType: encryptedTokens.tokenType || 'bearer'
-  }
-}
-
-// Exportar para evitar erro de não uso
-export { encryptTokens }
+// Token encryption lives in ./lib/oauthCrypto.ts (ADR-019).

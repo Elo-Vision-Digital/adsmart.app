@@ -1,5 +1,10 @@
 import * as admin from 'firebase-admin'
 import { HttpsError, onCall } from 'firebase-functions/v2/https'
+import {
+  ReserveUserDocumentInputSchema,
+  type ReserveUserDocumentOutput,
+} from '@adsmart/shared'
+import { config } from './config'
 
 if (!admin.apps.length) {
   admin.initializeApp()
@@ -51,17 +56,6 @@ function isValidCnpj(cnpj: string): boolean {
   return d2 === Number.parseInt(cnpj.charAt(13), 10)
 }
 
-interface ReserveRequest {
-  documentType: 'cpf' | 'cnpj'
-  documentNumber: string
-}
-
-interface ReserveResponse {
-  success: true
-  documentNumber: string
-  documentType: 'cpf' | 'cnpj'
-}
-
 // Atomically reserves the document for the caller. The reservation is the
 // single source of truth for "is this CPF/CNPJ already taken?" — the
 // transaction reads userDocuments/{normalized} and either:
@@ -70,20 +64,25 @@ interface ReserveResponse {
 //   - throws already-exists if a different uid already holds it, or
 //   - throws failed-precondition if the caller already has a different
 //     document on file (immutability).
-export const reserveUserDocument = onCall<ReserveRequest, Promise<ReserveResponse>>(
+//
+// I/O schemas live in @adsmart/shared (ADR-018); check-digit validation
+// stays here because it is server-side concern.
+export const reserveUserDocument = onCall<unknown, Promise<ReserveUserDocumentOutput>>(
+  { region: config.project.region },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Usuário não autenticado')
     }
     const uid = request.auth.uid
 
-    const { documentType, documentNumber } = request.data ?? {}
-    if (documentType !== 'cpf' && documentType !== 'cnpj') {
-      throw new HttpsError('invalid-argument', 'Tipo de documento inválido')
+    const parsed = ReserveUserDocumentInputSchema.safeParse(request.data)
+    if (!parsed.success) {
+      throw new HttpsError(
+        'invalid-argument',
+        parsed.error.issues[0]?.message ?? 'Documento inválido'
+      )
     }
-    if (typeof documentNumber !== 'string' || documentNumber.trim() === '') {
-      throw new HttpsError('invalid-argument', 'Documento é obrigatório')
-    }
+    const { documentType, documentNumber } = parsed.data
 
     const normalized = normalize(documentNumber)
     const isValid = documentType === 'cpf' ? isValidCpf(normalized) : isValidCnpj(normalized)

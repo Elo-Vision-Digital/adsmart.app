@@ -2,7 +2,15 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
 import { AdAccountSchema } from '@adsmart/shared'
-import { googleAdsClientSecret } from './config'
+import {
+  encryptionKey,
+  googleAdsClientId,
+  googleAdsClientSecret,
+  googleAdsDeveloperToken,
+  googleAdsRedirectUri,
+  googleAdsRedirectUriDev,
+} from './config'
+import { encryptString } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -31,7 +39,9 @@ interface TemporaryTokenData {
 /**
  * Processa o callback OAuth e retorna contas disponíveis para seleção
  */
-export const handleGoogleAdsCallbackWithSelection = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
+export const handleGoogleAdsCallbackWithSelection = onCall(
+  { secrets: [googleAdsClientSecret, googleAdsDeveloperToken] },
+  async (request) => {
   console.log('=== INICIANDO handleGoogleAdsCallbackWithSelection ===')
   
   // Verificar autenticação
@@ -297,7 +307,9 @@ export const handleGoogleAdsCallbackWithSelection = onCall({ secrets: [googleAds
 /**
  * Confirma a seleção de contas e salva no Firestore
  */
-export const confirmGoogleAdsAccountSelection = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
+export const confirmGoogleAdsAccountSelection = onCall(
+  { secrets: [googleAdsClientSecret, googleAdsDeveloperToken, encryptionKey] },
+  async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -339,13 +351,15 @@ export const confirmGoogleAdsAccountSelection = onCall({ secrets: [googleAdsClie
       selectedAccountIds
     )
 
-    // Criptografar tokens antes de armazenar
-    const encryptedTokens = await encryptTokens({
-      accessToken: tokenData.accessToken,
-      refreshToken: tokenData.refreshToken,
+    // Criptografar tokens antes de armazenar (ADR-019: AES-256-GCM,
+    // versioned format, key from ENCRYPTION_KEY secret).
+    const secret = encryptionKey.value()
+    const encryptedTokens = {
+      accessToken: encryptString(tokenData.accessToken, secret),
+      refreshToken: encryptString(tokenData.refreshToken, secret),
       expiresAt: tokenData.expiresAt,
-      scope: tokenData.scope
-    })
+      scope: tokenData.scope,
+    }
 
     // Salvar tokens e contas selecionadas
     const batch = admin.firestore().batch()
@@ -642,8 +656,13 @@ async function getGoogleAdsAccountDetails(accessToken: string, accountIds: strin
  * Obter developer token do Google Ads
  */
 async function getDeveloperToken(): Promise<string> {
-  const token = process.env.GOOGLE_ADS_DEVELOPER_TOKEN || 'wRhu9OHLIWdbht2HY3B9yw'
-  console.log('Developer token configurado')
+  const token = googleAdsDeveloperToken.value()
+  if (!token) {
+    throw new HttpsError(
+      'failed-precondition',
+      'GOOGLE_ADS_DEVELOPER_TOKEN não configurado no Secret Manager'
+    )
+  }
   return token
 }
 
@@ -653,10 +672,10 @@ async function getDeveloperToken(): Promise<string> {
  */
 async function getGoogleAdsConfig() {
   const config = {
-    clientId: process.env.GOOGLE_ADS_CLIENT_ID || '422483165860-npdsq44121mh4chg2gers6qade02bo5l.apps.googleusercontent.com',
+    clientId: googleAdsClientId.value(),
     clientSecret: googleAdsClientSecret.value(),
-    redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
-    redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
+    redirectUri: googleAdsRedirectUri.value(),
+    redirectUriDev: googleAdsRedirectUriDev.value(),
     // ALTERAÇÃO IMPORTANTE: Adicionar todos os escopos necessários
     scope: [
       'https://www.googleapis.com/auth/userinfo.profile',
@@ -669,15 +688,5 @@ async function getGoogleAdsConfig() {
   return config
 }
 
-/**
- * Funções de criptografia (simplificadas)
- * TODO: Implementar criptografia real com crypto-js ou similar
- */
-async function encryptTokens(tokens: any): Promise<any> {
-  return {
-    accessToken: Buffer.from(tokens.accessToken).toString('base64'),
-    refreshToken: Buffer.from(tokens.refreshToken).toString('base64'),
-    expiresAt: tokens.expiresAt,
-    scope: tokens.scope
-  }
-}
+// Token encryption lives in ./lib/oauthCrypto.ts (ADR-019). The local
+// Base64 implementation that lived here pre-Sprint-3 was not encryption.

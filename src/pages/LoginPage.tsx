@@ -1,13 +1,13 @@
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { validatePassword } from '@adsmart/shared'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LanguageSelector } from '@/components/common/LanguageSelector'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { auth } from '@/firebase/config'
 import { useRateLimit } from '@/hooks/useRateLimit'
+import { authErrorToTKey } from '@/lib/auth/errorMessages'
+import { isAuthError } from '@/lib/auth/errors'
 import { sanitizeEmail, sanitizeInput } from '@/utils/sanitize'
-import { validatePassword } from '@/utils/validation'
 
 export function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -20,14 +20,13 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const { signInWithGoogle, signInWithFacebook, signInWithEmail } = useAuth()
+  const { signInWithGoogle, signInWithFacebook, signInWithEmail, signUp } = useAuth()
   const { t } = useLanguage()
   const navigate = useNavigate()
 
-  // Rate limiting
   const loginRateLimit = useRateLimit({
     maxAttempts: 5,
-    windowMs: 15 * 60 * 1000, // 15 minutos
+    windowMs: 15 * 60 * 1000,
     message: t('common.error.tooManyAttempts'),
   })
 
@@ -36,14 +35,12 @@ export function LoginPage() {
     setError('')
     setLoading(true)
 
-    // Verificar rate limit
     if (!loginRateLimit.checkLimit()) {
       setError(loginRateLimit.message)
       setLoading(false)
       return
     }
 
-    // Sanitizar inputs
     const sanitizedEmail = sanitizeEmail(email)
     const sanitizedName = name ? sanitizeInput(name) : ''
 
@@ -51,92 +48,71 @@ export function LoginPage() {
       if (isLogin) {
         await signInWithEmail(sanitizedEmail, password)
       } else {
-        // Validar senha no registro
-        const passwordErrors = validatePassword(password)
-        if (passwordErrors.length > 0) {
-          setError(passwordErrors.join('. '))
+        const policy = validatePassword(password)
+        if (!policy.valid) {
+          setError(policy.errors.map((k) => t(k)).join(' '))
           setLoading(false)
           return
         }
-
         if (password !== confirmPassword) {
           throw new Error(t('common.validation.passwordMismatch'))
         }
-
         if (!sanitizedName.trim()) {
           throw new Error(t('common.validation.requiredField'))
         }
-
-        await createUserWithEmailAndPassword(auth, sanitizedEmail, password)
+        await signUp(sanitizedEmail, password)
       }
       navigate('/dashboard')
-    } catch (error: any) {
-      let errorMessage = t('common.error.generic')
-
-      // Mensagens de erro mais amigáveis
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = t('loginPage.error.invalidCredentials')
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = t('loginPage.error.invalidCredentials')
-      } else if (error.code === 'auth/email-already-in-use') {
-        errorMessage = t('loginPage.error.emailInUse')
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = t('common.validation.weakPassword')
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = t('common.validation.invalidEmail')
-      } else if (error.message) {
-        errorMessage = error.message
+    } catch (err) {
+      // Local Error throws (validation pre-Firebase) carry the already-
+      // translated message; only Firebase Auth errors go through the map.
+      if (isAuthError(err)) {
+        setError(t(authErrorToTKey(err)))
+      } else if (err instanceof Error && err.message) {
+        setError(err.message)
+      } else {
+        setError(t('common.error.generic'))
       }
-
-      setError(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogleSignIn = async () => {
+    setError('')
+    if (!loginRateLimit.checkLimit()) {
+      setError(loginRateLimit.message)
+      return
+    }
     try {
-      setError('')
-
-      // Verificar rate limit também para login social
-      if (!loginRateLimit.checkLimit()) {
-        setError(loginRateLimit.message)
-        return
-      }
-
       await signInWithGoogle()
       navigate('/dashboard')
-    } catch (error: any) {
-      setError(error.message || t('loginPage.error.socialLoginFailed'))
+    } catch (err) {
+      setError(t(authErrorToTKey(err)))
     }
   }
 
   const handleFacebookSignIn = async () => {
+    setError('')
+    if (!loginRateLimit.checkLimit()) {
+      setError(loginRateLimit.message)
+      return
+    }
     try {
-      setError('')
-
-      // Verificar rate limit também para login social
-      if (!loginRateLimit.checkLimit()) {
-        setError(loginRateLimit.message)
-        return
-      }
-
       await signInWithFacebook()
       navigate('/dashboard')
-    } catch (error: any) {
-      setError(error.message || t('loginPage.error.socialLoginFailed'))
+    } catch (err) {
+      setError(t(authErrorToTKey(err)))
     }
   }
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4 py-[30px]">
-      {/* Language Selector - positioned at top right */}
       <div className="absolute top-4 right-4">
         <LanguageSelector />
       </div>
 
       <div className="w-full max-w-[480px]">
-        {/* Header com logo */}
         <div className="text-center mb-0">
           <img
             src="https://i.imgur.com/T6AehDg.png"
@@ -159,15 +135,12 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* Card de login */}
         <div className="bg-white rounded-xl p-8 shadow-sm">
-          {/* Rate limit warning */}
           {loginRateLimit.isBlocked && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
               {loginRateLimit.message}
             </div>
           )}
-
           {loginRateLimit.remainingAttempts < 3 && !loginRateLimit.isBlocked && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-sm">
               {t('common.warning.rateLimitRemaining').replace(
@@ -176,15 +149,12 @@ export function LoginPage() {
               )}
             </div>
           )}
-
-          {/* Error message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
               {error}
             </div>
           )}
 
-          {/* Social Login Buttons */}
           <div className="space-y-3 mb-6">
             <button
               onClick={handleGoogleSignIn}
@@ -227,7 +197,6 @@ export function LoginPage() {
             </button>
           </div>
 
-          {/* Divider */}
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200"></div>
@@ -237,7 +206,6 @@ export function LoginPage() {
             </div>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
@@ -349,7 +317,6 @@ export function LoginPage() {
             </button>
           </form>
 
-          {/* Toggle Login/Signup */}
           <p className="text-center text-sm text-gray-600 mt-6">
             {isLogin ? (
               <>
@@ -383,7 +350,6 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* Footer Links */}
         <div className="flex items-center justify-center gap-6 mt-8 mb-[30px] text-sm">
           <Link to="/terms" className="text-gray-600 hover:text-gray-900 hover:underline">
             {t('common.footer.termsOfUse')}

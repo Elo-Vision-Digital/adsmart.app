@@ -79,11 +79,21 @@ export interface Translations {
       changePassword: string
       sendVerificationEmail: string
       wrongPassword: string
+      network: string
+      requiresReauth: string
+      appCheckFailed: string
     }
     warning: {
       testAccount: string
       rateLimit: string
       rateLimitRemaining: string
+    }
+    emailVerification: {
+      banner: string
+      resendButton: string
+      resending: string
+      sent: string
+      error: string
     }
   }
 
@@ -145,7 +155,30 @@ export interface Translations {
       emailInUse: string
       weakPasswordDetails: string
       socialLoginFailed: string
+      popupBlocked: string
+      popupClosed: string
+      accountConflict: string
+      credentialInUse: string
     }
+  }
+
+  // ForgotPasswordPage specific translations
+  forgotPasswordPage: {
+    title: string
+    subtitle: string
+    button: string
+    sending: string
+    success: string
+    backToLogin: string
+  }
+
+  // Password policy translations (mirrors PasswordValidationResult.errors keys from @adsmart/shared)
+  passwordPolicy: {
+    tooShort: string
+    requireUppercase: string
+    requireLowercase: string
+    requireNumber: string
+    requireSpecial: string
   }
 
   // HomePage translations

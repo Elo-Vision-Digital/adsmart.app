@@ -118,7 +118,7 @@ export function TermsOfServicePage() {
                 Formas de Pagamento
               </h3>
               <ul className="list-disc list-inside space-y-1">
-                <li>PIX (processado via SuitPay)</li>
+                <li>PIX (em breve)</li>
                 <li>Cartão de crédito (em breve)</li>
               </ul>
 

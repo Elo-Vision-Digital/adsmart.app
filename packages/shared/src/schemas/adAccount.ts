@@ -9,7 +9,8 @@ export const AdAccountSchema = z.object({
   platform: AdPlatformSchema,
   accountId: z.string(),
   accountName: z.string(),
-  email: z.string().optional(),
+  // Provider-reported email; validated only when present.
+  email: z.email().optional(),
   currency: z.string(),
   timezone: z.string().optional(),
   isActive: z.boolean(),

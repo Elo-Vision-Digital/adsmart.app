@@ -1,5 +1,4 @@
-import { CreditCard } from 'lucide-react'
-import { useState } from 'react'
+import { AlertCircle, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -9,112 +8,50 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { useWallet } from '@/hooks/useWallet'
-import { PixPaymentModal } from './PixPaymentModal'
 
 interface AddCreditsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+// SuitPay was removed in ADR-021 (2026-05-18). This modal stays in the UI
+// because three callers reference it (Header, MobileHeader, TemplatesPage)
+// and the "add credits" feature itself is permanent — only the payment
+// backend changed. When the Asaas integration ships, restore the amount
+// input + redirect to whatever flow Asaas requires. Until then, surface a
+// clear maintenance notice instead of silently failing on a 404 callable.
 export function AddCreditsModal({ open, onOpenChange }: AddCreditsModalProps) {
-  const { formatCurrency } = useWallet()
-  const [amount, setAmount] = useState('')
-  const [showPixModal, setShowPixModal] = useState(false)
-  const [selectedAmount, setSelectedAmount] = useState(0)
-
-  const predefinedAmounts = [10, 25, 50, 100] // em reais
-
-  const handleAddCredits = () => {
-    const value = parseFloat(amount)
-    if (!value || value <= 0) return
-
-    // Abrir modal de pagamento PIX
-    setSelectedAmount(value)
-    setShowPixModal(true)
-  }
-
-  const handlePaymentSuccess = () => {
-    // Fechar ambos os modais
-    setShowPixModal(false)
-    onOpenChange(false)
-    setAmount('')
-    // A carteira será atualizada automaticamente via webhook
-  }
-
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Adicionar Créditos</DialogTitle>
-            <DialogDescription>
-              Adicione créditos à sua carteira para gerar relatórios. Cada relatório custa R$ 5,00.
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            Adicionar Créditos
+          </DialogTitle>
+          <DialogDescription>O sistema de pagamento está em manutenção.</DialogDescription>
+        </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-2">
-              {predefinedAmounts.map((value) => (
-                <Button
-                  key={value}
-                  variant="outline"
-                  onClick={() => setAmount(value.toString())}
-                  className="w-full"
-                >
-                  {formatCurrency(value * 100)}
-                </Button>
-              ))}
-            </div>
-
-            <div className="grid gap-2">
-              <label htmlFor="custom-amount" className="text-sm font-medium">
-                Ou digite um valor personalizado
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                  R$
-                </span>
-                <Input
-                  id="custom-amount"
-                  type="number"
-                  step="0.01"
-                  min="5"
-                  placeholder="0,00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="pl-10"
-                />
+        <div className="py-4">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+            <div className="flex gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800 dark:text-amber-200">
+                <p className="font-medium mb-1">Pagamento indisponível no momento</p>
+                <p>
+                  Estamos migrando o sistema de pagamento. A funcionalidade de adicionar créditos
+                  via PIX retornará em breve. Se você precisa de créditos urgentemente, entre em
+                  contato com o suporte.
+                </p>
               </div>
             </div>
-
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                💳 Pagamento seguro via PIX. Os créditos são adicionados instantaneamente após a
-                confirmação do pagamento.
-              </p>
-            </div>
           </div>
+        </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleAddCredits} disabled={!amount || parseFloat(amount) <= 0}>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Continuar para Pagamento
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <PixPaymentModal
-        open={showPixModal}
-        onOpenChange={setShowPixModal}
-        amount={selectedAmount}
-        onSuccess={handlePaymentSuccess}
-      />
-    </>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)}>Entendi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

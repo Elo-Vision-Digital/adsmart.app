@@ -2,7 +2,14 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
 import { CampaignSchema } from '@adsmart/shared'
-import { googleAdsClientSecret } from './config'
+import {
+  encryptionKey,
+  googleAdsClientId,
+  googleAdsClientSecret,
+  googleAdsRedirectUri,
+  googleAdsRedirectUriDev,
+} from './config'
+import { encryptString, detectAndDecrypt } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -18,21 +25,15 @@ const OAuthEventType = {
   OAUTH_ERROR: 'oauth_error' as SecurityEventType
 }
 
-// Configurações OAuth do Google Ads (client secret via defineSecret; demais valores via process.env)
 const GOOGLE_ADS_CONFIG = {
-  clientId: process.env.GOOGLE_ADS_CLIENT_ID || '422483165860-npdsq44121mh4chg2gers6qade02bo5l.apps.googleusercontent.com',
-  developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN || 'wRhu9OHLIWdbht2HY3B9yw',
-  redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
-  redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
-  // ALTERAÇÃO IMPORTANTE: Adicionar todos os escopos necessários
   scope: [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/adwords'
+    'https://www.googleapis.com/auth/adwords',
   ].join(' '),
   authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenUrl: 'https://oauth2.googleapis.com/token',
-  apiVersion: 'v17'
+  apiVersion: 'v17',
 }
 
 // Interface para os tokens armazenados
@@ -76,9 +77,9 @@ export const getGoogleAdsAuthUrl = onCall({ secrets: [googleAdsClientSecret] }, 
   })
 
   // Usar redirect URI correto baseado no ambiente
-  const redirectUri = isLocalEnv 
-    ? GOOGLE_ADS_CONFIG.redirectUriDev 
-    : GOOGLE_ADS_CONFIG.redirectUri
+  const redirectUri = isLocalEnv
+    ? googleAdsRedirectUriDev.value()
+    : googleAdsRedirectUri.value()
 
   console.log('OAuth URL sendo gerada:', {
     isLocalEnv,
@@ -89,7 +90,7 @@ export const getGoogleAdsAuthUrl = onCall({ secrets: [googleAdsClientSecret] }, 
 
   // Construir URL de autorização
   const authUrl = new URL(GOOGLE_ADS_CONFIG.authUrl)
-  authUrl.searchParams.append('client_id', GOOGLE_ADS_CONFIG.clientId)
+  authUrl.searchParams.append('client_id', googleAdsClientId.value())
   authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('response_type', 'code')
   authUrl.searchParams.append('scope', GOOGLE_ADS_CONFIG.scope)
@@ -183,7 +184,9 @@ export const handleGoogleAdsCallback = onCall({ secrets: [googleAdsClientSecret]
 /**
  * Busca campanhas do Google Ads
  */
-export const getGoogleAdsCampaigns = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
+export const getGoogleAdsCampaigns = onCall(
+  { secrets: [googleAdsClientSecret, encryptionKey] },
+  async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -265,27 +268,63 @@ async function getValidTokens(userId: string): Promise<GoogleAdsTokens> {
     throw new HttpsError('not-found', 'Tokens não encontrados. Reconecte sua conta.')
   }
 
-  const encryptedTokens = tokenDoc.data()!
-  const tokens = await decryptTokens(encryptedTokens)
+  const raw = tokenDoc.data() as {
+    accessToken: unknown
+    refreshToken: unknown
+    expiresAt: number
+    scope: string
+  }
 
-  // Verificar se o token expirou
-  if (tokens.expiresAt < Date.now() + 60000) { // 1 minuto de margem
-    // Renovar token
+  // detectAndDecrypt accepts both the v1 EncryptedField (ADR-019) and the
+  // pre-Sprint-3 legacy Base64 string. Tokens persisted before ADR-019
+  // are read transparently and re-encrypted with AES-GCM on the next
+  // refresh write below.
+  const secret = encryptionKey.value()
+  const tokens: GoogleAdsTokens = {
+    accessToken: detectAndDecrypt(raw.accessToken, secret),
+    refreshToken: detectAndDecrypt(raw.refreshToken, secret),
+    expiresAt: raw.expiresAt,
+    scope: raw.scope,
+  }
+
+  // Refresh window: 1 minute before stated expiry.
+  if (tokens.expiresAt < Date.now() + 60000) {
     const newTokens = await refreshGoogleAdsToken(tokens.refreshToken)
-    
-    // Salvar novos tokens
-    const encryptedNewTokens = await encryptTokens(newTokens)
+
     await admin.firestore()
       .collection('users')
       .doc(userId)
       .collection('oauth_tokens')
       .doc('google_ads')
       .update({
-        ...encryptedNewTokens,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        accessToken: encryptString(newTokens.accessToken, secret),
+        refreshToken: encryptString(newTokens.refreshToken, secret),
+        expiresAt: newTokens.expiresAt,
+        scope: newTokens.scope,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       })
 
     return newTokens
+  }
+
+  // Opportunistic migration: if the stored tokens were still in the
+  // legacy Base64 shape, re-persist them with AES-GCM so we never have
+  // to walk the legacy path again for this user. This is fire-and-forget
+  // because the read already returned the plaintext.
+  if (
+    typeof raw.accessToken === 'string' ||
+    typeof raw.refreshToken === 'string'
+  ) {
+    await admin.firestore()
+      .collection('users')
+      .doc(userId)
+      .collection('oauth_tokens')
+      .doc('google_ads')
+      .update({
+        accessToken: encryptString(tokens.accessToken, secret),
+        refreshToken: encryptString(tokens.refreshToken, secret),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      })
   }
 
   return tokens
@@ -297,9 +336,9 @@ async function getValidTokens(userId: string): Promise<GoogleAdsTokens> {
 async function refreshGoogleAdsToken(refreshToken: string): Promise<GoogleAdsTokens> {
   const response = await axios.post(GOOGLE_ADS_CONFIG.tokenUrl, {
     refresh_token: refreshToken,
-    client_id: GOOGLE_ADS_CONFIG.clientId,
+    client_id: googleAdsClientId.value(),
     client_secret: googleAdsClientSecret.value(),
-    grant_type: 'refresh_token'
+    grant_type: 'refresh_token',
   })
 
   const { access_token, expires_in, scope } = response.data
@@ -327,24 +366,4 @@ async function fetchGoogleAdsCampaigns(accessToken: string, accountId: string): 
   }
 }
 
-/**
- * Funções de criptografia (simplificadas)
- * TODO: Implementar criptografia real com crypto-js ou similar
- */
-async function encryptTokens(tokens: GoogleAdsTokens): Promise<any> {
-  return {
-    accessToken: Buffer.from(tokens.accessToken).toString('base64'),
-    refreshToken: Buffer.from(tokens.refreshToken).toString('base64'),
-    expiresAt: tokens.expiresAt,
-    scope: tokens.scope
-  }
-}
-
-async function decryptTokens(encryptedTokens: any): Promise<GoogleAdsTokens> {
-  return {
-    accessToken: Buffer.from(encryptedTokens.accessToken, 'base64').toString(),
-    refreshToken: Buffer.from(encryptedTokens.refreshToken, 'base64').toString(),
-    expiresAt: encryptedTokens.expiresAt,
-    scope: encryptedTokens.scope
-  }
-}
+// Token encryption lives in ./lib/oauthCrypto.ts (ADR-019).

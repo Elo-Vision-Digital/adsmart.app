@@ -69,7 +69,7 @@ await securityLogger.logEvent(
 
 ### Event types (enum `SecurityEventType`)
 
-`LOGIN_SUCCESS`, `LOGIN_FAILED`, `RECAPTCHA_SUCCESS`, `RECAPTCHA_FAILED`, `RATE_LIMIT_EXCEEDED`, `SUSPICIOUS_ACTIVITY`, `PASSWORD_RESET_REQUEST`, `ACCOUNT_LOCKED`, `UNAUTHORIZED_ACCESS`, `BACKUP_STARTED`, `BACKUP_COMPLETED`, `BACKUP_FAILED`, `BACKUP_CLEANUP`, `BACKUP_RESTORED`.
+`LOGIN_SUCCESS`, `LOGIN_FAILED`, `RECAPTCHA_SUCCESS`, `RECAPTCHA_FAILED`, `RATE_LIMIT_EXCEEDED`, `SUSPICIOUS_ACTIVITY`, `PASSWORD_RESET_REQUEST`, `ACCOUNT_LOCKED`, `UNAUTHORIZED_ACCESS`, `BACKUP_STARTED`, `BACKUP_COMPLETED`, `BACKUP_FAILED`, `BACKUP_CLEANUP`, `BACKUP_RESTORED`, `USER_DELETION` (added in ADR-020 — emitted by `deleteUserData` after the cascade delete completes).
 
 ### Severity levels (enum `SecuritySeverity`)
 
@@ -104,6 +104,53 @@ try {
   else { /* generic */ }
 }
 ```
+
+## Firebase Auth errors → i18n keys (ADR-020)
+
+Single source of truth: [`src/lib/auth/errorMessages.ts`](../src/lib/auth/errorMessages.ts). Every caller of `signInWith*`, `signUp`, `linkWithCredential`, `reauthenticateWithCredential`, `updatePassword`, `sendPasswordResetEmail`, `sendEmailVerification` must wrap the error in `authErrorToTKey(err)` and pass through `t(...)`. No bespoke per-page mapping. Use the `isAuthError(err)` type guard from `src/lib/auth/errors.ts` to distinguish Firebase errors from local `Error` throws (see "Catch pattern" below).
+
+| Firebase code | i18n key | UX rationale |
+|---|---|---|
+| `auth/invalid-credential` | `loginPage.error.invalidCredentials` | Modern combined code |
+| `auth/wrong-password` | `loginPage.error.invalidCredentials` | Legacy code, same UX |
+| `auth/user-not-found` | `loginPage.error.invalidCredentials` | Collapsed to prevent enumeration |
+| `auth/invalid-login-credentials` | `loginPage.error.invalidCredentials` | Same |
+| `auth/email-already-in-use` | `loginPage.error.emailInUse` | Signup-only |
+| `auth/weak-password` | `common.validation.weakPassword` | Backstop if Identity Platform policy disagrees with client |
+| `auth/invalid-email` | `common.validation.invalidEmail` | Format error |
+| `auth/too-many-requests` | `common.error.tooManyAttempts` | Firebase server-side throttle |
+| `auth/popup-blocked` | `loginPage.error.popupBlocked` | Browser blocked the OAuth popup |
+| `auth/popup-closed-by-user` | `loginPage.error.popupClosed` | User dismissed |
+| `auth/cancelled-popup-request` | `loginPage.error.popupClosed` | Concurrent popup attempt — same UX as closed |
+| `auth/network-request-failed` | `common.error.network` | Offline or DNS failure |
+| `auth/account-exists-with-different-credential` | `loginPage.error.accountConflict` | Provider linking conflict |
+| `auth/credential-already-in-use` | `loginPage.error.credentialInUse` | Same email linked to another uid |
+| `auth/requires-recent-login` | `common.error.requiresReauth` | reauthenticateWithCredential needed |
+| **unknown** | `common.error.generic` | Last-resort catch-all |
+
+**Privacy collapse** (intentional): `auth/user-not-found`, `auth/wrong-password`, `auth/invalid-credential`, and `auth/invalid-login-credentials` all surface the same message to prevent account enumeration via differential error messages.
+
+**Note:** `auth/firebase-app-check-token-is-invalid` is NOT mapped — App Check was removed by [ADR-019](Decisions.md#adr-019-remove-firebase-app-check--aes-256-gcm-for-oauth-tokens-at-rest). If App Check is ever re-introduced, add it then.
+
+**Note:** `auth/provider-already-linked` is NOT currently mapped. Falls through to `common.error.generic`. Tracked as a deferred follow-up in ADR-020 — add to the map if reported in the wild.
+
+### Catch pattern for handlers that mix local Error throws + Firebase Auth calls
+
+`LoginPage.handleSubmit` and `SettingsPage.handleChangePassword` `throw new Error(t('<translated key>'))` for pre-validation failures (password mismatch, required-field empty, policy violation). Those local errors carry the i18n-resolved message in `err.message` — passing them through `authErrorToTKey` would mask the real message as `common.error.generic` (which surfaces as "Erro ao processar solicitação"). Use this split pattern instead:
+
+```ts
+} catch (err) {
+  if (isAuthError(err)) {
+    setError(t(authErrorToTKey(err)))         // Firebase auth/* code
+  } else if (err instanceof Error && err.message) {
+    setError(err.message)                       // local pre-validation throw — already translated
+  } else {
+    setError(t('common.error.generic'))          // unknown
+  }
+}
+```
+
+This bug was caught in browser validation post-Approach-A and fixed in commit `f0fc264` — see ADR-020 "Post-validation fix".
 
 ### When to add a top-level error boundary
 

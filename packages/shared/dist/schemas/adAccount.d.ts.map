@@ -1,0 +1,1 @@
+{"version":3,"file":"adAccount.d.ts","sourceRoot":"","sources":["../../src/schemas/adAccount.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,CAAC,MAAM,KAAK,CAAA;AAGxB,eAAO,MAAM,gBAAgB;;;EAAqC,CAAA;AAClE,MAAM,MAAM,UAAU,GAAG,CAAC,CAAC,KAAK,CAAC,OAAO,gBAAgB,CAAC,CAAA;AAEzD,eAAO,MAAM,eAAe;;;;;;;;;;;;;;;iBAa1B,CAAA;AACF,MAAM,MAAM,SAAS,GAAG,CAAC,CAAC,KAAK,CAAC,OAAO,eAAe,CAAC,CAAA"}

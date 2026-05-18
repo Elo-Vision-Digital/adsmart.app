@@ -6,10 +6,11 @@ Google Ads V2 and Meta Ads V2 use a two-step account-selection flow. V1 function
 
 ### Prerequisites
 
-- `GOOGLE_ADS_CLIENT_ID` (env var in `.env` and as `process.env` in functions)
-- `googleAdsClientSecret` (Secret Manager via `defineSecret`)
-- `GOOGLE_ADS_DEVELOPER_TOKEN` (env var in functions)
-- OAuth redirect URIs registered in Google Cloud Console:
+- `googleAdsClientId` — `defineString` in `functions/src/config/index.ts` (consumed via `.value()`; non-secret, has a baked-in default for the project's OAuth app).
+- `googleAdsClientSecret` — `defineSecret` in `functions/src/config/index.ts`.
+- `googleAdsDeveloperToken` — `defineSecret` (was a plain env var pre-ADR-017).
+- `encryptionKey` — `defineSecret`, bound on every callable that writes/reads OAuth tokens (ADR-019).
+- OAuth redirect URIs (`googleAdsRedirectUri`, `googleAdsRedirectUriDev`) — also `defineString`. Registered in Google Cloud Console:
   - Production: `https://adsmart.app/auth/google-ads/callback`
   - Development: `http://localhost:5173/auth/google-ads/callback`
 
@@ -42,7 +43,7 @@ Google Ads V2 and Meta Ads V2 use a two-step account-selection flow. V1 function
 7. **Function** (`confirmGoogleAdsAccountSelection`):
    - Validates temporary token belongs to caller and is not expired.
    - Fetches full account details from Google Ads API for each selected account.
-   - Base64-encodes tokens (⚠ not real encryption — TODO for a future phase).
+   - Encrypts access + refresh tokens with `encryptString` from `functions/src/lib/oauthCrypto.ts` (AES-256-GCM, versioned envelope — ADR-019).
    - Batch-writes to Firestore:
      - `users/{uid}/oauth_tokens/google_ads` — encoded tokens
      - `users/{uid}/adAccounts/google_ads_{customerId}` — one doc per account
@@ -53,9 +54,9 @@ Google Ads V2 and Meta Ads V2 use a two-step account-selection flow. V1 function
 
 `handleGoogleAdsCallbackWithSelection` preserves semantic `HttpsError` codes thrown inside the try block (CSRF check, expiry, etc.) by re-throwing `instanceof HttpsError` before the generic error logger. This ensures the client can distinguish CSRF failures (`invalid-argument`, `permission-denied`, `deadline-exceeded`) from true server errors (`internal`).
 
-### Token storage note
+### Token storage
 
-Tokens are stored base64-encoded, not encrypted. A real encryption step using `crypto` is stubbed in `encryptTokens()` in `googleAdsOAuthV2.ts`. This is a known gap to address before Phase 2.
+Tokens at rest are encrypted with AES-256-GCM via `functions/src/lib/oauthCrypto.ts` (ADR-019). The envelope is `{ v: 1, iv, tag, ct }`; legacy Base64-encoded tokens from before ADR-019 are read via `detectAndDecrypt` and opportunistically re-encrypted on the next write. Key derivation uses `scryptSync` with the `ENCRYPTION_KEY` secret. Tests in `functions/src/lib/oauthCrypto.test.ts` cover round-trip, tampering, version mismatch, and legacy decode.
 
 ---
 
@@ -63,9 +64,10 @@ Tokens are stored base64-encoded, not encrypted. A real encryption step using `c
 
 ### Prerequisites
 
-- `META_ADS_APP_ID` (env var)
-- `metaAdsAppSecret` (Secret Manager via `defineSecret`)
-- OAuth redirect URIs in Meta App Dashboard:
+- `metaAdsAppId` — `defineString` in `functions/src/config/index.ts`.
+- `metaAdsAppSecret` — `defineSecret`.
+- `encryptionKey` — `defineSecret`, bound on every callable that writes/reads OAuth tokens (ADR-019).
+- `metaAdsRedirectUri` / `metaAdsRedirectUriDev` — `defineString`. Registered in Meta App Dashboard:
   - Production: `https://adsmart.app/auth/meta-ads/callback`
   - Development: `http://localhost:5173/auth/meta-ads/callback`
 

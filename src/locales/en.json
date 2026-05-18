@@ -40,7 +40,7 @@
       "weakPassword": "Password must be at least 8 characters",
       "completeRecaptcha": "Please complete the ReCAPTCHA",
       "emailCannotBeChanged": "Email cannot be changed",
-      "minimumCharacters": "Minimum 6 characters",
+      "minimumCharacters": "Min. 8 chars + uppercase, number, special",
       "invalidDocument": "Invalid {type}"
     },
     "general": {
@@ -75,12 +75,22 @@
       "saveProfile": "Error saving profile",
       "changePassword": "Error changing password",
       "sendVerificationEmail": "Error sending email. Please try again later.",
-      "wrongPassword": "Incorrect current password"
+      "wrongPassword": "Incorrect current password",
+      "network": "Connection error. Check your internet.",
+      "requiresReauth": "For security, sign in again and try once more.",
+      "appCheckFailed": "Could not verify this device."
     },
     "warning": {
       "testAccount": "Test account identified - ReCAPTCHA disabled",
       "rateLimit": "Too many attempts. Try again in 15 minutes.",
       "rateLimitRemaining": "Warning: You have only {attempts} attempts remaining."
+    },
+    "emailVerification": {
+      "banner": "Please verify your email to secure your account.",
+      "resendButton": "Resend",
+      "resending": "Sending...",
+      "sent": "Email sent. Check your inbox.",
+      "error": "Failed to resend the verification email."
     }
   },
   "dashboard": {
@@ -133,8 +143,27 @@
       "invalidCredentials": "Invalid email or password",
       "emailInUse": "This email is already in use",
       "weakPasswordDetails": "Password must contain at least 8 characters, including uppercase, lowercase, numbers and special characters",
-      "socialLoginFailed": "Social login failed. Please try again."
+      "socialLoginFailed": "Social login failed. Please try again.",
+      "popupBlocked": "Pop-up was blocked. Enable pop-ups and try again.",
+      "popupClosed": "Login window closed before completion.",
+      "accountConflict": "An account with this email already exists using another sign-in method.",
+      "credentialInUse": "This sign-in is already linked to another account."
     }
+  },
+  "forgotPasswordPage": {
+    "title": "Forgot your password?",
+    "subtitle": "Enter your email and we'll send a link to reset it.",
+    "button": "Send link",
+    "sending": "Sending...",
+    "success": "Email sent. If your account exists, you'll receive the link shortly.",
+    "backToLogin": "Back to login"
+  },
+  "passwordPolicy": {
+    "tooShort": "Password must be at least 8 characters long.",
+    "requireUppercase": "Include at least one uppercase letter.",
+    "requireLowercase": "Include at least one lowercase letter.",
+    "requireNumber": "Include at least one number.",
+    "requireSpecial": "Include at least one special character (!@#$%^&*)."
   },
   "homePage": {
     "hero": {

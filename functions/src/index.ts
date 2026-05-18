@@ -46,9 +46,9 @@ export {
   confirmMetaAdsAccountSelection
 } from './metaAdsOAuthV2'
 
-// ✅ NOVO: Exportar funções SuitPay
-export { suitpayWebhook } from './suitpayWebhook'
-export { createPixPayment, checkPaymentStatus } from './suitpayPayment'
+// SuitPay (suitpayWebhook, createPixPayment, checkPaymentStatus) removed
+// in ADR-021 (2026-05-18). Payment integration is pending Asaas migration.
+// See docs/PAYMENTS.md.
 
 // ✅ NOVO: Exportar função de exclusão de dados
 export { deleteUserData } from './deleteUserData'

@@ -8,7 +8,7 @@ Single map of every documentation file. Organized by category. Update this file 
 |---|---|
 | [../README.md](../README.md) | Public-facing project overview, setup, scripts |
 | [../AGENTS.md](../AGENTS.md) | Authoritative guide for AI agents and engineers — read first |
-| [../CLAUDE.md](../CLAUDE.md) | Claude Code-specific guidance + design system reference |
+| [../CLAUDE.md](../CLAUDE.md) | Claude Code-specific guidance (skills, slash commands, memory pointer) |
 
 ## Foundation docs
 
@@ -16,7 +16,10 @@ Single map of every documentation file. Organized by category. Update this file 
 |---|---|
 | [README.md](README.md) | Reading order and category map for the docs/ directory |
 | [Decisions.md](Decisions.md) | Architectural Decision Records (ADRs) |
-| [CHANGES.md](CHANGES.md) | Append-only dated changelog (parseable `## [YYYY-MM-DD]` headers) |
+| [CHANGES.md](CHANGES.md) | Dated changelog (current quarter, parseable `## [YYYY-MM-DD]` headers) |
+| [changelog/](changelog/) | Quarterly archives of CHANGES (older entries) |
+| [UI-DESIGN.md](UI-DESIGN.md) | Design system reference (typography, colors, shadcn/ui inventory) |
+| [FIREBASE-CONVENTIONS.md](FIREBASE-CONVENTIONS.md) | Firebase Conventions Pack inventory (commands, agents, hooks) |
 
 ## Domain & data
 
@@ -56,8 +59,10 @@ Single map of every documentation file. Organized by category. Update this file 
 
 | Path | Purpose |
 |---|---|
-| [REFACTOR-PLAN.md](REFACTOR-PLAN.md) | Schema standardization plan (Zod + FirestoreDataConverter) — phases A→E |
-| [superpowers/plans/](superpowers/plans/) | Implementation plans (one file per multi-step initiative) |
+| [REFACTOR-PLAN.md](REFACTOR-PLAN.md) | Historical: schema standardization plan (Phases A–E, completed 2026-04-26 → ADR-009/016/018) |
+| [superpowers/specs/](superpowers/specs/) | Active design specs (work-in-progress) |
+| [superpowers/plans/](superpowers/plans/) | Active implementation plans (work-in-progress) |
+| [superpowers/archive/](superpowers/archive/) | Concluded specs/plans/notes — historical reference |
 
 ## Conventions
 

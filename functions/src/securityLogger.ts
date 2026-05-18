@@ -27,7 +27,8 @@ export enum SecurityEventType {
   BACKUP_COMPLETED = 'backup_completed',
   BACKUP_FAILED = 'backup_failed',
   BACKUP_CLEANUP = 'backup_cleanup',
-  BACKUP_RESTORED = 'backup_restored'
+  BACKUP_RESTORED = 'backup_restored',
+  USER_DELETION = 'user_deletion'
 }
 
 // Níveis de severidade

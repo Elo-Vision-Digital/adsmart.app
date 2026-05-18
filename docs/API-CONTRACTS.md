@@ -56,9 +56,11 @@ Throws `resource-exhausted` if blocked. Returns `true` if allowed.
 
 ## getProductPrices
 
-**File:** `functions/src/priceManager.ts`  
-**Trigger:** `onCall` (firebase-functions v1 style)  
-**Auth required:** Yes
+**File:** `functions/src/priceManager.ts`
+**Trigger:** `onCall` (firebase-functions v2, region `us-central1`)
+**Auth required:** Yes + admin check (via `isAdminUser` from `@adsmart/shared`)
+**Input schema:** none (empty payload)
+**Output schema:** `ProductPriceSchema` array from `@adsmart/shared`
 
 **Input:** `{}` (none)
 
@@ -66,55 +68,63 @@ Throws `resource-exhausted` if blocked. Returns `true` if allowed.
 ```typescript
 {
   success: true,
-  prices: Array<{
-    id: string,
-    name: string,
-    description: string,
-    price: number,      // BRL float (display only)
-    category: "google" | "meta",
-    type: "lancamento" | "negocio_local",
-    isActive: boolean,
-    updatedAt: string,  // ISO date string
-    updatedBy: string
-  }>
+  prices: Array<ProductPrice>   // see @adsmart/shared/schemas/productPrice
 }
 ```
+
+If the `productPrices` collection is empty, returns `DEFAULT_PRODUCT_PRICES` (sourced from `@adsmart/shared`) with a synthetic `updatedAt`/`updatedBy: 'system'`.
 
 ---
 
 ## updateProductPrices
 
-**File:** `functions/src/priceManager.ts`  
-**Trigger:** `onCall` (firebase-functions v1 style)  
+**File:** `functions/src/priceManager.ts`
+**Trigger:** `onCall` (firebase-functions v2, region `us-central1`)
 **Auth required:** Yes + admin check
+**Input schema:** `UpdateProductPricesInputSchema` from `@adsmart/shared` (validated via `safeParse`)
 
 **Input:**
 ```typescript
 {
   prices: Array<{
     id: string,
-    price: number,
-    isActive?: boolean
-  }>
+    name: string,
+    description: string,
+    price: number,            // BRL, will be rounded to 2 decimals server-side
+    category: "google" | "meta",
+    type: "lancamento" | "negocio_local",
+    isActive: boolean,
+  }>  // 1..50 items
 }
 ```
 
+Server stamps `updatedAt` (server Timestamp) and `updatedBy` (admin email) — clients cannot set them.
+
 **Output:**
 ```typescript
-{ success: true, updatedCount: number }
+{
+  success: true,
+  message: string,
+  updatedAt: string,   // ISO 8601
+}
 ```
+
+**Errors:**
+- `unauthenticated` — not signed in
+- `permission-denied` — caller is not admin
+- `invalid-argument` — Zod validation failed; first issue message is returned
 
 ---
 
 ## initializeDefaultPrices
 
-**File:** `functions/src/priceManager.ts`  
-**Trigger:** `onCall`  
+**File:** `functions/src/priceManager.ts`
+**Trigger:** `onCall` (firebase-functions v2, region `us-central1`)
 **Auth required:** Yes + admin check
 
-Idempotent. Seeds the four default product price documents if they don't exist.
+Idempotent. Seeds the canonical `DEFAULT_PRODUCT_PRICES` catalog (from `@adsmart/shared`) into `productPrices/{id}`.
 
-**Output:** `{ success: true, message: string }`
+**Output:** `{ success: true, message: string, count: number }`
 
 ---
 
@@ -148,7 +158,7 @@ Returns only `isActive: true` prices.
 **File:** `functions/src/googleAdsOAuthV2.ts`  
 **Trigger:** `onCall`  
 **Auth required:** Yes  
-**Secrets:** `googleAdsClientSecret`
+**Secrets:** `googleAdsClientSecret`, `googleAdsDeveloperToken`
 
 Step 1 of Google Ads OAuth V2. Validates state token (CSRF), exchanges auth code for tokens, lists accessible ad accounts, stores temporary token.
 
@@ -187,7 +197,7 @@ Step 1 of Google Ads OAuth V2. Validates state token (CSRF), exchanges auth code
 **File:** `functions/src/googleAdsOAuthV2.ts`  
 **Trigger:** `onCall`  
 **Auth required:** Yes  
-**Secrets:** `googleAdsClientSecret`
+**Secrets:** `googleAdsClientSecret`, `googleAdsDeveloperToken`
 
 Step 2 of Google Ads OAuth V2. Saves selected accounts + encrypted tokens, deletes temporary token.
 

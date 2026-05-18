@@ -60,3 +60,9 @@ Thumbs.db
 
 # Local timestamp stamp written by scripts/firebase/test-rules.sh
 .firebase/rules-last-tested.txt
+
+# Firebase hosting upload cache (regenerated on every `firebase deploy --only hosting`)
+.firebase/hosting.*.cache
+
+# Playwright MCP session artifacts (console logs + page snapshots)
+.playwright-mcp/

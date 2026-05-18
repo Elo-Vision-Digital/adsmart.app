@@ -1,10 +1,17 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app'
-import { connectAuthEmulator, getAuth } from 'firebase/auth'
+import {
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+  browserSessionPersistence,
+  connectAuthEmulator,
+  indexedDBLocalPersistence,
+  initializeAuth,
+} from 'firebase/auth'
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions'
 
-// Your web app's Firebase configuration
+// Web app's Firebase configuration. All values come from build-time env
+// vars in .env.production / .env.development; never inline.
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -15,35 +22,45 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig)
 
-// Initialize services
-export const auth = getAuth(app)
+// Auth persistence fallback chain (validated via Context7 against
+// /firebase/firebase-js-sdk 2026-05-17). IndexedDB is the most robust
+// option for privacy-mode browsers; localStorage is the historical default;
+// sessionStorage is the Safari ITP-friendly fallback; if all of those are
+// blocked, the SDK falls back to in-memory and the user is signed out on
+// tab close. browserPopupRedirectResolver wires the popup OAuth flow.
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+  popupRedirectResolver: browserPopupRedirectResolver,
+})
+
+// Firebase App Check was removed in ADR-019. The previous setup
+// (reCAPTCHA Enterprise provider gated by VITE_APPCHECK_SITE_KEY) was
+// scaffolded but never activated — no site key was ever provisioned in
+// any environment and no callable had enforceAppCheck enabled. Per the
+// same reasoning as ADR-013 (drop reCAPTCHA from auth), we rely on
+// Firebase Auth + per-action rate limiting + Firestore rules as the
+// abuse-prevention surface. See docs/SECURITY.md.
+
 export const db = getFirestore(app)
 export const functions = getFunctions(app, 'us-central1')
 
-// Verificar se deve usar emuladores
 const shouldUseEmulator =
   import.meta.env.DEV &&
+  typeof window !== 'undefined' &&
   window.location.hostname === 'localhost' &&
   import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true'
 
-// Conectar aos emuladores apenas em desenvolvimento E se explicitamente habilitado
-if (shouldUseEmulator) {
-  // Evitar múltiplas conexões
+if (shouldUseEmulator && typeof window !== 'undefined') {
   if (!window.__FIREBASE_EMULATOR_CONNECTED__) {
     connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
     connectFirestoreEmulator(db, '127.0.0.1', 8080)
     connectFunctionsEmulator(functions, '127.0.0.1', 5001)
-    console.log('🔧 Conectado aos emuladores do Firebase')
     window.__FIREBASE_EMULATOR_CONNECTED__ = true
   }
-} else {
-  console.log('🌐 Usando Firebase em produção')
 }
 
-// Declarar tipo global
 declare global {
   interface Window {
     __FIREBASE_EMULATOR_CONNECTED__?: boolean

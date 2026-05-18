@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import * as admin from 'firebase-admin'
+import { isAdminUser } from '@adsmart/shared'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -230,13 +231,7 @@ export const restoreBackup = onCall(async (request) => {
     )
   }
 
-  // ✅ CORRIGIDO: Lista de emails de administradores
-  const adminEmails = [
-    'agency.elovisiondigital@gmail.com', // ✅ Seu Gmail atual (Firebase)
-    'admin@adsmart.app' // ✅ Email corporativo futuro
-  ]
-  
-  if (!adminEmails.includes(request.auth.token.email || '')) {
+  if (!isAdminUser(request.auth.token, request.auth.token.email)) {
     throw new HttpsError(
       'permission-denied',
       'Apenas administradores podem restaurar backups'

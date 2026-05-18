@@ -11,6 +11,7 @@ import { PricesConfigPage } from '@/pages/admin/PricesConfigPage'
 import { WalletAdminPage } from '@/pages/admin/WalletAdminPage'
 import { Dashboard } from '@/pages/Dashboard'
 import { DeleteDataPage } from '@/pages/DeleteDataPage'
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { GenerateReportPage } from '@/pages/GenerateReportPage'
 import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -37,6 +38,7 @@ function App() {
           <AuthProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route
                 path="/dashboard"
                 element={

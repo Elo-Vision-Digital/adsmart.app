@@ -1,6 +1,7 @@
-import * as functions from 'firebase-functions'
+import { isAdminUser } from '@adsmart/shared'
 import * as admin from 'firebase-admin'
-import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
+import * as functions from 'firebase-functions'
+import { SecurityEventType, SecuritySeverity, securityLogger } from './securityLogger'
 
 // Inicializar admin se ainda não foi
 if (!admin.apps.length) {
@@ -60,12 +61,6 @@ const DEFAULT_PRICES: Omit<ProductPrice, 'updatedAt' | 'updatedBy'>[] = [
   }
 ]
 
-// ✅ Lista de emails de administradores
-const ADMIN_EMAILS = [
-  'agency.elovisiondigital@gmail.com', // ✅ Seu Gmail atual (Firebase)
-  'admin@adsmart.app', // ✅ Email corporativo futuro
-]
-
 // Função para obter preços dos produtos
 export const getProductPrices = functions.https.onCall(async (request) => {
   // ✅ NOVO: Verificar autenticação e admin
@@ -77,7 +72,7 @@ export const getProductPrices = functions.https.onCall(async (request) => {
   }
 
   const userEmail = request.auth.token.email || ''
-  const isAdmin = request.auth.token.admin || ADMIN_EMAILS.includes(userEmail)
+  const isAdmin = isAdminUser(request.auth.token, userEmail)
 
   console.log('🔍 DEBUG getProductPrices:')
   console.log('👤 Email do usuário:', userEmail)
@@ -159,7 +154,7 @@ export const updateProductPrices = functions.https.onCall(async (request) => {
 
   // Verificar se é admin
   const userEmail = request.auth.token.email || ''
-  if (!ADMIN_EMAILS.includes(userEmail)) {
+  if (!isAdminUser(request.auth.token, userEmail)) {
     // Registrar tentativa não autorizada
     await securityLogger.logEvent(
       SecurityEventType.UNAUTHORIZED_ACCESS,
@@ -257,7 +252,7 @@ export const initializeDefaultPrices = functions.https.onCall(async (request) =>
 
   // Verificar se é admin
   const userEmail = request.auth.token.email || ''
-  if (!ADMIN_EMAILS.includes(userEmail)) {
+  if (!isAdminUser(request.auth.token, userEmail)) {
     throw new functions.https.HttpsError(
       'permission-denied',
       'Apenas administradores podem inicializar preços'

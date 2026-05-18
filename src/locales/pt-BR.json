@@ -40,7 +40,7 @@
       "weakPassword": "A senha deve ter pelo menos 8 caracteres",
       "completeRecaptcha": "Por favor, complete o ReCAPTCHA",
       "emailCannotBeChanged": "O email não pode ser alterado",
-      "minimumCharacters": "Mínimo 6 caracteres",
+      "minimumCharacters": "Mín. 8 chars + maiúscula, número e especial",
       "invalidDocument": "{type} inválido"
     },
     "general": {
@@ -75,12 +75,22 @@
       "saveProfile": "Erro ao salvar perfil",
       "changePassword": "Erro ao alterar senha",
       "sendVerificationEmail": "Erro ao enviar email. Tente novamente mais tarde.",
-      "wrongPassword": "Senha atual incorreta"
+      "wrongPassword": "Senha atual incorreta",
+      "network": "Erro de conexão. Verifique sua internet.",
+      "requiresReauth": "Por segurança, faça login novamente e tente outra vez.",
+      "appCheckFailed": "Não foi possível verificar este dispositivo."
     },
     "warning": {
       "testAccount": "Conta de teste identificada - ReCAPTCHA desabilitado",
       "rateLimit": "Muitas tentativas. Tente novamente em 15 minutos.",
       "rateLimitRemaining": "Atenção: Você tem apenas {attempts} tentativas restantes."
+    },
+    "emailVerification": {
+      "banner": "Confirme seu email para garantir o acesso à sua conta.",
+      "resendButton": "Reenviar",
+      "resending": "Enviando...",
+      "sent": "Email enviado. Verifique sua caixa de entrada.",
+      "error": "Erro ao reenviar o email."
     }
   },
   "dashboard": {
@@ -133,8 +143,27 @@
       "invalidCredentials": "Email ou senha inválidos",
       "emailInUse": "Este email já está em uso",
       "weakPasswordDetails": "A senha deve conter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais",
-      "socialLoginFailed": "Erro ao fazer login social. Tente novamente."
+      "socialLoginFailed": "Erro ao fazer login social. Tente novamente.",
+      "popupBlocked": "Pop-up bloqueado. Habilite pop-ups e tente novamente.",
+      "popupClosed": "Janela de login fechada antes da conclusão.",
+      "accountConflict": "Já existe uma conta com este email usando outro método de login.",
+      "credentialInUse": "Este login já está associado a outra conta."
     }
+  },
+  "forgotPasswordPage": {
+    "title": "Esqueceu sua senha?",
+    "subtitle": "Informe seu email e enviaremos um link para redefinir a senha.",
+    "button": "Enviar link",
+    "sending": "Enviando...",
+    "success": "Email enviado. Se sua conta existir, você receberá o link em breve.",
+    "backToLogin": "Voltar ao login"
+  },
+  "passwordPolicy": {
+    "tooShort": "A senha deve ter pelo menos 8 caracteres.",
+    "requireUppercase": "Inclua pelo menos uma letra maiúscula.",
+    "requireLowercase": "Inclua pelo menos uma letra minúscula.",
+    "requireNumber": "Inclua pelo menos um número.",
+    "requireSpecial": "Inclua pelo menos um caractere especial (!@#$%^&*)."
   },
   "homePage": {
     "hero": {

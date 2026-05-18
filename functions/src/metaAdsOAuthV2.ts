@@ -2,7 +2,14 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
 import { AdAccountSchema } from '@adsmart/shared'
-import { metaAdsAppSecret } from './config'
+import {
+  encryptionKey,
+  metaAdsAppId,
+  metaAdsAppSecret,
+  metaAdsRedirectUri,
+  metaAdsRedirectUriDev,
+} from './config'
+import { encryptString } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
@@ -272,7 +279,9 @@ export const handleMetaAdsCallbackWithSelection = onCall({ secrets: [metaAdsAppS
 /**
  * Confirma a seleção de contas e salva no Firestore
  */
-export const confirmMetaAdsAccountSelection = onCall({ secrets: [metaAdsAppSecret] }, async (request) => {
+export const confirmMetaAdsAccountSelection = onCall(
+  { secrets: [metaAdsAppSecret, encryptionKey] },
+  async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -314,13 +323,17 @@ export const confirmMetaAdsAccountSelection = onCall({ secrets: [metaAdsAppSecre
       selectedAccountIds
     )
 
-    // Criptografar tokens antes de armazenar
-    const encryptedTokens = await encryptTokens({
-      accessToken: tokenData.accessToken,
+    // Criptografar tokens antes de armazenar (ADR-019: AES-256-GCM,
+    // versioned format, key from ENCRYPTION_KEY secret). Meta does not
+    // issue refresh tokens — the long-lived token is rotated by the user
+    // re-connecting, so only `accessToken` needs encryption here.
+    const secret = encryptionKey.value()
+    const encryptedTokens = {
+      accessToken: encryptString(tokenData.accessToken, secret),
       expiresAt: tokenData.expiresAt,
       scope: tokenData.scope,
-      tokenType: tokenData.tokenType
-    })
+      tokenType: tokenData.tokenType,
+    }
 
     // Salvar tokens e contas selecionadas
     const batch = admin.firestore().batch()
@@ -637,24 +650,12 @@ async function getAdAccountDetails(accessToken: string, accountIds: string[]): P
  * Obter configurações do Meta Ads
  */
 async function getMetaAdsConfig() {
-  // App secret via defineSecret (Secret Manager); demais valores via process.env
   return {
-    appId: process.env.META_ADS_APP_ID || '4052927898253765',
+    appId: metaAdsAppId.value(),
     appSecret: metaAdsAppSecret.value(),
-    redirectUri: 'https://adsmart.app/auth/meta-ads/callback',
-    redirectUriDev: 'http://localhost:5173/auth/meta-ads/callback'
+    redirectUri: metaAdsRedirectUri.value(),
+    redirectUriDev: metaAdsRedirectUriDev.value(),
   }
 }
 
-/**
- * Funções de criptografia (simplificadas)
- * TODO: Implementar criptografia real com crypto-js ou similar
- */
-async function encryptTokens(tokens: any): Promise<any> {
-  return {
-    accessToken: Buffer.from(tokens.accessToken).toString('base64'),
-    expiresAt: tokens.expiresAt,
-    scope: tokens.scope,
-    tokenType: tokens.tokenType
-  }
-}
+// Token encryption lives in ./lib/oauthCrypto.ts (ADR-019).

@@ -40,7 +40,7 @@
       "weakPassword": "La contraseña debe tener al menos 8 caracteres",
       "completeRecaptcha": "Por favor, complete el ReCAPTCHA",
       "emailCannotBeChanged": "El correo electrónico no se puede cambiar",
-      "minimumCharacters": "Mínimo 6 caracteres",
+      "minimumCharacters": "Mín. 8 chars + mayúscula, número y especial",
       "invalidDocument": "{type} inválido"
     },
     "general": {
@@ -75,12 +75,22 @@
       "saveProfile": "Error al guardar el perfil",
       "changePassword": "Error al cambiar la contraseña",
       "sendVerificationEmail": "Error al enviar el correo. Intente nuevamente más tarde.",
-      "wrongPassword": "Contraseña actual incorrecta"
+      "wrongPassword": "Contraseña actual incorrecta",
+      "network": "Error de conexión. Verifica tu internet.",
+      "requiresReauth": "Por seguridad, vuelve a iniciar sesión e inténtalo de nuevo.",
+      "appCheckFailed": "No se pudo verificar este dispositivo."
     },
     "warning": {
       "testAccount": "Cuenta de prueba identificada - ReCAPTCHA deshabilitado",
       "rateLimit": "Demasiados intentos. Intente nuevamente en 15 minutos.",
       "rateLimitRemaining": "Atención: Solo tienes {attempts} intentos restantes."
+    },
+    "emailVerification": {
+      "banner": "Verifica tu email para asegurar tu cuenta.",
+      "resendButton": "Reenviar",
+      "resending": "Enviando...",
+      "sent": "Email enviado. Revisa tu bandeja.",
+      "error": "Error al reenviar el email."
     }
   },
   "dashboard": {
@@ -133,8 +143,27 @@
       "invalidCredentials": "Correo electrónico o contraseña inválidos",
       "emailInUse": "Este correo electrónico ya está en uso",
       "weakPasswordDetails": "La contraseña debe contener al menos 8 caracteres, incluyendo mayúsculas, minúsculas, números y caracteres especiales",
-      "socialLoginFailed": "Error al iniciar sesión social. Intente nuevamente."
+      "socialLoginFailed": "Error al iniciar sesión social. Intente nuevamente.",
+      "popupBlocked": "El pop-up fue bloqueado. Habilita pop-ups e inténtalo de nuevo.",
+      "popupClosed": "Ventana de inicio de sesión cerrada antes de finalizar.",
+      "accountConflict": "Ya existe una cuenta con este email usando otro método de acceso.",
+      "credentialInUse": "Este acceso ya está vinculado a otra cuenta."
     }
+  },
+  "forgotPasswordPage": {
+    "title": "¿Olvidaste tu contraseña?",
+    "subtitle": "Ingresa tu email y te enviaremos un enlace para restablecerla.",
+    "button": "Enviar enlace",
+    "sending": "Enviando...",
+    "success": "Email enviado. Si tu cuenta existe, recibirás el enlace en breve.",
+    "backToLogin": "Volver al login"
+  },
+  "passwordPolicy": {
+    "tooShort": "La contraseña debe tener al menos 8 caracteres.",
+    "requireUppercase": "Incluye al menos una letra mayúscula.",
+    "requireLowercase": "Incluye al menos una letra minúscula.",
+    "requireNumber": "Incluye al menos un número.",
+    "requireSpecial": "Incluye al menos un carácter especial (!@#$%^&*)."
   },
   "homePage": {
     "hero": {

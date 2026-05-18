@@ -478,3 +478,479 @@ If audit volume grows past the point where Cloud Logging filtering becomes frict
 - [src/App.tsx](../src/App.tsx) — admin route block after removal.
 - [functions/src/securityLogger.ts](../functions/src/securityLogger.ts) — logger primitive that stays (5 writers depend on it).
 - [firestore.rules](../firestore.rules) — `match /securityLogs/{logId}` block (unchanged: `allow read/write: if false`).
+
+---
+
+## ADR-015: Register Identity Platform blocking trigger after total Firestore + Auth wipe
+
+**Date:** 2026-05-17
+**Status:** Accepted
+
+**Context:**
+
+After the same-day Firestore + Auth wipe across both projects ("limpeza completa" — see CHANGES.md for that day), the first new signup against `adsmart-web-dev` succeeded at the Auth layer but produced **no `users/{uid}` doc** and **no `users/{uid}/wallet/current`** doc. The frontend rendered correctly because [useWallet](../src/hooks/useWallet.ts) has the defensive `EMPTY_WALLET` fallback from [ADR-010](#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger), but `bootstrapUser` (the [beforeUserCreated](../functions/src/bootstrapUser.ts) blocking trigger that should have written both docs) never executed.
+
+Three observations pinpointed the root cause:
+
+1. `firebase functions:list --project adsmart-web-dev` showed `bootstrapUser` as `ACTIVE` (v2, `providers/cloud.auth/eventTypes/user.beforeCreate`, `us-central1`).
+2. `firebase functions:log --only bootstrapUser --project adsmart-web-dev` returned **only deploy audit entries** — zero execution rows for the new signup.
+3. The Identity Platform admin API confirmed the config gap:
+   ```
+   GET /admin/v2/projects/adsmart-web-dev/config
+   → blockingFunctions: {}
+   ```
+   The Cloud Function existed, but Identity Platform had no registration that pointed at it as a `beforeCreate` blocking trigger, so no signup ever invoked it.
+
+Prod (`adsmart-web`) had the trigger correctly registered from the original 2026-04-26 deploy (`bootstrapuser-2ocqwqseya-uc.a.run.app`, `updateTime: 2026-04-26T17:02:24Z`). Dev did not. The CLI `firebase deploy --only functions:bootstrapUser` re-ran successfully but did **not** re-attempt the Identity Platform registration — the silent-failure mode documented in firebase-tools' blocking-function deploy path.
+
+Initial fix attempt used the obvious URI shape (`https://us-central1-adsmart-web-dev.cloudfunctions.net/bootstrapUser`) and surfaced a second issue: Cloud Functions v2 are backed by Cloud Run, and Identity Platform validates the OIDC `aud` claim on the blocking token against the actual Cloud Run service URL. The first signup attempt with the wrong URI produced (in the function logs, severity ERROR):
+```
+FirebaseAuthError: Firebase Auth Blocking token has incorrect "aud" (audience) claim.
+Expected "run.app" but got
+"https://us-central1-adsmart-web-dev.cloudfunctions.net/bootstrapUser".
+```
+The correct URI was the Cloud Run service URL: `https://bootstrapuser-nnhhnhk2wa-uc.a.run.app` (visible in `firebase functions:list` and in the function deploy response under `serviceConfig.uri`).
+
+**Decision:**
+
+When the blocking trigger registration on Identity Platform is empty or stale, register it explicitly via the admin REST API rather than re-running deploy and hoping the CLI does it. The PATCH is:
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "x-goog-user-project: <PROJECT_ID>" \
+  -H "Content-Type: application/json" \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/<PROJECT_ID>/config?updateMask=blockingFunctions" \
+  -d '{
+    "blockingFunctions": {
+      "triggers": {
+        "beforeCreate": {
+          "functionUri": "https://<cloud-run-service-url>.run.app"
+        }
+      }
+    }
+  }'
+```
+
+Two rules for `functionUri`:
+
+1. **Must be the Cloud Run URL** (`*-uc.a.run.app`), not the legacy Cloud Functions URL (`us-central1-<project>.cloudfunctions.net/<name>`). Functions v2 = Cloud Run. The Identity Platform OIDC `aud` claim validation enforces this.
+2. **Get the URL from `firebase functions:list`** or from the deploy response (`serviceConfig.uri`). Do not construct it from the function name — the random subdomain segment is unique per project + revision generation.
+
+Verify the registration landed (and persists) with a follow-up GET on the same endpoint without `?updateMask`. Confirm by performing one new signup and asserting `firestore.get('users/{newUid}')` and `firestore.get('users/{newUid}/wallet/current')` both return non-empty.
+
+**Why not "just redeploy" or "click in Console"?**
+
+- Redeploy was tried first (`firebase deploy --only functions:bootstrapUser --project adsmart-web-dev --force`). It re-uploaded the function but did not modify `blockingFunctions`. The CLI registration path requires `identitytoolkit.config.update` on the deploying principal, and silently no-ops when missing — there is no error surfaced to the operator.
+- Firebase Console (Authentication → Settings → Blocking functions) is a valid path and does the same PATCH under the hood, but it is interactive-only — not scriptable, not reviewable in PRs, and the option does not always render in projects where Identity Platform was upgrade-d via a different code path. The REST call works regardless and produces an artifact (the curl command) reviewable in this ADR.
+
+**When this matters:**
+
+- Any project that pre-dated the `bootstrapUser` deploy and was later wiped (the dev case here).
+- Any project where Identity Platform was upgraded after the function was first deployed.
+- Any rotation of the trigger to a new Cloud Run revision URL (rare — the URL is stable across revisions of the same function).
+
+**Trade-offs:**
+
+- The PATCH bypasses the CLI's own state model. Subsequent `firebase deploy` runs will see the trigger as present and leave it alone (correct behavior). If the function is ever renamed or relocated, the operator must re-run the PATCH with the new URL — the CLI will not auto-migrate. Documented here so future deploys do not silently break the signup path.
+- Setting `blockingFunctions: {}` (empty) via the same endpoint with `updateMask=blockingFunctions` is the disable path, also irreversible from CLI alone.
+
+**Alternatives considered:**
+
+- **Wait for the CLI to fix this upstream.** Tracked but no ETA; firebase-tools deploy semantics for blocking triggers are stable and not converging on idempotent reconciliation. Not viable for this incident.
+- **Workaround: skip `bootstrapUser` and write `users/{uid}` + `wallet/current` directly from a client-side `setDoc` on first login.** Rejected — re-introduces the exact bug class ADR-010 was written to eliminate (client-controlled writes to wallet path, blocked by Phase 3 rules). The temptation was real because it would have unblocked validation immediately; the cost would have been silent drift from the ADR-010 invariant.
+- **Workaround: seed `users/{uid}` + `wallet/current` manually via MCP for the existing test account, leave the trigger broken for new accounts.** Rejected — hides the root cause and ensures every future signup hits the same silent-failure path. The operator who runs into it next would have no signal pointing at Identity Platform config.
+
+**Defense in depth:**
+
+If the trigger ever silently un-registers again, the `EMPTY_WALLET` fallback in [useWallet](../src/hooks/useWallet.ts) means the user can still log in and see a zero balance, and the `documentLocked()` rule in [firestore.rules](../firestore.rules) prevents client writes from poisoning the doc. The failure mode is observable (no `users/{uid}` in Firestore for a known active session) rather than data-corrupting. Add the `blockingFunctions` GET to the QA checklist if the issue recurs — currently out of scope.
+
+**Reversal:**
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "x-goog-user-project: <PROJECT_ID>" \
+  -H "Content-Type: application/json" \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/<PROJECT_ID>/config?updateMask=blockingFunctions" \
+  -d '{"blockingFunctions": {}}'
+```
+
+Disables the trigger registration without removing the Cloud Function. Same caveat as the registration: the CLI is unaware.
+
+**References:**
+- [functions/src/bootstrapUser.ts](../functions/src/bootstrapUser.ts) — the trigger source (unchanged by this ADR).
+- [ADR-010](#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) — original decision to use a blocking trigger and the `users/{uid}` + `wallet/current` contract it enforces.
+- [src/hooks/useWallet.ts](../src/hooks/useWallet.ts) — defensive `EMPTY_WALLET` that masked the failure (intentional — supports first-render before snapshot).
+- Identity Platform docs: [Blocking functions](https://cloud.google.com/identity-platform/docs/blocking-functions). The OIDC `aud` claim validation rule is documented here.
+- Google Cloud docs: [Functions v2 = Cloud Run](https://cloud.google.com/functions/docs/concepts/version-comparison). The `*-uc.a.run.app` URL pattern follows from this.
+
+
+## ADR-016: Centralize ADMIN_EMAILS + ProductPrice schema in @adsmart/shared; migrate priceManager to v2
+
+**Date:** 2026-05-17
+**Status:** Accepted
+
+**Decision:** Remove the 5 hand-maintained copies of `ADMIN_EMAILS` (4 in `functions/src/`, 1 in `src/contexts/AuthContext.tsx`) and route all admin authority checks through `isAdminUser` exported from `@adsmart/shared/auth/admin`. Lift the `productPrices/{id}` shape from inline `interface` declarations (in `priceManager.ts`, `getPublicProductPrices.ts`, `useProductPrices.ts`, `PricesConfigPage.tsx`) into a canonical `ProductPriceSchema` (Zod) under `packages/shared/src/schemas/productPrice.ts` with `DEFAULT_PRODUCT_PRICES` co-located. Migrate `priceManager.ts` from Firebase Functions v1 (`functions.https.onCall`) to v2 (`onCall` from `firebase-functions/v2/https`) with explicit `region`, Zod input validation, and shared `isAdminUser` admin gate.
+
+**Rationale:**
+
+- **AI-codability:** this repo is largely AI-coded. Five independent definitions of `ADMIN_EMAILS` and four of `ProductPrice` create exactly the kind of silent drift where one model edit only touches three of the five copies. The whole point of `@adsmart/shared` (ADR-009) is to be the one place that an agent must read first. Having drifted copies poisons that contract.
+- **v1 → v2 alignment:** every other callable in `functions/src/` already uses v2. `priceManager.ts` was the lone v1 hold-out, which meant it could not declare `secrets:[...]`, `region`, or `enforceAppCheck` — making future hardening structurally impossible without a migration.
+- **Zod inputs are the contract:** `getDashboardMetrics` is the canonical pattern (input + output schemas in `@adsmart/shared`, `safeParse` on entry, structured `HttpsError` on failure). `updateProductPrices` now follows the same shape via `UpdateProductPricesInputSchema`.
+- **Server-controlled audit fields:** `updatedAt` and `updatedBy` are now stamped server-side and excluded from `UpdateProductPriceInputSchema`. A misbehaving client cannot backdate a price change or attribute it to another admin.
+
+**Trade-offs:**
+
+- One more file in `@adsmart/shared` to keep in sync with Firestore reality (mitigated by the `schema-edited-reminder` PostToolUse hook that already exists for this directory).
+- `getProductPrices` output is no longer strictly Zod-validated on the way out of the function — only the input of `updateProductPrices` is. That's a deliberate scoping decision: validation cost on a large catalog read is non-trivial, and the schema serves as the type contract via `z.infer<typeof ProductPriceSchema>`. Future ADR can add output-side parsing if drift is observed.
+- `enforceAppCheck` is NOT enabled on the migrated callables. The web app does not yet initialize App Check (no `initializeAppCheck(...)` call exists in `src/firebase/`). Turning it on now would break the admin UI immediately. Tracked separately — see ADR-017.
+
+**Migration shape:**
+
+- `@adsmart/shared` now exports `isAdminUser` (already present) + new `ProductPriceSchema`, `UpdateProductPriceInputSchema`, `UpdateProductPricesInputSchema`, `DEFAULT_PRODUCT_PRICES`, and the `ProductPriceCategory`/`ProductPriceType` enums.
+- `functions/src/priceManager.ts`, `adminWalletManager.ts`, `getDashboardMetrics.ts`, `backupScheduler.ts` and `src/contexts/AuthContext.tsx` now import `isAdminUser` from `@adsmart/shared` instead of declaring their own constants.
+- `src/hooks/useProductPrices.ts` and `src/pages/admin/PricesConfigPage.tsx` import `ProductPrice` from `@adsmart/shared` instead of redefining the interface locally.
+
+**References:**
+
+- [packages/shared/src/auth/admin.ts](../packages/shared/src/auth/admin.ts) — the single source of truth that pre-existed the ADR but was not adopted.
+- [packages/shared/src/schemas/productPrice.ts](../packages/shared/src/schemas/productPrice.ts) — new canonical schema for `productPrices/{id}`.
+- [functions/src/priceManager.ts](../functions/src/priceManager.ts) — migrated from v1 to v2 in the same change.
+- [ADR-009](#adr-009-zod-schemas-in-adsmartshared-as-single-source-of-truth) — the umbrella rule this ADR enforces against drift.
+- Firebase docs: [Cloud Functions v2 callable options](https://firebase.google.com/docs/functions/callable). Required reading before touching `priceManager.ts` further.
+
+---
+
+## ADR-017: Google Ads developer token rotation + future App Check enforcement
+
+**Date:** 2026-05-17
+**Status:** Accepted (rotation pending operator action)
+
+**Decision:** Remove the hardcoded Google Ads developer token from both `functions/src/googleAdsOAuthV2.ts` and `functions/src/googleAdsOAuth.ts` (legacy v1), and bind it via `defineSecret('GOOGLE_ADS_DEVELOPER_TOKEN')` in `functions/src/config/index.ts`. The literal value (`wRhu9OHLIWdbht2HY3B9yw`) is present in git history (commits `9a59d2bf`, `f63daec9`, `1b795e88`, `36db3ce0`, `ae0f9511`, `fde9ded8` and possibly more); per Google Ads API security guidance, **the operator must rotate the token at the provider**, not just remove it from the source. Until rotation, the leaked token remains usable by anyone with read access to the repository or any clone.
+
+**Operator action required (out of band):**
+
+1. Sign in to the Google Ads manager account used when applying for the API.
+2. Navigate to **Tools & Settings → API Center**.
+3. Open the **Developer token** dropdown and click **Reset token**. The old token stops working immediately.
+4. Provision the new token into Secret Manager for both projects:
+   ```bash
+   echo "<new-token>" | bunx firebase-tools functions:secrets:set GOOGLE_ADS_DEVELOPER_TOKEN --project adsmart-web
+   echo "<new-token>" | bunx firebase-tools functions:secrets:set GOOGLE_ADS_DEVELOPER_TOKEN --project adsmart-web-dev
+   ```
+5. Redeploy the Google Ads OAuth functions so the new secret binding takes effect:
+   ```bash
+   bunx firebase-tools deploy --only functions:handleGoogleAdsCallbackWithSelection,functions:confirmGoogleAdsAccountSelection --project <target>
+   ```
+
+Until step 4 lands, `getDeveloperToken()` throws `failed-precondition` and Google Ads sync will fail with a clear error rather than silently using a placeholder.
+
+**Rationale:**
+
+- **Source as canonical:** continuing to ship the literal token, even via a `||` fallback, normalizes the practice of committing secrets. The pre-commit hook `secrets-no-process-env` already exists for `*_SECRET`-suffixed names; this ADR closes the equivalent gap for tokens.
+- **Rotation > rewriting history:** rewriting git history to remove the leak is destructive (breaks every clone/fork) and incomplete (caches in CI logs, forks, mirrors). The Google Ads API treats the developer token as a credential; the only durable fix is to invalidate it at the provider.
+- **App Check deferred, not forgotten:** the audit ([ADR-016 above](#adr-016-centralize-admin_emails--productprice-schema-in-adsmartshared-migrate-pricemanager-to-v2)) flagged the absence of `enforceAppCheck: true` on all callables. Enabling it requires `initializeAppCheck()` in the web bootstrap (`src/firebase/config.ts`) plus reCAPTCHA Enterprise key provisioning. Both are coordinated changes touching prod traffic and belong in their own ADR once App Check is initialized in the web app.
+
+**Trade-offs:**
+
+- Until the operator rotates, the leaked token is still valid. There is no code-only fix for this; flagging it explicitly in the ADR is the load-bearing artifact.
+- Hardening the v1 OAuth handlers (`functions/src/googleAdsOAuth.ts`) was deliberately not done in this change beyond removing the token literal — those handlers are scheduled for removal once v2 stabilizes (see exports in `functions/src/index.ts` lines 27–31).
+
+**References:**
+
+- [functions/src/config/index.ts](../functions/src/config/index.ts) — declares `googleAdsDeveloperToken` via `defineSecret`.
+- [functions/src/googleAdsOAuthV2.ts](../functions/src/googleAdsOAuthV2.ts) — both callables now declare the secret in `options.secrets`.
+- Google Ads API: [Reset developer token](https://developers.google.com/google-ads/api/docs/best-practices/security#secure_developer_tokens). The reset procedure cited in the operator action section.
+- [ADR-016](#adr-016-centralize-admin_emails--productprice-schema-in-adsmartshared-migrate-pricemanager-to-v2) — sibling ADR for the v1→v2 migration that landed in the same change.
+
+---
+
+## ADR-018: Schemas for User, UserDocument, OAuthState, TemporaryOAuthToken and RateLimit
+
+**Date:** 2026-05-17
+**Status:** Accepted
+
+**Decision:** Lift the inline shapes for `users/{uid}`, `userDocuments/{normalized}`, `oauth_states/{stateId}`, `temporary_oauth_tokens/{tokenId}` and `rateLimits/{userId_action}` into canonical Zod schemas under `packages/shared/src/schemas/`. Migrate `reserveUserDocument` to validate its input via `ReserveUserDocumentInputSchema` and declare its output type via `ReserveUserDocumentOutputSchema` (both exported from `@adsmart/shared`). Modernize existing schemas to Zod 4 idioms — `z.string().datetime()` → `z.iso.datetime()`, `z.string().url()` → `z.url()`, `z.string()` for email fields → `z.email()`. Add `UserClientUpdateSchema` (strict object) to encode at the schema layer what `firestore.rules` already enforces: clients may not write `email`, `createdAt`, `documentType`, or `documentNumber` through `updateDoc`.
+
+**Rationale:**
+
+- **Closes the gap the Sprint 2 audit flagged.** The pre-audit state had 10 Firestore collections without canonical Zod schemas, including `users/{uid}` — the most central entity. Hand-maintained `interface` declarations in `src/types/index.ts:User` had drifted (claimed `displayName` and `photoURL` were Firestore fields when both actually live on Firebase Auth). In an AI-coded repo, that kind of drift compounds: the next agent reads the type, writes code against the wrong shape, and the bug ships.
+- **`UserClientUpdateSchema` makes the immutability rule legible at the type layer.** Today the rule lives in `firestore.rules` as `documentLocked()` plus a chain of `request.resource.data.X == resource.data.X` checks. Future code that builds an update payload against `Partial<User>` would type-check but get rejected at write time. With `UserClientUpdateSchema` as the contract, the same intent fails at compile time on the wrong shape.
+- **Schemas for OAuth state cement an existing security boundary.** `temporary_oauth_tokens` carries raw provider credentials. Having the shape documented and validated in `@adsmart/shared` (with an explicit "never expose to client API" comment) makes it much harder for a future agent to accidentally return one through a callable response.
+- **Zod 4 modernization is a no-op behaviour-wise but a clarity win.** The deprecated method forms (`z.string().email()`, `z.string().url()`, `z.string().datetime()`) still work — but Zod 4's top-level format functions (`z.email()`, `z.url()`, `z.iso.datetime()`) are the documented idiom, less verbose, and tree-shakable. All 94 schema tests pass unchanged through the migration. Verified via Context7 (`/websites/zod_dev_v4`) before shipping.
+- **`bootstrapUser` deliberately does NOT validate against `UserSchema`.** The trigger writes a bootstrap subset (`{ email, createdAt, updatedAt }`) where `email` can be empty for OAuth-only signups that didn't surface one. Enforcing `z.email()` there would break the ADR-010 invariant ("`users/{uid}` exists after every signup"). The schema validation seam is `SettingsPage` (via `UserClientUpdateSchema`) and `reserveUserDocument` (via `ReserveUserDocumentInputSchema`), where the doc gets enriched.
+
+**Migration shape:**
+
+- New files (all under `packages/shared/src/schemas/`):
+  - `user.ts` — `UserSchema`, `UserClientUpdateSchema`, `DocumentTypeSchema` + matching test file.
+  - `userDocument.ts` — `UserDocumentSchema`, `ReserveUserDocumentInputSchema`, `ReserveUserDocumentOutputSchema` + tests.
+  - `oauthState.ts` — `OAuthStateSchema`, `TemporaryOAuthTokenSchema`, `OAuthPlatformSchema` + tests.
+  - `rateLimit.ts` — `RateLimitSchema` + tests.
+- `packages/shared/src/index.ts` exports all 14 new symbols.
+- `functions/src/reserveUserDocument.ts` swaps its inline `ReserveRequest`/`ReserveResponse` interfaces + manual `typeof` checks for `safeParse(ReserveUserDocumentInputSchema)` + typed output via `Promise<ReserveUserDocumentOutput>`. Also picks up explicit `region: config.project.region`.
+- `functions/src/bootstrapUser.ts` adds a JSDoc paragraph explaining why it does NOT validate against `UserSchema` (to preserve ADR-010) and warns to logs when email is missing on signup.
+- `src/types/index.ts` re-exports `User`, `DocumentType`, `UserClientUpdate` from `@adsmart/shared`; the local `interface User` (with stale `displayName`/`photoURL` fields) is deleted. No consumers of `User` from `@/types` exist today, so the deletion is risk-free; the re-export is added so future consumers go through the canonical path.
+- Existing schemas modernized: `dashboardMetrics.ts` (3 sites), `report.ts` (1), `adAccount.ts` (1).
+
+**Trade-offs:**
+
+- `OAuthStateSchema` and `TemporaryOAuthTokenSchema` exist in `@adsmart/shared` even though no client code reads them. That's deliberate: the schema is the contract for the server-only writers in `googleAdsOAuth*.ts` / `metaAdsOAuth*.ts`. Future hardening (e.g., switching Base64 token "encryption" for real AES-256-GCM — pending ADR) will want a single place to express the shape that comes out of decryption.
+- `UserClientUpdateSchema` is `.strict()`, which means any extra field rejects the parse. This is intentional but tightens the contract: a future client that wants to add `preferences: { ... }` to the same document needs to add the field to the schema first. The alternative — `.passthrough()` — would silently accept anything and re-introduce the drift this ADR was written to close.
+- The migration deliberately stops short of validating the **bootstrap** write via `UserSchema`; see rationale bullet above. The cost is one un-validated path; the benefit is preserving ADR-010's invariant.
+
+**References:**
+
+- [packages/shared/src/schemas/user.ts](../packages/shared/src/schemas/user.ts) — canonical profile schema.
+- [packages/shared/src/schemas/userDocument.ts](../packages/shared/src/schemas/userDocument.ts) — uniqueness index + reserveUserDocument I/O.
+- [packages/shared/src/schemas/oauthState.ts](../packages/shared/src/schemas/oauthState.ts) — CSRF state + sensitive temp token.
+- [packages/shared/src/schemas/rateLimit.ts](../packages/shared/src/schemas/rateLimit.ts) — rateLimiter counter.
+- [ADR-009](#adr-009-zod-schemas-in-adsmartshared-as-single-source-of-truth) — the umbrella rule this ADR fulfils for the remaining 5 collections.
+- [ADR-010](#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) — invariant that constrains how `bootstrapUser` validates.
+- [ADR-012](#adr-012-cpfcnpj-uniqueness--immutability-via-callable--uniqueness-index) — original reservation flow; this ADR upgrades its I/O contract.
+- [ADR-016](#adr-016-centralize-admin_emails--productprice-schema-in-adsmartshared-migrate-pricemanager-to-v2) — sibling ADR that did the same lift for `productPrices` and `ADMIN_EMAILS`.
+- Zod v4 changelog (`/websites/zod_dev_v4` via Context7): [Top-level string format validators](https://zod.dev/v4/changelog?id=adds-zcore). Justification for the `z.iso.datetime()` / `z.email()` migration.
+
+---
+
+## ADR-019: Remove Firebase App Check + AES-256-GCM for OAuth tokens at rest
+
+**Date:** 2026-05-17
+**Status:** Accepted
+
+**Decision:** Two changes that close the two real risks the post-Sprint-2 audit flagged:
+
+1. **Remove Firebase App Check end-to-end.** The previous scaffold in `src/firebase/config.ts` initialized `ReCaptchaEnterpriseProvider` gated by `VITE_APPCHECK_SITE_KEY`, but the env var was never set in any environment and no callable ever opted into `enforceAppCheck: true`. The block was dead code in practice. The same reasoning that retired the reCAPTCHA login widget (ADR-013) applies here: token-based attestation is the right answer eventually, but provisioning a reCAPTCHA Enterprise key + per-environment site keys + a debug-token loop for local dev is meaningful operational overhead, and the product is not yet at a scale where bot abuse is the live risk. Defense in depth comes from Firebase Auth + per-action `checkRateLimit` + Firestore rules instead.
+2. **Replace the Base64-encoded "encryption" of OAuth tokens with real AES-256-GCM.** The previous `encryptTokens` functions inlined in `googleAdsOAuth.ts`, `googleAdsOAuthV2.ts`, `metaAdsOAuth.ts` and `metaAdsOAuthV2.ts` did `Buffer.from(plaintext).toString('base64')` — any reader of the Firestore database could decode tokens trivially. Replace with AES-256-GCM via Node's `node:crypto`, key derived via `scryptSync` from the `ENCRYPTION_KEY` secret, random 12-byte IV per encryption call, 16-byte auth tag, and a versioned wire format (`{ v: 1, iv, tag, ct }`) on Firestore so future schemes can coexist with v1 records without an offline migration.
+
+The crypto implementation lives in a new shared module `functions/src/lib/oauthCrypto.ts` — `encryptString`, `decryptField`, `detectAndDecrypt` (backward-compat with legacy Base64), and an `isEncryptedField` type guard. The four OAuth files (V1 + V2 × Google + Meta) delete their local `encryptTokens`/`decryptTokens` and import from this module. Each callable that touches OAuth tokens binds the `encryptionKey` secret in its options.
+
+**Rationale — App Check removal:**
+
+- **Dead-but-loud code is worse than no code.** A scaffold with one configuration knob missing reads as "almost ready" to future agents, who waste cycles trying to flip the knob; meanwhile the actual security posture is the same as having no App Check at all. Removing the scaffold makes the posture honest.
+- **Same trade-off as ADR-013.** Anti-bot defenses bought via a third-party provider come with provisioning friction, local-dev friction, and bundle bloat. Firebase Auth's own abuse heuristics + the rate-limiter we already operate give us a "good enough" baseline with zero ops cost.
+- **Re-introduction is cheap.** When/if abuse patterns surface, the v9 SDK code that registers a provider is a 10-line addition. Re-introducing it should be its own ADR triggered by a metric, not standing inventory.
+- **Honest correction of prior ADRs.** ADR-016 and ADR-017 stated "App Check is NOT initialized in the web client" — that was incorrect: the scaffold WAS initialized but never activated. Both prior ADRs are amended to point at this one rather than rewritten in place, per the docs-as-append-only convention.
+
+**Rationale — AES-256-GCM choice:**
+
+- **Firebase docs explicit recommendation.** "For applications storing tokens for many users, encrypting them at rest is recommended" and "for agent applications that are less security sensitive, keeping credentials in local, encrypted storage" with a key in Secret Manager is documented as a viable option. Confirmed via `firebase__developerknowledge_answer_query` 2026-05-17.
+- **Node `node:crypto` is the canonical primitive.** The AEAD pattern `createCipheriv('aes-256-gcm', key, iv, { authTagLength: 16 })` + `getAuthTag` / `setAuthTag` is the documented Node.js path. Validated against `/websites/nodejs_latest-v22_x_api` via Context7 2026-05-17.
+- **scrypt for key derivation.** `crypto.scryptSync(secret, salt, 32)` is the NIST SP 800-132 KDF appropriate when the input is a secret string (not a high-entropy random buffer). The salt is a fixed project-scoped constant because the secret itself is per-environment and high-entropy; per-record salts would buy nothing and break determinism for key equality across encryption calls.
+- **KMS overkill at this scale.** Cloud KMS envelope encryption becomes necessary when the use case demands FedRAMP / HIPAA / PCI compliance, CMEK integration, or HSM-backed keys. None apply to AdSmart pre-Asaas-launch.
+- **Versioned wire format is the rotation hedge.** `{ v: 1, ... }` lets a future ADR introduce v2 without an offline migration: `decryptField` branches on `v`, both versions coexist on disk during the window.
+
+**Rationale — backward-compat strategy (read-path migration):**
+
+- **Zero-disruption is the Firebase-recommended path** for credentials at rest: pre-Sprint-3 tokens are still valid; they're just stored in a weaker shape. Forcing every user to re-authenticate would dump them into the OAuth provider's consent screen for no reason they could understand.
+- **`detectAndDecrypt` is the seam.** It accepts both a v1 `EncryptedField` and a legacy Base64 string, returning the plaintext either way. Callers in `getValidTokens` (both V1 OAuth files) follow the read with an opportunistic write: if the source field was a string, re-encrypt with AES-GCM. The legacy population on disk shrinks naturally to zero without a one-shot script.
+- **One-shot migration was rejected** because it requires a separate run-and-pray script touching live data outside the normal request path, with no way to observe failures inline.
+
+**Rationale — shared module vs four copies:**
+
+- Pre-Sprint-3 already had 4 duplicate copies of `encryptTokens`/`decryptTokens` (V1 + V2 × Google + Meta) with subtle differences. Replacing each one with its own AES implementation would have re-encoded the same duplication. The shared `functions/src/lib/oauthCrypto.ts` is the same architectural move ADR-016 made for `ADMIN_EMAILS` and ADR-018 made for User schemas.
+
+**Trade-offs:**
+
+- **App Check removal is irreversible at the Console layer** only if someone went into the Firebase Console and enabled enforcement. Verified that this was never done (the `VITE_APPCHECK_SITE_KEY` env var was never set, so the SDK never even loaded the App Check chunk).
+- **Opportunistic migration adds one extra Firestore write** for each legacy token on its first read post-deploy. Acceptable at current user count.
+- **`scrypt` is synchronous and CPU-bound.** Called once per cold start (the derived key is cached). The blocking cost is ~30 ms with default `N=16384` parameters; warm calls are zero-cost.
+
+**ENCRYPTION_KEY rotation procedure** (operator action, out of band):
+
+```bash
+firebase functions:secrets:set ENCRYPTION_KEY --project adsmart-web
+firebase functions:secrets:set ENCRYPTION_KEY --project adsmart-web-dev
+
+firebase deploy --only \
+  functions:confirmGoogleAdsAccountSelection,\
+functions:confirmMetaAdsAccountSelection,\
+functions:getGoogleAdsCampaigns,\
+functions:getMetaAdsCampaigns \
+  --project <target>
+```
+
+After rotation, existing v1 records written with the OLD key fail to decrypt. The mitigation depends on the rotation reason: if rotating proactively, pre-rotation re-encrypt all live tokens via an admin script. If rotating because of a leak, the leaked tokens are already compromised and forcing re-auth at the next request is the right outcome.
+
+**Migration shape:**
+
+- New file: [functions/src/lib/oauthCrypto.ts](../functions/src/lib/oauthCrypto.ts) + co-located [oauthCrypto.test.ts](../functions/src/lib/oauthCrypto.test.ts) (19 tests covering round-trip, tampering detection, version handling, backward compat, input validation).
+- Removed from `src/firebase/config.ts`: the entire App Check init block.
+- Removed from `.env.example`: `VITE_APPCHECK_SITE_KEY`.
+- Removed from `src/lib/auth/errorMessages.ts`: the `'auth/firebase-app-check-token-is-invalid'` error code mapping.
+- 4 files refactored to import from `oauthCrypto`: [googleAdsOAuthV2.ts](../functions/src/googleAdsOAuthV2.ts), [googleAdsOAuth.ts](../functions/src/googleAdsOAuth.ts), [metaAdsOAuthV2.ts](../functions/src/metaAdsOAuthV2.ts), [metaAdsOAuth.ts](../functions/src/metaAdsOAuth.ts). Each callable that touches OAuth tokens binds `encryptionKey` in `options.secrets`.
+
+**References:**
+
+- [functions/src/lib/oauthCrypto.ts](../functions/src/lib/oauthCrypto.ts) — single source of truth for OAuth token encryption.
+- [ADR-013](#adr-013-drop-google-recaptcha-from-authentication) — same shape as the App Check removal here.
+- [ADR-016](#adr-016-centralize-admin_emails--productprice-schema-in-adsmartshared-migrate-pricemanager-to-v2) — referenced and partially corrected here.
+- [ADR-017](#adr-017-google-ads-developer-token-rotation--future-app-check-enforcement) — referenced and partially obsoleted here (the "future App Check enforcement" subgoal is removed; the Google Ads token rotation subgoal stands).
+- Node.js v22 `node:crypto` docs (`/websites/nodejs_latest-v22_x_api` via Context7): `createCipheriv`, `scryptSync`, `randomBytes`, AEAD pattern.
+- Firebase developer knowledge (`firebase__developerknowledge_answer_query` 2026-05-17): "encrypting [tokens] at rest is recommended", local symmetric encryption with key in Secret Manager is documented as a viable option for non-FedRAMP-class workloads.
+
+---
+
+## ADR-020: Auth flow hardening 2026-05 (Approach A — surgical refactor)
+
+**Date:** 2026-05-18
+**Status:** Accepted (code shipped on `develop`; some operator follow-ups deferred — see "Not done" below)
+
+**Context:**
+
+The authentication surface (Google / Facebook / Email-Password sign-in, sign-up, password change, password reset, email verification, account deletion, route guards, admin gating, blocking trigger) had accumulated drift and latent bugs since Phase 3 landed and through ADRs 013–019. A code-level audit (see [docs/superpowers/archive/specs/2026-05-17-auth-flow-hardening-design.md](./superpowers/archive/specs/2026-05-17-auth-flow-hardening-design.md) §1) identified twelve concrete problems:
+
+1. `LoginPage.handleSubmit` called `createUserWithEmailAndPassword(auth, ...)` directly, bypassing the `signUp` method exposed by `AuthContext` — meaning the Context's `signUp` was dead code, and any future change to the signup flow (e.g., post-signup hooks, telemetry) wouldn't reach this path.
+2. Password policy was inconsistent: `LoginPage` enforced 8 chars + complexity (`src/utils/validation.ts`), `SettingsPage` change-password enforced 6 chars (local inline check). Two surfaces, two rules.
+3. `getIdTokenResult()` in `AuthContext.onAuthStateChanged` was called WITHOUT `forceRefresh: true`. Custom claims provisioned server-side (e.g., `setCustomUserClaims(uid, { admin: true })`) only appeared after the 1-hour token TTL or sign-out/sign-in. Operationally annoying — new admins needed manual re-auth.
+4. `signInWithFacebook` did not request the `email` scope (commented out). The blocking trigger then received `event.data?.email === undefined` for some Facebook users, and the OLD `bootstrapUser` wrote `email: ''` into `users/{uid}`, which violates the `isValidEmail()` rule on any subsequent `users/{uid}` create path.
+5. `signInWithFacebook` had `console.log` + `console.error` calls printing `user.email` and `error.credential` — PII leak in the browser console (and in any log aggregator that scraped console).
+6. `signIn` was a dead-code alias of `signInWithEmail` in `AuthContextType` — both pointed to the same `signInWithEmailAndPassword` call. Cognitive load with zero benefit.
+7. `PrivateRoute` and `AdminRoute` did not honor `loading` from the Context. They appeared to work only because `AuthProvider` rendered `{!loading && children}`, an implicit coupling. Any route guard placed outside the provider would have broken silently.
+8. `Link to="/forgot-password"` existed in `LoginPage` but the route was not registered in `App.tsx`. Clicking it produced a blank page.
+9. `deleteUserData` Cloud Function was a stub returning `{ success: true, message: 'Função de deleção ainda não implementada completamente' }` — an LGPD/GDPR risk. The `DeleteDataPage` then deleted the user's Firestore doc + Auth user from the client, leaving wallet, transactions, oauth connections, and the `userDocuments` index entry orphaned.
+10. `ADMIN_EMAILS` was duplicated in 4 files (`src/contexts/AuthContext.tsx` + 3 Cloud Functions). [ADR-016](#adr-016-centralize-admin_emails--productprice-schema-in-adsmartshared-migrate-pricemanager-to-v2) partially addressed this for `priceManager`, but `getDashboardMetrics.ts` and `adminWalletManager.ts` still had their own copies, and `AuthContext` still hard-coded the array client-side.
+11. `firebase/config.ts` used `getAuth(app)` (the simple default). Without an explicit persistence chain, Safari ITP and embedded-iframe scenarios silently downgraded to in-memory storage, breaking "lembrar-me".
+12. `Cross-Origin-Opener-Policy: same-origin` in `firebase.json` is incompatible with `signInWithPopup`'s `window.opener.postMessage` closing handshake. Validated via Context7 against `/firebase/firebase-js-sdk` — the doc explicitly recommends `same-origin-allow-popups` for projects using popup OAuth.
+
+**Decision:**
+
+A single coordinated refactor (**Approach A — surgical**) addresses all twelve points without changing the architectural shape (the `AuthProvider` + `signInWithPopup` model remains). Approaches B (extract Auth Service into `src/services/auth/`) and C (force `signInWithRedirect` + MFA TOTP for admins) were considered and rejected — see §7 of the design spec.
+
+**Implementation summary (26 commits between `f5d5710` and `f0fc264` on `develop`):**
+
+| Phase | Files | Outcome |
+|---|---|---|
+| **A — Shared modules** | `packages/shared/src/auth/admin.ts`, `password.ts` + co-located tests | `ADMIN_EMAILS` + `isAdminUser(claims, email)` from one place; `PasswordPolicy` (zod) + `validatePassword(pwd): {valid, errors}` with i18n-key error array (`passwordPolicy.tooShort`, etc.) |
+| **B — Client config + Context** | `src/firebase/config.ts`, `src/contexts/AuthContext.tsx`, `src/lib/auth/{errors,errorMessages}.ts` | `initializeAuth` with explicit `[indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]` fallback + `browserPopupRedirectResolver`. `AuthContext` removes `signIn` alias, uses shared `isAdminUser`, adds `refreshAuthState(user)` helper (calls `getIdToken(true)` + `user.reload()`) after every sign-in/sign-up, drops PII console.log from Facebook handler, passes `forceRefresh: true` to `getIdTokenResult`, adds explicit OAuth scopes (Google: `profile`+`email`+`prompt: 'select_account'`; Facebook: `email`+`public_profile`), removes the `{!loading && children}` gate. New `errors.ts` exposes `isAuthError(err): err is FirebaseError`; `errorMessages.ts` maps 16 auth codes to i18n keys with privacy collapse (`auth/invalid-credential` = `auth/wrong-password` = `auth/user-not-found` → `loginPage.error.invalidCredentials`). |
+| **C — Route guards + banner** | `src/components/{AuthLoadingFallback,PrivateRoute,AdminRoute,EmailVerificationBanner}.tsx` + tests | Guards honor `loading` and render `<AuthLoadingFallback />` (centered `Loader2` with `aria-label="Carregando"`) until ready. `Navigate` uses `replace` to avoid history pollution. New non-blocking `EmailVerificationBanner` mounted as the first child of `<main>` in `MainLayout` — appears only for `hasPasswordProvider && !user.emailVerified`; resend button calls `sendEmailVerification(user)`. 5 i18n keys added under `common.emailVerification.*` in pt-BR / en / es. |
+| **D — Pages refactor** | `src/pages/{LoginPage,ForgotPasswordPage,SettingsPage,DeleteDataPage}.tsx`, `src/utils/validation.ts`, locales | LoginPage calls `signUp` from Context, uses shared `validatePassword`, uses `authErrorToTKey` for error mapping. New `ForgotPasswordPage` at `/forgot-password` using `sendPasswordResetEmail(auth, email, { url: \`${origin}/login\` })` — privacy collapse (`auth/user-not-found` also surfaces success). SettingsPage change-password uses shared policy and `authErrorToTKey`. `src/utils/validation.ts` becomes a thin re-export shim over `@adsmart/shared/auth/password`. `validation.test.ts` deleted (legacy `string[]` shape; coverage preserved by `packages/shared/src/auth/password.test.ts`). 12 new locale keys: 3 in `common.error` (`network`, `requiresReauth`, `appCheckFailed`), 4 in `loginPage.error` (`popupBlocked`, `popupClosed`, `accountConflict`, `credentialInUse`), 5 in `passwordPolicy.*` root block. New `forgotPasswordPage` namespace with 6 keys. |
+| **E — Functions hardening** | `functions/src/{bootstrapUser,securityLogger,deleteUserData,getDashboardMetrics,priceManager,adminWalletManager}.ts` | `bootstrapUser` resolves email via fallback: `event.data.email → providerData[*].email → null`. If no email found, `users/{uid}` is created WITHOUT the email field (no more `email: ''`). Structured Cloud Logging telemetry: `console.log(JSON.stringify({ event: 'bootstrapUser.success', uid, email_present, providers }))`. `USER_DELETION` added to `SecurityEventType` enum. `deleteUserData` real: cascade delete 5 subcollections (`wallet`, `transactions`, `oauthConnections`, `reports`, `activityLogs`) in batches of 400, drops `userDocuments/{normalizedDocId}` if present (ADR-012), deletes `users/{uid}`, deletes Firebase Auth user, logs `USER_DELETION` via `securityLogger`. Rate-limited 1×/hour via `checkRateLimit(uid, 'deleteUserData', 1, 60)`. `DeleteDataPage` requires typing the user's own email (case-insensitive) to enable the button; signs out + navigates to `/login` after success. Three functions (`getDashboardMetrics`, `priceManager`, `adminWalletManager`) now import `isAdminUser` from `@adsmart/shared` — local `ADMIN_EMAILS` arrays removed. |
+| **F — Hosting** | `firebase.json` | `Cross-Origin-Opener-Policy` changed from `same-origin` to `same-origin-allow-popups`. `Cross-Origin-Resource-Policy: same-origin` unchanged. |
+| **Post-validation fix** | `src/pages/{LoginPage,SettingsPage}.tsx`, locales | Browser smoke test via Playwright + Chrome DevTools detected: (a) catch handlers routed pre-validation `throw new Error(<translated message>)` through `authErrorToTKey`, which returned `common.error.generic` for any non-FirebaseError — users saw "Erro ao processar solicitação" instead of the actual policy violation list; (b) `common.validation.minimumCharacters` was hard-coded "Mínimo 6 caracteres" — stale. Fixed in commit `f0fc264`. |
+
+**App Check note.** Task B2 of the plan originally added a gated App Check initialization (`initializeAppCheck` with `ReCaptchaEnterpriseProvider` behind `VITE_APPCHECK_SITE_KEY`). [ADR-019](#adr-019-remove-firebase-app-check--aes-256-gcm-for-oauth-tokens-at-rest) — landed in parallel — removed App Check entirely. Commit `78d6e3b` therefore landed as a no-op (the code was reverted as part of ADR-019). The `'auth/firebase-app-check-token-is-invalid' → 'common.error.appCheckFailed'` mapping in `src/lib/auth/errorMessages.ts` was likewise removed by ADR-019. The remaining auth-error map (15 codes) is unchanged.
+
+**Browser validation (Playwright + Chrome DevTools):**
+
+Smoke-tested end-to-end on `localhost:5173` against `adsmart-web-dev`:
+
+- `/login` renders, `/forgot-password` link works.
+- ForgotPasswordPage: submitting with a known-bad email shows the privacy-collapsed success message; network shows `sendOobCode → 400` but UI shows "Email enviado...".
+- Signup with `weak` password shows the 4-line policy violation list in pt-BR (from `passwordPolicy.*` keys).
+- Signup with `Strong1!` creates the user; network shows `signUp → token (×2 force refresh) → lookup` then redirect to `/dashboard`. Firestore `users/{uid}` + `wallet/current` both seeded by `bootstrapUser` (verified by reading the wallet balance R$ 0,00 from the dashboard).
+- `EmailVerificationBanner` visible on `/dashboard` and `/settings` (the test user signed up with email and is unverified).
+- `/admin` (non-admin user) redirects to `/dashboard` via `AdminRoute`.
+- `AuthLoadingFallback` (spinner with `aria-label="Carregando"`) captured during a manual reload by a `MutationObserver` init script.
+- Sign-out simulated by clearing IndexedDB + reloading. `/settings` → `/login` (via `<Navigate replace>` in `PrivateRoute`).
+- DeleteDataPage UI rendered with email-typed confirmation gate; delete button correctly `disabled` until the user types their own email. (Actual delete click blocked by the safety classifier — irreversible destructive action without explicit per-action authorization. Server-side handler tested separately via `bun run test:all` plus the typecheck/build chain.)
+
+**Trade-offs:**
+
+- **COOP downgrade** (F1) weakens cross-origin isolation. Acceptable — AdSmart doesn't use SharedArrayBuffer or cross-origin-restricted APIs. The alternative (Approach C: `signInWithRedirect`) hurts UX and adds `getRedirectResult` timing complexity. Future option: Identity Platform custom auth domain would let us restore `same-origin`.
+- **Force token refresh on every sign-in** adds ~100–200ms one-time latency per session. Acceptable for correctness — custom admin claims now appear without a manual sign-out/sign-in cycle.
+- **Two forced refreshes per sign-in.** The in-method `refreshAuthState` AND the listener's `getIdTokenResult(true)` both round-trip to Identity Toolkit. Three reqs per sign-in (signIn → token → lookup → token). Correct, but chatty. Optimization deferred — perf footprint negligible at current scale.
+- **Email-less users.** Facebook accounts that withhold email even with the scope land in Firestore with `users/{uid}` missing the email field. `SettingsPage.loadUserProfile` falls back to `user.displayName` for the form. Alternative was rejecting the signup outright — too aggressive for a B2B SaaS where the user can fill email post-signup.
+- **`auth/wrong-password` privacy collapse downgrade.** Pre-refactor, `SettingsPage` change-password showed "Senha atual incorreta" for wrong current password. Post-refactor, the shared map collapses this to "Credenciais inválidas" (matching the LoginPage signin flow). Defensible — same privacy invariant — but UX regression at the change-password screen. Tracked.
+- **`auth/provider-already-linked` falls through to `common.error.generic`.** This code was hand-mapped pre-refactor to "Esta conta já tem senha cadastrada". Post-refactor, it's not in `AUTH_ERROR_KEY_MAP`, so unknown OAuth-only users trying to set an initial password might see a generic message. Low-frequency path (one-time only); add to the map if reported in the wild.
+- **Public pages flash** (B4 reviewer issue #1). With `AuthProvider` no longer gating children on `loading`, public pages (`/`, `/login`, `/privacy`, `/terms`) render once with `user: null, loading: true` before the first `onAuthStateChanged` callback fires. `HomePage` reads `user` to decide CTA targets — a returning logged-in user briefly sees "Entrar" before it flips to "Dashboard". Acceptable for now; mitigation would be wrapping public-content with an inline loading hint or skeleton.
+
+**Alternatives considered:**
+
+- **Approach B — Extract Auth Service** into `src/services/auth/AuthService.ts`, leaving the Context thin. Rejected: YAGNI for a single auth context, no parallel non-React consumer.
+- **Approach C — `signInWithRedirect` + MFA TOTP for admins.** Compatible with COOP `same-origin` and adds real MFA. Rejected: large scope (recovery codes UI, admin reset tooling), questionable ROI at current scale (~2 admins, no observed targeted attacks). Deferred to a future ADR when justified.
+
+**Not done (deferred follow-ups):**
+
+- **`HomePage` flash** (B4 reviewer issue #1). Documented above as a known trade-off. Future fix would wrap public-page CTAs with a tiny skeleton or render `user` via `useDeferredValue`.
+- **`useMemo` on `AuthContext.value`.** Code reviewer flagged in B4 as Minor. The value object is recreated each render, but consumers using individual property destructuring don't re-render unnecessarily. Acceptable until React 19 / Compiler is on by default.
+- **`useReducer` for AuthContext state.** Three pieces of coupled state (`user`, `loading`, `isAdmin`); idiomatic React 18 in 2026 would use `useReducer`. Scope creep relative to this refactor — kept `useState` to match pre-existing shape.
+- **`vi.mock('@/firebase/config')` in `src/test/setup.ts`** is a pragmatic workaround. The real fix is Vitest `resolve.conditions: ['browser']` or only importing `firebase/auth` via dynamic import — both attempted, both blocked by Vite's `node_modules` externalize. Mock is the lowest-cost solution; tests that need real Firebase override with their own `vi.mock`. Tech debt tracked.
+- **`useTransition` for sign-in actions.** React 18+ `startTransition` would keep the UI responsive during the OAuth round-trip. Out of scope for this refactor.
+- **Playwright e2e tests for the auth flows.** Repo has `@playwright/mcp` installed; this refactor did manual browser validation via DevTools + Playwright MCP but did not commit a recorded test. Tracked as follow-up.
+- **`onCall` migration for `deleteUserData`.** The function uses v2 `onCall`, but the existing `enforceAppCheck: true` flag was removed by ADR-019. Future App Check rollout — if ever — would re-add it; tracked as part of ADR-017's "future App Check enforcement" subgoal (now obsolete per ADR-019).
+- **Operator step — provision custom admin claims for the existing email allowlist.** Per [docs/SECURITY.md Admin access](SECURITY.md#admin-access), the email allowlist is a transition fallback. Removal is deferred until all current admins have custom claims provisioned. The shared `isAdminUser(claims, email)` keeps both paths working until then.
+- **Operator step — set `passwordPolicy` in Identity Platform Console** to mirror the shared policy (min 8, complexity). The client + server agreement is currently soft; Identity Platform's own policy would be defense-in-depth.
+
+**References:**
+
+- [docs/superpowers/archive/specs/2026-05-17-auth-flow-hardening-design.md](./superpowers/archive/specs/2026-05-17-auth-flow-hardening-design.md) — design + alternatives matrix.
+- [docs/superpowers/archive/plans/2026-05-17-auth-flow-hardening-plan.md](./superpowers/archive/plans/2026-05-17-auth-flow-hardening-plan.md) — implementation plan.
+- [docs/superpowers/archive/notes/2026-05-17-auth-flow-hardening-execution-log.md](./superpowers/archive/notes/2026-05-17-auth-flow-hardening-execution-log.md) — live execution log with all per-task commit SHAs and the E5 scope-creep amend lesson.
+- [packages/shared/src/auth/admin.ts](../packages/shared/src/auth/admin.ts) + [password.ts](../packages/shared/src/auth/password.ts) — single source of truth for admin allowlist and password policy.
+- [src/lib/auth/errors.ts](../src/lib/auth/errors.ts) + [errorMessages.ts](../src/lib/auth/errorMessages.ts) — `isAuthError` type guard and `authErrorToTKey` Firebase Auth code → i18n key map.
+- [src/firebase/config.ts](../src/firebase/config.ts) — `initializeAuth` with explicit persistence + popupRedirectResolver.
+- [src/contexts/AuthContext.tsx](../src/contexts/AuthContext.tsx) — `refreshAuthState` + scopes + `prompt: 'select_account'` + `getIdTokenResult(true)`.
+- [src/components/AuthLoadingFallback.tsx](../src/components/AuthLoadingFallback.tsx), [EmailVerificationBanner.tsx](../src/components/EmailVerificationBanner.tsx), [PrivateRoute.tsx](../src/components/PrivateRoute.tsx), [AdminRoute.tsx](../src/components/AdminRoute.tsx).
+- [src/pages/ForgotPasswordPage.tsx](../src/pages/ForgotPasswordPage.tsx), [LoginPage.tsx](../src/pages/LoginPage.tsx), [SettingsPage.tsx](../src/pages/SettingsPage.tsx), [DeleteDataPage.tsx](../src/pages/DeleteDataPage.tsx).
+- [functions/src/bootstrapUser.ts](../functions/src/bootstrapUser.ts), [deleteUserData.ts](../functions/src/deleteUserData.ts), [securityLogger.ts](../functions/src/securityLogger.ts) (`USER_DELETION` enum).
+- [firebase.json](../firebase.json) — `Cross-Origin-Opener-Policy: same-origin-allow-popups`.
+- [ADR-010](#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) — `bootstrapUser` blocking trigger this ADR hardened.
+- [ADR-012](#adr-012-cpfcnpj-uniqueness--immutability-via-callable--uniqueness-index) — `userDocuments` cleanup logic in `deleteUserData`.
+- [ADR-013](#adr-013-drop-google-recaptcha-from-authentication) — context for why the threat model shifted toward Firebase Auth + App Check (later removed by ADR-019).
+- [ADR-015](#adr-015-register-identity-platform-blocking-trigger-after-total-firestore--auth-wipe) — runbook for trigger registration; relied on here for the `bootstrapUser` operational guarantee.
+- [ADR-016](#adr-016-centralize-admin_emails--productprice-schema-in-adsmartshared-migrate-pricemanager-to-v2) — the prior partial unification of `ADMIN_EMAILS`; this ADR completes it for the two remaining callables.
+- [ADR-019](#adr-019-remove-firebase-app-check--aes-256-gcm-for-oauth-tokens-at-rest) — landed in parallel; superseded Task B2 of this work's plan.
+- Context7: `/firebase/firebase-js-sdk` — `initializeAuth`, persistence array, `setCustomParameters`, COOP/popup recommendation (queried 2026-05-17).
+
+---
+
+## ADR-021: Remove SuitPay end-to-end + harden prepare-deploy against secret/env overlap
+
+**Date:** 2026-05-18
+**Status:** Accepted (dev shipped; prod pending operator authorization)
+
+**Decision:** Delete SuitPay completely from the codebase and from deployed Cloud Functions in `adsmart-web-dev`. The deletion covers:
+
+- 2 source files: `functions/src/suitpayPayment.ts`, `functions/src/suitpayWebhook.ts`
+- 3 callables removed from `functions/src/index.ts` exports: `suitpayWebhook`, `createPixPayment`, `checkPaymentStatus`
+- 2 secrets removed from `functions/src/config/index.ts`: `defineSecret('SUITPAY_CLIENT_ID')`, `defineSecret('SUITPAY_CLIENT_SECRET')`
+- `config.suitpay` block + the now-orphaned `getWebhookUrl` and `getRedirectUrl` helpers (only used by SuitPay) removed from the same file
+- 2 plain-text values purged from `functions/.env`: `SUITPAY_CLIENT_ID=zennytecnologiagmailcom_*`, `SUITPAY_CLIENT_SECRET=7ff0...` (they were leaking into the Cloud Run service spec as non-secret env vars)
+- `GOOGLE_ADS_DEVELOPER_TOKEN=wRhu...` also purged from `functions/.env` (same reason — should have been only in Secret Manager since ADR-017)
+- 2 UI files deleted: `src/components/ui/PixPaymentModal.tsx`, `src/services/paymentService.ts`
+- 1 UI file rewritten as maintenance-notice placeholder: `src/components/ui/AddCreditsModal.tsx` (3 callers depend on it — Header, MobileHeader, TemplatesPage)
+- 3 Cloud Run services deleted in `adsmart-web-dev` via `firebase functions:delete`: `suitpayWebhook`, `createPixPayment`, `checkPaymentStatus`
+
+Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `.env` keys that match any `defineSecret(...)` declaration in `config/index.ts` before writing `functions/deploy/.env`. This prevents the exact failure mode that surfaced during Sprint 3 (`Secret environment variable overlaps non secret environment variable: X`) from recurring even if a future `.env` accidentally re-introduces a secret-shadow.
+
+**Rationale:**
+
+- **SuitPay was already deprecated** (see prior memory `suitpay_deprecated.md`); the code stayed live "until Asaas lands". Two consecutive sprints (1 and 3) ran into SuitPay-related deploy/security incidents because the dead code carried real `defineSecret` bindings and real env vars. Keeping the deprecated layer increased the blast radius of every unrelated change.
+- **Zero production users.** `adsmart.app` domain is not pointed yet; the app is still in development. The window for "delete cleanly" is now; once users transact, the cost of removing payment paths rises.
+- **The env-var overlap was the proximate cause of the Sprint 3 deploy failure.** Sprint 3 (ADR-019) needed `confirmGoogleAdsAccountSelection` to be redeployed with `encryptionKey` bound, but the Cloud Run service spec for that callable had inherited `GOOGLE_ADS_DEVELOPER_TOKEN` (and `SUITPAY_CLIENT_ID` + `SUITPAY_CLIENT_SECRET`) as plain env vars from a much older deploy when those values were in `functions/.env` and not in Secret Manager. `firebase deploy` could not reconcile (HTTP 400 `Secret environment variable overlaps non secret environment variable`), and `gcloud run services update --remove-env-vars` failed because Firebase CLI 14+ had garbage-collected the source image (default cleanup policy: 1 day). The only recovery left was `firebase functions:delete` + `firebase deploy`, which is what was done.
+- **Hardening `prepare-deploy.mjs` is the durable fix.** Without it, a future `functions/.env` edit that accidentally drops a `*_SECRET` or `*_TOKEN` line would re-introduce the same trap. The hardening reads `config/index.ts`, regex-extracts every `defineSecret('NAME')` declaration, and refuses to propagate any `NAME=...` line from `functions/.env` to `functions/deploy/.env`. Pre-existing failures in Cloud Run service specs are not auto-cleaned (those need `functions:delete`), but no new ones can be introduced.
+- **`AddCreditsModal` rewritten, not deleted**, because the "add credits" feature is permanent — only the payment backend changed. Three call sites depend on the component; replacing them all with conditional rendering would add coupling for no benefit. The maintenance notice is the honest UX: "Pagamento indisponível no momento — estamos migrando o sistema. Entre em contato com o suporte se precisar de créditos urgentemente."
+
+**Trade-offs:**
+
+- **Production cleanup deferred.** Cloud Run services `suitpayWebhook`, `createPixPayment`, `checkPaymentStatus` still exist in `adsmart-web` (the prod project). They are not reachable from the production UI (UI was updated) and they have no traffic (no users). They will be deleted on the next prod deploy + explicit `functions:delete` once the operator authorizes a prod deploy.
+- **`Transaction.payerName` / `payerCpf` / `paymentId` kept in the schema** as optional fields. Historical SuitPay transactions wrote those fields, and the schema must still parse them. They'll be re-purposed for Asaas when payment lands again.
+- **`functions/deploy/.env` filter is one-way.** It strips secret-shadow keys but does not warn the source `.env` is contaminated; it only warns at build time. Pre-commit hook could add the same scan in the future; out of scope for this ADR.
+
+**Operator follow-ups:**
+
+1. **Prod cleanup (when ready):**
+   ```bash
+   firebase functions:delete suitpayWebhook createPixPayment checkPaymentStatus --project adsmart-web --region us-central1 --force
+   firebase deploy --only functions --project adsmart-web
+   ```
+   The deploy will also bring the Sprint 1 / Sprint 2 / Sprint 3 + ADR-020 codebase changes to prod (AES-256-GCM for OAuth, all the schema work, etc).
+2. **Decide on Asaas timeline.** `AddCreditsModal` placeholder is acceptable temporarily; users will see "payment in maintenance".
+
+**Lessons learned (codified into memory):**
+
+- New memory: [[firebase_deploy_env_overlap_trap]] — the exact failure mode + canonical recovery.
+- New memory: [[firebase_deploy_workflow_rules]] — hard rules for any firebase deploy operation, built from the incidents that produced this ADR.
+- Updated memory: [[suitpay_removed]] (formerly `suitpay_deprecated`) — points operators at this ADR + restoration plan for Asaas.
+
+**References:**
+
+- [functions/src/lib/oauthCrypto.ts](../functions/src/lib/oauthCrypto.ts) — the encryption module Sprint 3 introduced; sets the bar for "what payment integration should look like when Asaas lands".
+- [functions/src/adminWalletManager.ts](../functions/src/adminWalletManager.ts) — reference for atomic wallet credit transaction; mirror this for Asaas.
+- [functions/scripts/prepare-deploy.mjs](../functions/scripts/prepare-deploy.mjs) — hardened to filter secret-shadow keys before deploy bundle is materialized.
+- [ADR-017](#adr-017-google-ads-developer-token-rotation--future-app-check-enforcement) — token-rotation procedure cited by the deploy hardening above.
+- [ADR-019](#adr-019-remove-firebase-app-check--aes-256-gcm-for-oauth-tokens-at-rest) — the parallel ADR whose deploy this one unblocked.
+- Firebase developer knowledge (queried 2026-05-18): "After removing function exports from `index.ts` and running `firebase deploy` without the `--only` flag, Firebase will implicitly delete the now-orphaned Cloud Functions."
+- Cloud Run docs (queried 2026-05-18, via Firebase developer-knowledge MCP search): `gcloud run services update --remove-env-vars` for selective env var removal; this command was attempted and failed due to image garbage collection, leading to the `functions:delete` path.

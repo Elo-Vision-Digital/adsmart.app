@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { EmailVerificationBanner } from '@/components/EmailVerificationBanner'
 import { BottomNavigation } from './BottomNavigation'
 import { Footer } from './Footer'
 import { Header } from './Header'
@@ -30,6 +31,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
         {/* Main Content */}
         <main className="md:ml-20 pt-14 md:pt-20 pb-20 md:pb-0 min-h-[calc(100vh-8rem)] md:min-h-[calc(100vh-5rem)]">
+          <EmailVerificationBanner />
           {children}
         </main>
       </div>

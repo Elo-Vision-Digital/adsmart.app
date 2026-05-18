@@ -3,21 +3,19 @@ import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/
 import {
   GetDashboardMetricsInputSchema,
   type GetDashboardMetricsOutput,
+  isAdminUser,
 } from '@adsmart/shared'
 
 if (!admin.apps.length) {
   admin.initializeApp()
 }
 
-const ADMIN_EMAILS = ['agency.elovisiondigital@gmail.com', 'admin@adsmart.app']
-
 function assertAdmin(auth: CallableRequest['auth']) {
   if (!auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
   }
-  const email = typeof auth.token.email === 'string' ? auth.token.email : ''
-  const isAdmin = auth.token.admin === true || ADMIN_EMAILS.includes(email)
-  if (!isAdmin) {
+  const email = typeof auth.token.email === 'string' ? auth.token.email : null
+  if (!isAdminUser(auth.token, email)) {
     throw new HttpsError('permission-denied', 'Acesso restrito a administradores')
   }
 }

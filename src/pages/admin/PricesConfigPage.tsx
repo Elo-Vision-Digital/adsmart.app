@@ -1,3 +1,4 @@
+import type { ProductPrice } from '@adsmart/shared'
 import { httpsCallable } from 'firebase/functions'
 import { DollarSign, RefreshCw, Save } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -5,17 +6,10 @@ import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { functions } from '@/firebase/config'
 
-interface ProductPrice {
-  id: string
-  name: string
-  description: string
-  price: number
-  category: 'google' | 'meta'
-  type: 'lancamento' | 'negocio_local'
-  isActive: boolean
-  updatedAt?: { seconds: number }
-  updatedBy?: string
-}
+// Firestore Timestamp arrives as `{ seconds, nanoseconds }` over the callable
+// wire; the schema's zTimestamp() preprocess only runs on parse, so for UI
+// rendering we cast the runtime shape narrowly here.
+type SerializedTimestamp = { seconds: number; nanoseconds?: number }
 
 export function PricesConfigPage() {
   const { t } = useLanguage()
@@ -140,7 +134,9 @@ export function PricesConfigPage() {
                 {product.updatedAt && (
                   <p>
                     {t('admin.prices.updatedAtLabel')}:{' '}
-                    {new Date(product.updatedAt.seconds * 1000).toLocaleString()}
+                    {new Date(
+                      (product.updatedAt as unknown as SerializedTimestamp).seconds * 1000
+                    ).toLocaleString()}
                   </p>
                 )}
               </div>
