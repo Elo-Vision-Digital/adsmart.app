@@ -2,7 +2,13 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
 import { AdAccountSchema } from '@adsmart/shared'
-import { encryptionKey, metaAdsAppSecret } from './config'
+import {
+  encryptionKey,
+  metaAdsAppId,
+  metaAdsAppSecret,
+  metaAdsRedirectUri,
+  metaAdsRedirectUriDev,
+} from './config'
 import { encryptString } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
@@ -644,12 +650,13 @@ async function getAdAccountDetails(accessToken: string, accountIds: string[]): P
  * Obter configurações do Meta Ads
  */
 async function getMetaAdsConfig() {
-  // App secret via defineSecret (Secret Manager); demais valores via process.env
+  // App secret via defineSecret (Secret Manager); non-secret values via
+  // defineString params from ./config (ADR 2026-05-18).
   return {
-    appId: process.env.META_ADS_APP_ID || '4052927898253765',
+    appId: metaAdsAppId.value(),
     appSecret: metaAdsAppSecret.value(),
-    redirectUri: 'https://adsmart.app/auth/meta-ads/callback',
-    redirectUriDev: 'http://localhost:5173/auth/meta-ads/callback'
+    redirectUri: metaAdsRedirectUri.value(),
+    redirectUriDev: metaAdsRedirectUriDev.value(),
   }
 }
 

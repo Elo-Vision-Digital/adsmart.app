@@ -2,7 +2,13 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
 import { CampaignSchema } from '@adsmart/shared'
-import { encryptionKey, metaAdsAppSecret } from './config'
+import {
+  encryptionKey,
+  metaAdsAppId,
+  metaAdsAppSecret,
+  metaAdsRedirectUri,
+  metaAdsRedirectUriDev,
+} from './config'
 import { encryptString, detectAndDecrypt } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
@@ -19,15 +25,15 @@ const OAuthEventType = {
   OAUTH_ERROR: 'oauth_error' as SecurityEventType
 }
 
-// Configurações OAuth do Meta Ads (app secret via defineSecret; demais valores via process.env)
+// Configurações OAuth do Meta Ads. appId / redirectUri / redirectUriDev
+// come from defineString params in ./config (ADR 2026-05-18) and are read
+// via .value() inside handlers. App secret is bound via defineSecret on
+// each onCall options.
 const META_ADS_CONFIG = {
-  appId: process.env.META_ADS_APP_ID || '4052927898253765',
-  redirectUri: process.env.META_ADS_REDIRECT_URI || 'https://adsmart.app/auth/meta-ads/callback',
-  redirectUriDev: process.env.META_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/meta-ads/callback',
   scope: 'ads_read,ads_management,business_management,read_insights',
   authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
   tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token',
-  apiVersion: 'v18.0'
+  apiVersion: 'v18.0',
 }
 
 // Interface para os tokens armazenados
@@ -72,8 +78,8 @@ export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret] }, async (
 
   // Usar redirect URI correto baseado no ambiente
   const redirectUri = isLocalEnv 
-    ? META_ADS_CONFIG.redirectUriDev 
-    : META_ADS_CONFIG.redirectUri
+    ? metaAdsRedirectUriDev.value()
+    : metaAdsRedirectUri.value()
 
   console.log('OAuth URL sendo gerada:', {
     isLocalEnv,
@@ -83,7 +89,7 @@ export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret] }, async (
 
   // Construir URL de autorização
   const authUrl = new URL(META_ADS_CONFIG.authUrl)
-  authUrl.searchParams.append('client_id', META_ADS_CONFIG.appId)
+  authUrl.searchParams.append('client_id', metaAdsAppId.value())
   authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('response_type', 'code')
   authUrl.searchParams.append('scope', META_ADS_CONFIG.scope)

@@ -2,7 +2,13 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
 import { CampaignSchema } from '@adsmart/shared'
-import { encryptionKey, googleAdsClientSecret } from './config'
+import {
+  encryptionKey,
+  googleAdsClientId,
+  googleAdsClientSecret,
+  googleAdsRedirectUri,
+  googleAdsRedirectUriDev,
+} from './config'
 import { encryptString, detectAndDecrypt } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
@@ -23,19 +29,18 @@ const OAuthEventType = {
 // (googleAdsOAuthV2.ts) stabilizes. This file does NOT call the Google Ads
 // data API, so `developer-token` is not needed; client secret is bound via
 // defineSecret on each handler.
+//
+// clientId / redirectUri / redirectUriDev come from defineString params in
+// ./config (ADR 2026-05-18). Read via .value() inside handlers.
 const GOOGLE_ADS_CONFIG = {
-  clientId: process.env.GOOGLE_ADS_CLIENT_ID || '422483165860-npdsq44121mh4chg2gers6qade02bo5l.apps.googleusercontent.com',
-  redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
-  redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
-  // ALTERAÇÃO IMPORTANTE: Adicionar todos os escopos necessários
   scope: [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/adwords'
+    'https://www.googleapis.com/auth/adwords',
   ].join(' '),
   authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenUrl: 'https://oauth2.googleapis.com/token',
-  apiVersion: 'v17'
+  apiVersion: 'v17',
 }
 
 // Interface para os tokens armazenados
@@ -79,9 +84,9 @@ export const getGoogleAdsAuthUrl = onCall({ secrets: [googleAdsClientSecret] }, 
   })
 
   // Usar redirect URI correto baseado no ambiente
-  const redirectUri = isLocalEnv 
-    ? GOOGLE_ADS_CONFIG.redirectUriDev 
-    : GOOGLE_ADS_CONFIG.redirectUri
+  const redirectUri = isLocalEnv
+    ? googleAdsRedirectUriDev.value()
+    : googleAdsRedirectUri.value()
 
   console.log('OAuth URL sendo gerada:', {
     isLocalEnv,
@@ -92,7 +97,7 @@ export const getGoogleAdsAuthUrl = onCall({ secrets: [googleAdsClientSecret] }, 
 
   // Construir URL de autorização
   const authUrl = new URL(GOOGLE_ADS_CONFIG.authUrl)
-  authUrl.searchParams.append('client_id', GOOGLE_ADS_CONFIG.clientId)
+  authUrl.searchParams.append('client_id', googleAdsClientId.value())
   authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('response_type', 'code')
   authUrl.searchParams.append('scope', GOOGLE_ADS_CONFIG.scope)
@@ -338,9 +343,9 @@ async function getValidTokens(userId: string): Promise<GoogleAdsTokens> {
 async function refreshGoogleAdsToken(refreshToken: string): Promise<GoogleAdsTokens> {
   const response = await axios.post(GOOGLE_ADS_CONFIG.tokenUrl, {
     refresh_token: refreshToken,
-    client_id: GOOGLE_ADS_CONFIG.clientId,
+    client_id: googleAdsClientId.value(),
     client_secret: googleAdsClientSecret.value(),
-    grant_type: 'refresh_token'
+    grant_type: 'refresh_token',
   })
 
   const { access_token, expires_in, scope } = response.data

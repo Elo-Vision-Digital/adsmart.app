@@ -2,7 +2,14 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import axios from 'axios'
 import { AdAccountSchema } from '@adsmart/shared'
-import { encryptionKey, googleAdsClientSecret, googleAdsDeveloperToken } from './config'
+import {
+  encryptionKey,
+  googleAdsClientId,
+  googleAdsClientSecret,
+  googleAdsDeveloperToken,
+  googleAdsRedirectUri,
+  googleAdsRedirectUriDev,
+} from './config'
 import { encryptString } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
@@ -665,10 +672,10 @@ async function getDeveloperToken(): Promise<string> {
  */
 async function getGoogleAdsConfig() {
   const config = {
-    clientId: process.env.GOOGLE_ADS_CLIENT_ID || '422483165860-npdsq44121mh4chg2gers6qade02bo5l.apps.googleusercontent.com',
+    clientId: googleAdsClientId.value(),
     clientSecret: googleAdsClientSecret.value(),
-    redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
-    redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
+    redirectUri: googleAdsRedirectUri.value(),
+    redirectUriDev: googleAdsRedirectUriDev.value(),
     // ALTERAÇÃO IMPORTANTE: Adicionar todos os escopos necessários
     scope: [
       'https://www.googleapis.com/auth/userinfo.profile',
