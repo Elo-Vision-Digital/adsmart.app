@@ -44,7 +44,7 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 | Change wallet / billing | `docs/DOMAIN.md`, `functions/src/adminWalletManager.ts`, `src/hooks/useWallet.ts`, `packages/shared/src/schemas/userWallet.ts` + `transaction.ts` |
 | Change user profile shape | `packages/shared/src/schemas/user.ts` (source of truth: `UserSchema` + strict `UserClientUpdateSchema`), `functions/src/bootstrapUser.ts`, `functions/src/reserveUserDocument.ts`, `src/pages/SettingsPage.tsx` |
 | Add OAuth provider | `docs/OAUTH.md`, `functions/src/googleAdsOAuthV2.ts`, `src/services/oauthServices.ts`, `packages/shared/src/schemas/oauthState.ts` (state + temp token schemas), `functions/src/lib/oauthCrypto.ts` (AES-256-GCM for tokens at rest — ADR-019) |
-| Work on payments | `docs/PAYMENTS.md` — SuitPay is deprecated; read before touching |
+| Work on payments | `docs/PAYMENTS.md` — SuitPay was REMOVED in ADR-021 (2026-05-18); Asaas integration is pending. `AddCreditsModal` is a maintenance-notice placeholder. Reference for atomic wallet credit: `functions/src/adminWalletManager.ts` |
 | Add a translation key | `docs/I18N.md`, `src/locales/pt-BR.json` (then en.json and es.json) |
 | Write tests | `docs/TESTING.md`, `vitest.config.ts` (root + functions/) |
 | Deploy | `docs/DEPLOYMENT.md`, `firebase.json`, `.github/workflows/ci.yml` |
@@ -91,7 +91,9 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 - Do not pass local `Error` instances (e.g., `throw new Error(t('...'))`) through `authErrorToTKey`. That maps them to `common.error.generic` and hides the real message. Use the split pattern documented in `docs/ERROR-HANDLING.md`.
 - Do not call `createUserWithEmailAndPassword(auth, ...)` directly from pages. Use `signUp` from `useAuth()` so future Context-level hooks (telemetry, post-signup steps) reach the path (ADR-020).
 - Do not hand-write `interface User` / `interface ProductPrice` / etc. — every Firestore document shape is in `packages/shared/src/schemas/`. Import the inferred type. Stale fields (`displayName`, `photoURL` on `User`) live on Firebase Auth, not Firestore.
-- Do not invest time in SuitPay hardening — it is deprecated in favour of Asaas (see `docs/PAYMENTS.md`). Keep current behaviour working until Asaas ships, then delete.
+- Do NOT restore SuitPay (deleted end-to-end in ADR-021 — code, secrets, Cloud Run services, UI). Asaas is the planned replacement; build that instead. See [docs/PAYMENTS.md](docs/PAYMENTS.md).
+- Before any `firebase deploy`, follow the pre-deploy checklist in the `firebase_deploy_workflow_rules` memory — multiple Sprint 3 deploys failed because the checklist was skipped (.env not rebuilt, secrets not provisioned in target project, etc).
+- Never use `gcloud run services update` on a Firebase-managed function. Firebase CLI 14+ garbage-collects images after 1 day; any Cloud Run config change needs the source image to create a new revision. Always use `firebase deploy` or `firebase functions:delete` + redeploy.
 - Do not re-introduce Firebase App Check without a new ADR (ADR-019 removed it end-to-end). Defense in depth is Firebase Auth + `checkRateLimit` + Firestore rules.
 - Do not re-implement OAuth token encryption inline. Import `encryptString` / `decryptField` / `detectAndDecrypt` from `functions/src/lib/oauthCrypto.ts` (single source of truth, ADR-019). Callables that touch OAuth tokens bind `encryptionKey` in `options.secrets`.
 - Do not add new routes without adding them to the route table in `src/App.tsx`.

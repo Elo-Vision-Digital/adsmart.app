@@ -893,3 +893,64 @@ Smoke-tested end-to-end on `localhost:5173` against `adsmart-web-dev`:
 - [ADR-016](#adr-016-centralize-admin_emails--productprice-schema-in-adsmartshared-migrate-pricemanager-to-v2) — the prior partial unification of `ADMIN_EMAILS`; this ADR completes it for the two remaining callables.
 - [ADR-019](#adr-019-remove-firebase-app-check--aes-256-gcm-for-oauth-tokens-at-rest) — landed in parallel; superseded Task B2 of this work's plan.
 - Context7: `/firebase/firebase-js-sdk` — `initializeAuth`, persistence array, `setCustomParameters`, COOP/popup recommendation (queried 2026-05-17).
+
+---
+
+## ADR-021: Remove SuitPay end-to-end + harden prepare-deploy against secret/env overlap
+
+**Date:** 2026-05-18
+**Status:** Accepted (dev shipped; prod pending operator authorization)
+
+**Decision:** Delete SuitPay completely from the codebase and from deployed Cloud Functions in `adsmart-web-dev`. The deletion covers:
+
+- 2 source files: `functions/src/suitpayPayment.ts`, `functions/src/suitpayWebhook.ts`
+- 3 callables removed from `functions/src/index.ts` exports: `suitpayWebhook`, `createPixPayment`, `checkPaymentStatus`
+- 2 secrets removed from `functions/src/config/index.ts`: `defineSecret('SUITPAY_CLIENT_ID')`, `defineSecret('SUITPAY_CLIENT_SECRET')`
+- `config.suitpay` block + the now-orphaned `getWebhookUrl` and `getRedirectUrl` helpers (only used by SuitPay) removed from the same file
+- 2 plain-text values purged from `functions/.env`: `SUITPAY_CLIENT_ID=zennytecnologiagmailcom_*`, `SUITPAY_CLIENT_SECRET=7ff0...` (they were leaking into the Cloud Run service spec as non-secret env vars)
+- `GOOGLE_ADS_DEVELOPER_TOKEN=wRhu...` also purged from `functions/.env` (same reason — should have been only in Secret Manager since ADR-017)
+- 2 UI files deleted: `src/components/ui/PixPaymentModal.tsx`, `src/services/paymentService.ts`
+- 1 UI file rewritten as maintenance-notice placeholder: `src/components/ui/AddCreditsModal.tsx` (3 callers depend on it — Header, MobileHeader, TemplatesPage)
+- 3 Cloud Run services deleted in `adsmart-web-dev` via `firebase functions:delete`: `suitpayWebhook`, `createPixPayment`, `checkPaymentStatus`
+
+Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `.env` keys that match any `defineSecret(...)` declaration in `config/index.ts` before writing `functions/deploy/.env`. This prevents the exact failure mode that surfaced during Sprint 3 (`Secret environment variable overlaps non secret environment variable: X`) from recurring even if a future `.env` accidentally re-introduces a secret-shadow.
+
+**Rationale:**
+
+- **SuitPay was already deprecated** (see prior memory `suitpay_deprecated.md`); the code stayed live "until Asaas lands". Two consecutive sprints (1 and 3) ran into SuitPay-related deploy/security incidents because the dead code carried real `defineSecret` bindings and real env vars. Keeping the deprecated layer increased the blast radius of every unrelated change.
+- **Zero production users.** `adsmart.app` domain is not pointed yet; the app is still in development. The window for "delete cleanly" is now; once users transact, the cost of removing payment paths rises.
+- **The env-var overlap was the proximate cause of the Sprint 3 deploy failure.** Sprint 3 (ADR-019) needed `confirmGoogleAdsAccountSelection` to be redeployed with `encryptionKey` bound, but the Cloud Run service spec for that callable had inherited `GOOGLE_ADS_DEVELOPER_TOKEN` (and `SUITPAY_CLIENT_ID` + `SUITPAY_CLIENT_SECRET`) as plain env vars from a much older deploy when those values were in `functions/.env` and not in Secret Manager. `firebase deploy` could not reconcile (HTTP 400 `Secret environment variable overlaps non secret environment variable`), and `gcloud run services update --remove-env-vars` failed because Firebase CLI 14+ had garbage-collected the source image (default cleanup policy: 1 day). The only recovery left was `firebase functions:delete` + `firebase deploy`, which is what was done.
+- **Hardening `prepare-deploy.mjs` is the durable fix.** Without it, a future `functions/.env` edit that accidentally drops a `*_SECRET` or `*_TOKEN` line would re-introduce the same trap. The hardening reads `config/index.ts`, regex-extracts every `defineSecret('NAME')` declaration, and refuses to propagate any `NAME=...` line from `functions/.env` to `functions/deploy/.env`. Pre-existing failures in Cloud Run service specs are not auto-cleaned (those need `functions:delete`), but no new ones can be introduced.
+- **`AddCreditsModal` rewritten, not deleted**, because the "add credits" feature is permanent — only the payment backend changed. Three call sites depend on the component; replacing them all with conditional rendering would add coupling for no benefit. The maintenance notice is the honest UX: "Pagamento indisponível no momento — estamos migrando o sistema. Entre em contato com o suporte se precisar de créditos urgentemente."
+
+**Trade-offs:**
+
+- **Production cleanup deferred.** Cloud Run services `suitpayWebhook`, `createPixPayment`, `checkPaymentStatus` still exist in `adsmart-web` (the prod project). They are not reachable from the production UI (UI was updated) and they have no traffic (no users). They will be deleted on the next prod deploy + explicit `functions:delete` once the operator authorizes a prod deploy.
+- **`Transaction.payerName` / `payerCpf` / `paymentId` kept in the schema** as optional fields. Historical SuitPay transactions wrote those fields, and the schema must still parse them. They'll be re-purposed for Asaas when payment lands again.
+- **`functions/deploy/.env` filter is one-way.** It strips secret-shadow keys but does not warn the source `.env` is contaminated; it only warns at build time. Pre-commit hook could add the same scan in the future; out of scope for this ADR.
+
+**Operator follow-ups:**
+
+1. **Prod cleanup (when ready):**
+   ```bash
+   firebase functions:delete suitpayWebhook createPixPayment checkPaymentStatus --project adsmart-web --region us-central1 --force
+   firebase deploy --only functions --project adsmart-web
+   ```
+   The deploy will also bring the Sprint 1 / Sprint 2 / Sprint 3 + ADR-020 codebase changes to prod (AES-256-GCM for OAuth, all the schema work, etc).
+2. **Decide on Asaas timeline.** `AddCreditsModal` placeholder is acceptable temporarily; users will see "payment in maintenance".
+
+**Lessons learned (codified into memory):**
+
+- New memory: [[firebase_deploy_env_overlap_trap]] — the exact failure mode + canonical recovery.
+- New memory: [[firebase_deploy_workflow_rules]] — hard rules for any firebase deploy operation, built from the incidents that produced this ADR.
+- Updated memory: [[suitpay_removed]] (formerly `suitpay_deprecated`) — points operators at this ADR + restoration plan for Asaas.
+
+**References:**
+
+- [functions/src/lib/oauthCrypto.ts](../functions/src/lib/oauthCrypto.ts) — the encryption module Sprint 3 introduced; sets the bar for "what payment integration should look like when Asaas lands".
+- [functions/src/adminWalletManager.ts](../functions/src/adminWalletManager.ts) — reference for atomic wallet credit transaction; mirror this for Asaas.
+- [functions/scripts/prepare-deploy.mjs](../functions/scripts/prepare-deploy.mjs) — hardened to filter secret-shadow keys before deploy bundle is materialized.
+- [ADR-017](#adr-017-google-ads-developer-token-rotation--future-app-check-enforcement) — token-rotation procedure cited by the deploy hardening above.
+- [ADR-019](#adr-019-remove-firebase-app-check--aes-256-gcm-for-oauth-tokens-at-rest) — the parallel ADR whose deploy this one unblocked.
+- Firebase developer knowledge (queried 2026-05-18): "After removing function exports from `index.ts` and running `firebase deploy` without the `--only` flag, Firebase will implicitly delete the now-orphaned Cloud Functions."
+- Cloud Run docs (queried 2026-05-18, via Firebase developer-knowledge MCP search): `gcloud run services update --remove-env-vars` for selective env var removal; this command was attempted and failed due to image garbage collection, leading to the `functions:delete` path.

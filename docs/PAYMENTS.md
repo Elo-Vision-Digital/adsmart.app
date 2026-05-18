@@ -1,60 +1,65 @@
 # Payments
 
+> **Status (2026-05-18):** SuitPay was REMOVED end-to-end in [ADR-021](Decisions.md#adr-021-remove-suitpay-end-to-end--harden-prepare-deploy-against-secretenv-overlap). No payment backend is currently wired. `AddCreditsModal` shows a maintenance notice. Asaas integration is the planned replacement.
+
+---
+
 ## Current state
 
-The payment system is in transition. SuitPay is being replaced by Asaas. **Do not add features or harden SuitPay.** Only keep it functional.
+- ✅ **Wallet primitives** (`users/{uid}/wallet/current`, `users/{uid}/transactions/{txId}`) are intact and validated by `UserWalletSchema` and `TransactionSchema` in `@adsmart/shared`.
+- ✅ **Admin credit grants** still work via `addUserCredits` callable (`functions/src/adminWalletManager.ts`) — the canonical reference for "atomic Firestore transaction over wallet + transactions". Mirror this shape when Asaas lands.
+- ❌ **User-facing payment** (PIX, card, etc) has no backend. UI surfaces a maintenance-notice modal.
 
----
+## SuitPay (removed)
 
-## SuitPay (deprecated)
+Removed on 2026-05-18 (ADR-021). Why and how documented in the ADR. No restoration path — when payment functionality returns, it returns as Asaas, not as SuitPay.
 
-⚠ **Being replaced by Asaas. No new investment. Keep alive until Asaas ships.**
+What was deleted:
+- Cloud Functions: `suitpayWebhook`, `createPixPayment`, `checkPaymentStatus` (deleted from `adsmart-web-dev`; pending deletion from `adsmart-web`)
+- Secrets: `SUITPAY_CLIENT_ID`, `SUITPAY_CLIENT_SECRET` (no longer declared via `defineSecret`)
+- Source files: `functions/src/suitpayPayment.ts`, `functions/src/suitpayWebhook.ts`
+- UI: `src/components/ui/PixPaymentModal.tsx`, `src/services/paymentService.ts`
+- `config.suitpay` block + `getWebhookUrl` / `getRedirectUrl` helpers in `functions/src/config/index.ts`
 
-### PIX payment flow
+What was preserved (intentional):
+- `Transaction.payerName`, `Transaction.payerCpf`, `Transaction.paymentId` — historical SuitPay transactions still parse; these fields will be re-purposed for Asaas.
+- `AddCreditsModal` — kept as a maintenance-notice placeholder. 3 callers depend on it (Header, MobileHeader, TemplatesPage); restoring takes one component edit when Asaas ships.
 
-1. Client calls `createPixPayment({ amount, description })`.
-2. Function creates a PIX charge via SuitPay API, stores a `pendingPayments/{id}` doc.
-3. Returns QR code data + transaction ID to client.
-4. Client shows QR code in `PixPaymentModal`.
-5. User pays via PIX in their bank app.
-6. SuitPay POSTs to `suitpayWebhook` endpoint.
-7. Webhook function updates payment status, credits wallet balance.
+## Asaas (planned)
 
-### Webhook security (minimal)
+When Asaas integration lands:
 
-The webhook validates a signature header but the validation is not enforced as a hard block (SuitPay is being removed). The payload log is limited to `user-agent`, `x-forwarded-for`, `content-type` headers only (no full request body).
-
-### Firestore collections used
-
-- `pendingPayments/{id}` — payment waiting for confirmation
-- `payments/{id}` — confirmed payment records
-- `orphan_payments/{id}` — payments that arrived but matched no user
-- `webhook_logs/{id}` — incoming webhook audit log (headers subset only)
-
-### Known limitations
-
-- Hash validation is not mandatory (SuitPay is being removed anyway)
-- IP allowlist is not enforced
-- `deleteUserData` does not clean up payment collections yet
-
----
-
-## Asaas (future — Phase 5+)
-
-Asaas will replace SuitPay for PIX and potentially Boleto payments. This migration is NOT part of the current modernization plan (Phases 1–4). It is separate work.
-
-When Asaas lands, the SuitPay collections and functions should be deleted:
-- `functions/src/suitpayPayment.ts`
-- `functions/src/suitpayWebhook.ts`
-- Firestore collections: `pendingPayments`, `payments`, `orphan_payments`, `webhook_logs`
-
----
+1. **Do not bring back `SUITPAY_*` secrets** — Asaas uses its own credentials (declare via `defineSecret('ASAAS_*')` in `functions/src/config/index.ts`).
+2. **If Asaas hands tokens for storage at rest**, use the AES-256-GCM module at `functions/src/lib/oauthCrypto.ts` (ADR-019). Do not re-implement encryption inline.
+3. **Mirror `adminWalletManager.addUserCredits`** for the credit-wallet transaction shape: read `wallet/current` + read transaction-existence guard inside a `runTransaction`, then write the credit transaction + update the wallet balance atomically.
+4. **Restore `AddCreditsModal`** with an Asaas-specific input + redirect/embed flow. The 3 call sites do not need to change.
+5. **Reuse `useWallet` hook** in the frontend — no changes needed; it reads `users/{uid}/wallet/current` via Firestore snapshot.
 
 ## Wallet credit paths
 
-Credits can enter the wallet in two ways:
+Credits enter the wallet through one canonical path today:
 
-1. **Payment confirmed** — `suitpayWebhook` credits the wallet after a confirmed PIX (will be replaced by Asaas webhook).
-2. **Admin grant** — `addUserCredits` (admin only) via `adminWalletManager.ts`. Used for manual adjustments, refunds, onboarding.
+- **Admin grant** — [`addUserCredits`](../functions/src/adminWalletManager.ts) (admin-only callable, validated via `isAdminUser` from `@adsmart/shared`). Used for manual adjustments, refunds, onboarding.
 
-Debits happen when a report is generated (deduct report cost from wallet balance).
+Debits happen when a report is generated (deduct report cost from wallet balance). The `Transaction` schema's `type: 'debit'` + `reportId` fields encode this.
+
+## Implementation reference
+
+For any new payment writer:
+
+- Schema: `TransactionSchema.omit({ id: true }).parse(...)` — validate before persisting.
+- Wallet update: `UserWalletSchema.omit({ id: true }).parse(...)` — same.
+- Firestore transaction order: read all docs first, then write. See `adminWalletManager.ts` lines ~239-274 for the canonical shape.
+- Server timestamps: `admin.firestore.Timestamp.now()` or `FieldValue.serverTimestamp()` — never `new Date()` raw.
+- Security: declare any external API secret via `defineSecret`, bind on the function via `options.secrets: [...]`, never via `process.env`.
+
+## Operator: SuitPay prod cleanup pending
+
+The 3 Cloud Run services (`suitpayWebhook`, `createPixPayment`, `checkPaymentStatus`) still exist in `adsmart-web` (production). They have no traffic (UI updated, domain not pointed yet). To remove:
+
+```bash
+firebase functions:delete suitpayWebhook createPixPayment checkPaymentStatus --project adsmart-web --region us-central1 --force
+firebase deploy --only functions --project adsmart-web
+```
+
+The deploy in the second step also brings ADR-016, ADR-017, ADR-018, ADR-019, and ADR-021 codebase changes to prod (AES-256-GCM for OAuth tokens, schemas in `@adsmart/shared`, etc).

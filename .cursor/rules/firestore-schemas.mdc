@@ -1,30 +1,41 @@
 ---
-description: Zod-first schema source-of-truth for Firestore docs (ADR-009)
+description: Zod-first schema source-of-truth for Firestore docs (ADR-009 + ADR-016 + ADR-018)
 globs: packages/shared/src/schemas/**, src/types/**, functions/src/**/*.ts
 alwaysApply: false
 ---
 
-# Firestore schemas (AdSmart, ADR-009)
+# Firestore schemas (AdSmart, ADR-009 / ADR-016 / ADR-018)
 
-`packages/shared/src/schemas/` is the single source of truth for Firestore document shapes. Types are derived via `z.infer`. NEVER hand-write a parallel TypeScript interface.
+`packages/shared/src/schemas/` is the single source of truth for Firestore document shapes AND callable I/O contracts. Types are derived via `z.infer`. NEVER hand-write a parallel TypeScript interface.
 
-## Pattern
+## Canonical pattern (Zod 4 idioms)
 
 ```ts
-// packages/shared/src/schemas/userWallet.ts
-import { z } from 'zod'
+// packages/shared/src/schemas/myDoc.ts
+import * as z from 'zod'
+import { zTimestamp } from '../firestore'
 
-export const UserWalletSchema = z.object({
-  id: z.string().optional(),
-  balance: z.number().int().min(0),
-  currency: z.literal('BRL'),
-  updatedAt: z.unknown(), // Timestamp at runtime
+export const MyDocSchema = z.object({
+  id: z.string().min(1),
+  email: z.email(),                  // ✅ NOT z.string().email()
+  homepage: z.url().optional(),      // ✅ NOT z.string().url()
+  scheduledFor: z.iso.datetime(),    // ✅ NOT z.string().datetime()
+  amount: z.number().int().nonnegative(),
+  createdAt: zTimestamp(),           // duck-typed: works with admin + web SDK
+  updatedAt: zTimestamp(),
 })
-
-export type UserWallet = z.infer<typeof UserWalletSchema>
+export type MyDoc = z.infer<typeof MyDocSchema>
 ```
 
 Re-export in `packages/shared/src/index.ts`. Use the schema for validation in callables (`safeParse`); use the inferred type elsewhere.
+
+## Pair every persisted-shape schema with a strict client-update schema
+
+When the doc is partially client-writable, also export a `.strict()` subset that mirrors what `firestore.rules` allows — encodes the rule at the type layer too. Example: [user.ts](mdc:packages/shared/src/schemas/user.ts) ships `UserClientUpdateSchema` alongside `UserSchema`.
+
+## Callable I/O lives next to the doc schema
+
+If a callable mutates the doc, the Input/Output schemas live in the same file. Example: [userDocument.ts](mdc:packages/shared/src/schemas/userDocument.ts) exports `UserDocumentSchema` + `ReserveUserDocumentInputSchema` + `ReserveUserDocumentOutputSchema`.
 
 ## After changing a schema
 
@@ -33,8 +44,15 @@ Re-export in `packages/shared/src/index.ts`. Use the schema for validation in ca
 3. Update `docs/DATA-MODEL.md` (markdown follows the schema, not the other way).
 4. Add a dated entry in `docs/CHANGES.md` describing the field-level drift.
 
+## Canonical examples
+
+- [packages/shared/src/schemas/user.ts](mdc:packages/shared/src/schemas/user.ts) — persisted shape + strict client-update subset.
+- [packages/shared/src/schemas/userDocument.ts](mdc:packages/shared/src/schemas/userDocument.ts) — doc schema + callable I/O collocation.
+- [packages/shared/src/schemas/dashboardMetrics.ts](mdc:packages/shared/src/schemas/dashboardMetrics.ts) — pure callable I/O (no persisted doc).
+- [packages/shared/src/schemas/productPrice.ts](mdc:packages/shared/src/schemas/productPrice.ts) — server-stamped audit fields excluded from client input.
+
 ## References
 
 - CLAUDE.md → "Editing Firestore document shapes"
-- docs/Decisions.md → ADR-009
+- docs/Decisions.md → ADR-009, ADR-016, ADR-018
 - docs/DATA-MODEL.md

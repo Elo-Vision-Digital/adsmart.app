@@ -38,25 +38,27 @@ Collections marked **(deprecated)** belong to the SuitPay integration being repl
 
 Profile document seeded server-side at signup time by the [bootstrapUser](../functions/src/bootstrapUser.ts) Auth blocking trigger (`beforeUserCreated`). Name/phone/document fields are filled in by [SettingsPage](../src/pages/SettingsPage.tsx) on first save (via `updateDoc`).
 
+Source of truth: [packages/shared/src/schemas/user.ts](../packages/shared/src/schemas/user.ts) (`UserSchema`, ADR-018). Wire shape clients may send via `updateDoc` is constrained by `UserClientUpdateSchema` (strict — rejects email, createdAt, documentType, documentNumber so SettingsPage cannot bypass the rules).
+
 ```
 {
-  email: string,         // immutable after creation, seeded by trigger
-  createdAt: Timestamp,  // immutable after creation, seeded by trigger
+  email: string,                       // immutable after creation, seeded by trigger
+  createdAt: Timestamp,                // immutable after creation, seeded by trigger
   updatedAt: Timestamp,
-  name?: string,
-  phone?: string,
-  documentType?: 'cpf' | 'cnpj',
-  documentNumber?: string,
-  displayName?: string,
-  photoURL?: string
+  name?: string,                       // 1..120 chars
+  phone?: string,                      // 8..20 chars
+  documentType?: 'cpf' | 'cnpj',       // immutable once written (ADR-012)
+  documentNumber?: string              // normalized digits-only (11 = CPF, 14 = CNPJ), immutable once written
 }
 ```
 
+`displayName` and `photoURL` live on Firebase Auth (`user.displayName`, `user.photoURL`) and are **not** mirrored into Firestore. They were a stale entry in `src/types/index.ts:User` before ADR-018; consult Firebase Auth directly via `useAuth()` when you need them.
+
 Rules: owner read/create/update. `email` and `createdAt` cannot be changed after creation. The client never hits the `create` rule path under normal use because the doc is already seeded by the trigger when the user first signs in. Delete blocked (only Cloud Function can delete via Admin SDK).
 
-`documentType` and `documentNumber` are immutable once written — the rule's `documentLocked()` helper rejects any update that attempts to change them after they were set to non-empty. They're written exclusively by the [reserveUserDocument](../functions/src/reserveUserDocument.ts) callable (ADR-012), which validates the format server-side and reserves the document atomically against the `userDocuments` uniqueness index.
+`documentType` and `documentNumber` are immutable once written — the rule's `documentLocked()` helper rejects any update that attempts to change them after they were set to non-empty. They're written exclusively by the [reserveUserDocument](../functions/src/reserveUserDocument.ts) callable (ADR-012), which validates the format server-side via `ReserveUserDocumentInputSchema` and reserves the document atomically against the `userDocuments` uniqueness index.
 
-See [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for the full rationale of seeding both this doc and `users/{uid}/wallet/current` from a single batched trigger write, and [ADR-012](Decisions.md#adr-012-cpfcnpj-uniqueness--immutability-via-callable--uniqueness-index) for the document reservation flow.
+See [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for the full rationale of seeding both this doc and `users/{uid}/wallet/current` from a single batched trigger write, [ADR-012](Decisions.md#adr-012-cpfcnpj-uniqueness--immutability-via-callable--uniqueness-index) for the document reservation flow, and [ADR-018](Decisions.md#adr-018-schemas-for-user-userdocument-oauthstate-temporaryoauthtoken-and-ratelimit) for the canonical schema lift.
 
 ---
 
@@ -64,9 +66,11 @@ See [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side
 
 Uniqueness index for CPF/CNPJ across all users (ADR-012). The doc ID is the digits-only normalization of the document (`cpf.replace(/\D/g, '')` — e.g. `"12345678901"` for a CPF), so two writes for the same number collide on the path itself. Created exclusively by [reserveUserDocument](../functions/src/reserveUserDocument.ts) inside a Firestore transaction.
 
+Source of truth: [packages/shared/src/schemas/userDocument.ts](../packages/shared/src/schemas/userDocument.ts) (`UserDocumentSchema`); callable I/O shapes are `ReserveUserDocumentInputSchema` (accepts formatted or stripped document; server validates check digits) and `ReserveUserDocumentOutputSchema` (always returns normalized digits-only). ADR-018.
+
 ```
 {
-  userId: string,         // owner uid
+  userId: string,                       // owner uid
   documentType: 'cpf' | 'cnpj',
   createdAt: Timestamp
 }
@@ -290,16 +294,18 @@ The unused `ReportTemplate` TypeScript interface was removed from `src/types/ind
 
 Document ID format: `{userId}_{actionName}` (e.g., `abc123_signin_attempt`).
 
+Source of truth: [packages/shared/src/schemas/rateLimit.ts](../packages/shared/src/schemas/rateLimit.ts) (`RateLimitSchema`, ADR-018).
+
 ```
 {
-  attempts: number,
+  attempts: number,        // integer, >= 0
   firstAttempt: Timestamp,
   lastAttempt: Timestamp,
   blocked: boolean
 }
 ```
 
-Written only by `checkRateLimit()` via Admin SDK. Client `allow write: if false`.
+Written only by `checkRateLimit()` via Admin SDK. Client `allow write: if false`. Read is owner-only so a UI could surface its own counter.
 
 ---
 
@@ -307,36 +313,40 @@ Written only by `checkRateLimit()` via Admin SDK. Client `allow write: if false`
 
 CSRF protection for OAuth flows. Created by auth-URL-generation functions; deleted after callback validation.
 
+Source of truth: [packages/shared/src/schemas/oauthState.ts](../packages/shared/src/schemas/oauthState.ts) (`OAuthStateSchema`, ADR-018).
+
 ```
 {
   userId: string,
-  expiresAt: Timestamp,
+  platform: 'google_ads' | 'meta_ads',
   isLocalEnv: boolean,
-  createdAt: Timestamp
+  createdAt: Timestamp,
+  expiresAt: Timestamp
 }
 ```
 
-Expiry: 10 minutes. Checked and deleted in `handleGoogleAdsCallbackWithSelection` / `handleMetaAdsCallbackWithSelection`.
+Expiry: 10 minutes (enforced in code via `expiresAt.toDate() < new Date()` checks). Checked and deleted in `handleGoogleAdsCallbackWithSelection` / `handleMetaAdsCallbackWithSelection`. The collection has no firestore.rules grant — all access goes through Admin SDK.
 
 ---
 
 ## temporary_oauth_tokens/{tokenId}
 
-Holds OAuth credentials while the user selects which ad accounts to connect. TTL: 30 minutes.
+Holds OAuth credentials while the user selects which ad accounts to connect. TTL: 30 minutes (enforced in code).
+
+Source of truth: [packages/shared/src/schemas/oauthState.ts](../packages/shared/src/schemas/oauthState.ts) (`TemporaryOAuthTokenSchema`, ADR-018).
 
 ```
 {
   userId: string,
   accessToken: string,
-  refreshToken?: string,  // Google only
-  expiresAt: Timestamp,   // 30 min from creation
+  refreshToken: string,
   scope: string,
-  tokenType?: string,     // Meta only
+  expiresAt: Timestamp,
   createdAt: Timestamp
 }
 ```
 
-Deleted by `confirmGoogleAdsAccountSelection` / `confirmMetaAdsAccountSelection` after successful account save.
+Contains raw provider credentials — **MUST NEVER** be exposed to any client API surface. Only the opaque `tokenId` ever flows back to the browser. Deleted by `confirmGoogleAdsAccountSelection` / `confirmMetaAdsAccountSelection` after successful account save. No firestore.rules grant.
 
 ---
 
