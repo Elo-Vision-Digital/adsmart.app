@@ -1,3 +1,4 @@
+import { validatePassword } from '@adsmart/shared'
 import {
   EmailAuthProvider,
   linkWithCredential,
@@ -26,6 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { db, functions } from '@/firebase/config'
+import { authErrorToTKey } from '@/lib/auth/errorMessages'
 
 interface UserProfile {
   name: string
@@ -184,8 +186,9 @@ export function SettingsPage() {
       if (passwordForm.newPassword !== passwordForm.confirmPassword) {
         throw new Error(t('settingsPage.messages.passwordsDoNotMatch'))
       }
-      if (passwordForm.newPassword.length < 6) {
-        throw new Error(t('settingsPage.messages.passwordTooShort'))
+      const policy = validatePassword(passwordForm.newPassword)
+      if (!policy.valid) {
+        throw new Error(policy.errors.map((k) => t(k)).join(' '))
       }
 
       if (hasPasswordProvider) {
@@ -207,16 +210,8 @@ export function SettingsPage() {
       })
 
       setTimeout(() => setPasswordMessage(''), 3000)
-    } catch (error: any) {
-      if (error.code === 'auth/wrong-password') {
-        setPasswordError(t('settingsPage.messages.currentPasswordIncorrect'))
-      } else if (error.code === 'auth/provider-already-linked') {
-        setPasswordError('Esta conta já tem senha cadastrada')
-      } else if (error.code === 'auth/credential-already-in-use') {
-        setPasswordError('Email já vinculado a outra conta')
-      } else {
-        setPasswordError(error.message || t('common.error.changePassword'))
-      }
+    } catch (err) {
+      setPasswordError(t(authErrorToTKey(err)))
     } finally {
       setPasswordLoading(false)
     }
