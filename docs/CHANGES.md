@@ -10,6 +10,24 @@ Format conventions:
 
 ---
 
+## [2026-05-18] — CI deploy scope fix: firestore:rules,firestore:indexes now ship via deploy.yml + emulator test gate
+
+Full prod validation after the `adsmart-web` functions deploy surfaced that `firestore.rules` in production was 9 months stale — the deployed ruleset was from `2025-08-04`, before Phase 3 hardening (`wallet`/`transactions` client-write block) and ADR-012 (`documentLocked()` CPF/CNPJ immutability) landed in source.
+
+**Root cause:** `.github/workflows/deploy.yml` deployed only `hosting,functions`. Every PR that touched `firestore.rules` or `firestore.indexes.json` and merged to `main` lost those changes silently — the CI logs reported "deploy successful" but never shipped the rule changes. The drift had accumulated for 9 months invisible because adsmart.app has no users yet and the domain isn't pointed.
+
+**Fix landed in this commit:**
+- `deploy.yml`: both jobs (dev + prod) now (a) run `bash scripts/firebase/test-rules.sh` before deploy (16 rules tests must pass), and (b) deploy `hosting,functions,firestore:rules,firestore:indexes` as a single atomic step. Rules-breaking changes now fail CI instead of deploying broken rules.
+- [DEPLOYMENT.md](DEPLOYMENT.md) updated with the new scope + test-rules step in both auto-deploy and manual deploy sections. Cross-references the CHANGES entry as the cautionary tale.
+
+**Drift correction also landed today (separate commit, manual deploy):** `firebase deploy --only firestore:rules,firestore:indexes --project adsmart-web` synced 49 lines of missing rules + verified indexes match. Post-deploy ruleset `f3201a28-5edb-4c78-8e43-2f16a98bdb75` released `2026-05-18T15:06:06Z`.
+
+**Detection method:** Diffed source `firestore.rules` against the deployed ruleset via `firebaserules.googleapis.com` REST API (`GET /v1/projects/<project>/releases/cloud.firestore` → follow `rulesetName` → `GET /v1/<rulesetName>`). Firebase Console shows the deployed rules but doesn't diff against your repo. Adding this as a procedure in memory `firestore_rules_indexes_in_ci.md`.
+
+**Operator follow-up:** None. Next push to `develop` or `main` will exercise the new CI scope end-to-end.
+
+---
+
 ## [2026-05-18] — Memories promoted to skills + hook (knowledge moves from session-local to project-local)
 
 Applied 2026-Q2 Anthropic skills best practice: procedural knowledge belongs in `.claude/skills/` (project-versioned, auto-invoked, citable), deterministic blocks belong in PreToolUse hooks, and memory is reserved for user preferences and ephemeral state.

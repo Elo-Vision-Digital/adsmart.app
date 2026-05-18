@@ -29,8 +29,11 @@ jobs:
       - name: Build all (web + functions)
         run: bun run build:all
 
+      - name: Test Firestore rules (emulator)
+        run: bash scripts/firebase/test-rules.sh
+
       - name: Deploy to dev
-        run: bunx firebase-tools deploy --only hosting,functions --project adsmart-web-dev --non-interactive
+        run: bunx firebase-tools deploy --only hosting,functions,firestore:rules,firestore:indexes --project adsmart-web-dev --non-interactive
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
@@ -58,7 +61,10 @@ jobs:
       - name: Build all (web + functions)
         run: bun run build:all
 
+      - name: Test Firestore rules (emulator)
+        run: bash scripts/firebase/test-rules.sh
+
       - name: Deploy to production
-        run: bunx firebase-tools deploy --only hosting,functions --project adsmart-web --non-interactive
+        run: bunx firebase-tools deploy --only hosting,functions,firestore:rules,firestore:indexes --project adsmart-web --non-interactive
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

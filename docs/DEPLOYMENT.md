@@ -12,22 +12,28 @@ Pushes to `develop` and `main` trigger automatic deploys via `.github/workflows/
 **Deploy flow:**
 1. `bun install --frozen-lockfile`
 2. `turbo run build` → builds web (`dist/`) and functions (`functions/lib/`) with caching
-3. `firebase deploy --only hosting,functions --project <target>`
+3. `bash scripts/firebase/test-rules.sh` → runs Firestore rules unit tests in the emulator (fail-fast: deploy aborts if rules break)
+4. `firebase deploy --only hosting,functions,firestore:rules,firestore:indexes --project <target>`
+
+The `firestore:rules,firestore:indexes` scope is critical: without it, rules and indexes drift between source and prod (see [CHANGES.md](CHANGES.md) entry 2026-05-18 — rules in prod were 9 months stale before being detected and synced).
 
 **Prerequisites (one-time):**
 - `FIREBASE_TOKEN` GitHub secret set (see `docs/ENVIRONMENT.md`)
 - All Firebase Secret Manager secrets provisioned in the target project
 - `adsmart-web-dev` project created and configured (see `docs/ENVIRONMENT.md`)
+- `@firebase/rules-unit-testing` installed in `functions/` (for the test-rules step)
 
 **Manual deploy from local machine:**
 ```bash
 # Deploy to dev
 bun run build:all
-bunx firebase-tools deploy --only hosting,functions --project adsmart-web-dev
+bash scripts/firebase/test-rules.sh
+bunx firebase-tools deploy --only hosting,functions,firestore:rules,firestore:indexes --project adsmart-web-dev
 
 # Deploy to production (prefer letting CI handle this)
 bun run build:all
-bunx firebase-tools deploy --only hosting,functions --project adsmart-web
+bash scripts/firebase/test-rules.sh
+bunx firebase-tools deploy --only hosting,functions,firestore:rules,firestore:indexes --project adsmart-web
 ```
 
 ---
