@@ -81,6 +81,13 @@
       "testAccount": "Test account identified - ReCAPTCHA disabled",
       "rateLimit": "Too many attempts. Try again in 15 minutes.",
       "rateLimitRemaining": "Warning: You have only {attempts} attempts remaining."
+    },
+    "emailVerification": {
+      "banner": "Please verify your email to secure your account.",
+      "resendButton": "Resend",
+      "resending": "Sending...",
+      "sent": "Email sent. Check your inbox.",
+      "error": "Failed to resend the verification email."
     }
   },
   "dashboard": {

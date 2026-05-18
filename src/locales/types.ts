@@ -85,6 +85,13 @@ export interface Translations {
       rateLimit: string
       rateLimitRemaining: string
     }
+    emailVerification: {
+      banner: string
+      resendButton: string
+      resending: string
+      sent: string
+      error: string
+    }
   }
 
   // Dashboard translations

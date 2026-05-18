@@ -81,6 +81,13 @@
       "testAccount": "Conta de teste identificada - ReCAPTCHA desabilitado",
       "rateLimit": "Muitas tentativas. Tente novamente em 15 minutos.",
       "rateLimitRemaining": "Atenção: Você tem apenas {attempts} tentativas restantes."
+    },
+    "emailVerification": {
+      "banner": "Confirme seu email para garantir o acesso à sua conta.",
+      "resendButton": "Reenviar",
+      "resending": "Enviando...",
+      "sent": "Email enviado. Verifique sua caixa de entrada.",
+      "error": "Erro ao reenviar o email."
     }
   },
   "dashboard": {
