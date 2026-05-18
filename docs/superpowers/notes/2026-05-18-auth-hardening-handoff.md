@@ -1,6 +1,6 @@
 # Auth Flow Hardening — Handoff to Next Chat
 
-**Status:** ADR-020 SHIPPED on develop in 32 commits (`621bfab..afad53d`). Code + docs (Decisions/SECURITY/QA-CHECKLIST/ERROR-HANDLING/AGENTS/CLAUDE/CHANGES) all complete. Browser-validated. **This file is the bridge to whoever continues the work in a new chat.**
+**Status:** ADR-020 SHIPPED on `develop` and **PUSHED to origin** (HEAD = `225c28d`). The auth-flow work spans 40 commits in `621bfab..225c28d` (24 of those are the auth flow proper from this chat; the rest are parallel-chat work that landed on the same branch: ADR-019 App Check removal + AES-256-GCM, ADR-021 SuitPay removal, canonical schema consumption, gitignore). All canonical docs (Decisions/SECURITY/QA-CHECKLIST/ERROR-HANDLING/AGENTS/CLAUDE/CHANGES) are complete. Browser-validated.
 
 Sibling memory: `auth_hardening_continuation_2026_05_18.md` (Claude Code memory directory). The two files are intentionally redundant — the doc lives in the repo for any agent; the memory survives compaction in Claude Code sessions.
 
@@ -10,15 +10,18 @@ Sibling memory: `auth_hardening_continuation_2026_05_18.md` (Claude Code memory 
 
 ```text
 Estou continuando o trabalho de auth flow hardening (ADR-020). Tudo foi
-shipped em develop em 32 commits (621bfab..afad53d). Todos os docs
-canônicos atualizados: Decisions, SECURITY, QA-CHECKLIST, ERROR-HANDLING,
-AGENTS, CLAUDE, CHANGES.
+shipped e PUSHED para origin/develop (HEAD = 225c28d). O range
+621bfab..225c28d tem 40 commits mas inclui trabalho paralelo
+(ADR-019 App Check removal + AES-256-GCM, ADR-021 SuitPay removal,
+ADR-016/018 schema consumption). Todos os docs canônicos atualizados:
+Decisions, SECURITY, QA-CHECKLIST, ERROR-HANDLING, AGENTS, CLAUDE, CHANGES.
 
 CONTEXTO QUE VOCÊ DEVE LER ANTES DE QUALQUER AÇÃO:
 
 1. docs/Decisions.md → ADR-020 (12 decisões, 7 deferred follow-ups,
-   trade-offs explícitos). ADR-021 (entry vizinho) é SuitPay removal de
-   um chat paralelo — NÃO confundir.
+   trade-offs explícitos). ADR-019 (App Check removal + OAuth token
+   encryption) e ADR-021 (SuitPay removal) são vizinhos de chats
+   paralelos — já incorporados em develop. NÃO renumerar nada.
 
 2. docs/superpowers/notes/2026-05-17-auth-flow-hardening-execution-log.md
    — log per-commit de toda execução, com 2 bugfixes via browser
@@ -33,7 +36,7 @@ CONTEXTO QUE VOCÊ DEVE LER ANTES DE QUALQUER AÇÃO:
 5. docs/superpowers/specs/2026-05-17-auth-flow-hardening-design.md →
    spec original com 12 pontos de drift + 3 approaches considerados.
 
-ESTADO ATUAL:
+ESTADO ATUAL (verificado 2026-05-18):
 
 - bun run typecheck ✅
 - bun run test --run ✅ 62/62 web tests
@@ -41,7 +44,12 @@ ESTADO ATUAL:
 - cd functions && bun run build ✅
 - cd functions && bun run test ❌ pré-existente (emulators offline; é
   estado conhecido, não bloqueia)
-- 32 commits empilhados em develop, NÃO pushed
+- develop está em sync com origin/develop (HEAD = 225c28d, NADA pendente
+  de push)
+- Working tree limpo
+- ADR-019 (App Check OFF) já incorporado: NÃO existe mais
+  src/firebase/app-check.ts; functions/src/recaptcha.ts deletado;
+  enforceAppCheck removido de todos os callables
 - ADR-020 = auth flow (este); ADR-021 = SuitPay removal (chat paralelo).
   Stable, não renumerar.
 
@@ -107,11 +115,12 @@ Listados em ADR-020 "Not done". Por prioridade prática:
    deletada quando harness ou follow-ups landarem.
 
 ═══════════════════════════════════════════════════════════════════════
-OPÇÃO 3 — VALIDAR EM PROD (cuidado, irreversível)
+OPÇÃO 3 — PROMOVER PARA PROD (cuidado, irreversível)
 ═══════════════════════════════════════════════════════════════════════
 
-- Push para origin/develop
-- Abrir PR develop→main
+develop já está pushed. Próximos passos para ir para prod:
+
+- Abrir PR develop→main (gh pr create)
 - Merge → autodeploy via deploy.yml (CI pode estar com startup_failure
   pré-existente; verificar antes)
 - Validar /forgot-password em prod (NÃO disparar emails de teste para
@@ -119,6 +128,8 @@ OPÇÃO 3 — VALIDAR EM PROD (cuidado, irreversível)
 - Validar smoke browser test em prod com user de teste descartável
 - Confirmar COOP header em prod (DevTools → Network → Response Headers)
   → deve ser "same-origin-allow-popups"
+- Confirmar que App Check NÃO está bloqueando nada (ADR-019 removeu
+  end-to-end; se algum callable ainda exigir, é regressão)
 
 Como você quer começar?
 ```
@@ -127,11 +138,13 @@ Como você quer começar?
 
 ## Regras do handoff
 
-**NÃO renumerar ADR-020.** Estado final estável: ADR-020 = auth flow (este); ADR-021 = SuitPay removal (chat paralelo). Já houve uma renumeração ida-e-volta nesta sessão; outro round seria desnecessário.
+**NÃO renumerar ADRs.** Estado final estável: ADR-019 (App Check OFF + AES-256-GCM OAuth tokens, chat paralelo), ADR-020 (auth flow, este), ADR-021 (SuitPay removal, chat paralelo). Já houve uma renumeração ida-e-volta nesta sessão; outro round seria desnecessário.
 
-**Working tree pode ter modificações não-commitadas do outro chat** (schemas/API CONTRACT). Use `git status --short` para ver. O trabalho parallel é independente do auth flow. NÃO mexer nesses arquivos sem pedido explícito.
+**Branch já está pushed.** `origin/develop` = `HEAD` = `225c28d` (verificado 2026-05-18). NÃO há commits pendentes de push. Working tree limpo.
 
-**32 commits não pushed.** Push só com autorização explícita do usuário (regra do classifier para destrutivo em prod).
+**ADR-019 mudou o terreno desde o draft inicial:** App Check foi removido end-to-end. Não há mais `src/firebase/app-check.ts`, `functions/src/recaptcha.ts` foi deletado, `enforceAppCheck: true` removido de todos os callables, `verifyRecaptcha` callable removida. Se o harness da Opção 1 mencionar App Check, é referência morta — ignorar.
+
+**Schemas canônicos consumidos:** ADR-016/018 do chat paralelo lift-and-shifted User/UserDocument/OAuthState/RateLimit/ProductPrice para `@adsmart/shared`. AuthContext e Cloud Functions já consomem via `z.infer`. Se for tocar em I/O de callable auth-related, usar canonical schemas — não declarar interface local.
 
 **Browser validation já feita.** Se for re-validar, IndexedDB tem state stale do user de teste `weakpass@test.com` no `adsmart-web-dev`. O fluxo de signup desse user criou doc em `users/{uid}` e wallet/current (R$ 0,00).
 
