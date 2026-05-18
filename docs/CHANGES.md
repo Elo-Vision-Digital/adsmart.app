@@ -10,6 +10,31 @@ Format conventions:
 
 ---
 
+## [2026-05-18] — Memories promoted to skills + hook (knowledge moves from session-local to project-local)
+
+Applied 2026-Q2 Anthropic skills best practice: procedural knowledge belongs in `.claude/skills/` (project-versioned, auto-invoked, citable), deterministic blocks belong in PreToolUse hooks, and memory is reserved for user preferences and ephemeral state.
+
+**Promoted to project skills:**
+
+- `.claude/skills/firebase-deploy-recovery/SKILL.md` — auto-invokes on deploy failures (`Secret environment variable overlaps`, `Image not found`, `no value for the secret`). Covers pre-deploy checklist, canonical recovery (`functions:delete` + redeploy), and the hard rules from real Sprint 3 incidents. Replaces 2 memory entries (`firebase_deploy_env_overlap_trap`, `firebase_deploy_workflow_rules`).
+- `.claude/skills/dev-environment-diagnose/SKILL.md` — auto-invokes when user reports "CORS error" / 404 / post-auth failure on `adsmart-web-dev`. Enforces fixed diagnostic order (verify deployed surface BEFORE reading client code). Replaces 1 memory entry (`dev_environment_drift`).
+
+**Promoted to PreToolUse hook:**
+
+- `scripts/firebase/check-no-secret-in-env-example.sh` (registered in `.claude/settings.json`) — blocks `Edit/Write` to `**/.env.example` files when a credential-shaped key (`*_SECRET`, `*_TOKEN`, `*_PASSWORD`, `*_PRIVATE_KEY`, `*_API_KEY`) receives a real-looking value. Placeholder values (`empty`, `your-...`, `<REPLACE_ME>`, `${SHELL_VAR}`) pass. Self-tested with 5 cases. Replaces 1 memory entry (`env_example_leaked_token`).
+
+**Memories deleted:** 4 entries (`firebase_deploy_env_overlap_trap`, `firebase_deploy_workflow_rules`, `dev_environment_drift`, `env_example_leaked_token`). Their MEMORY.md pointers updated to reference the new locations under "Procedures (promoted to skills)" and "Deterministic blocks (promoted to hooks)".
+
+**Why this matters:** previously, recovery from a deploy failure depended on the agent reading the right session memory at the right moment — a soft dependency that broke on context compaction. Skills auto-invoke from their `description` field; hooks block deterministically. Same knowledge, more reliable activation, citable across sessions.
+
+**Sources:**
+
+- [code.claude.com/docs/skills](https://code.claude.com/docs/en/skills) — official skill spec + size guidance
+- [platform.claude.com/docs/agents-and-tools/agent-skills/best-practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) — anti-patterns
+- [DEV 2026 skill guide](https://dev.to/muhammad_moeed/claude-code-skills-a-practical-guide-for-2026-3f6p) — "8–12 well-chosen skills, audit monthly"
+
+---
+
 ## [2026-05-18] — Docs drift sweep: SuitPay residue + OAuth token encryption claim
 
 Post-merge cleanup of three stale claims in the canonical docs that survived the ADR-019/021 ship cycle. Pure documentation correction — no code change.
