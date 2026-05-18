@@ -4,16 +4,13 @@ import { defineSecret } from 'firebase-functions/params'
 // SECRETS (Credenciais sensíveis)
 // ========================================
 
-// SuitPay Secrets - TEMPORARIAMENTE DESABILITADOS
-// export const suitpayClientId = defineSecret('SUITPAY_CLIENT_ID')
-// export const suitpayClientSecret = defineSecret('SUITPAY_CLIENT_SECRET')
+// SuitPay secrets removed in ADR-021 (2026-05-18) together with the
+// suitpayPayment/suitpayWebhook Cloud Functions. Payment integration is
+// pending Asaas migration.
 
-// TEMPORÁRIO: Exportar objetos vazios para não quebrar imports
-export const suitpayClientId = { value: () => '' }
-export const suitpayClientSecret = { value: () => '' }
-
-// Google Ads Secrets (migrar no futuro)
+// Google Ads Secrets
 export const googleAdsClientSecret = defineSecret('GOOGLE_ADS_CLIENT_SECRET')
+export const googleAdsDeveloperToken = defineSecret('GOOGLE_ADS_DEVELOPER_TOKEN')
 
 // Meta Ads Secrets (migrar no futuro)
 export const metaAdsAppSecret = defineSecret('META_ADS_APP_SECRET')
@@ -40,18 +37,10 @@ export const config = {
     hostingDev: 'http://localhost:5173'
   },
   
-  // SuitPay (não sensível)
-  suitpay: {
-    apiUrl: 'https://ws.suitpay.app/api/v1',
-    apiUrlSandbox: 'https://sandbox.ws.suitpay.app/api/v1',
-    webhookPath: '/suitpayWebhook',
-    allowedIPs: ['3.132.137.46']
-  },
-  
-  // Google Ads (não sensível)
+  // Google Ads (não sensível) — developer token agora vive em Secret Manager
+  // como GOOGLE_ADS_DEVELOPER_TOKEN; usar `googleAdsDeveloperToken.value()`.
   googleAds: {
     clientId: process.env.GOOGLE_ADS_CLIENT_ID || '',
-    developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN || '',
     redirectUri: process.env.GOOGLE_ADS_REDIRECT_URI || 'https://adsmart.app/auth/google-ads/callback',
     redirectUriDev: process.env.GOOGLE_ADS_REDIRECT_URI_DEV || 'http://localhost:5173/auth/google-ads/callback',
     scope: 'https://www.googleapis.com/auth/adwords',
@@ -77,22 +66,8 @@ export const config = {
 // ========================================
 
 /**
- * Obtém a URL completa do webhook
- */
-export function getWebhookUrl(path: string): string {
-  return `${config.urls.functions}${path}`
-}
-
-/**
  * Verifica se está em produção
  */
 export function isProduction(): boolean {
   return config.project.environment === 'production'
-}
-
-/**
- * Obtém URL de redirect baseado no ambiente
- */
-export function getRedirectUrl(prodUrl: string, devUrl: string): string {
-  return isProduction() ? prodUrl : devUrl
 }
