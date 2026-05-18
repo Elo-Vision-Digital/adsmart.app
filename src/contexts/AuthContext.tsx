@@ -1,3 +1,4 @@
+import { isAdminUser } from '@adsmart/shared'
 import {
   createUserWithEmailAndPassword,
   FacebookAuthProvider,
@@ -16,7 +17,6 @@ interface AuthContextType {
   loading: boolean
   isAdmin: boolean
   hasPasswordProvider: boolean
-  signIn: (email: string, password: string) => Promise<void>
   signInWithEmail: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
@@ -38,11 +38,14 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-// Legacy email allowlist — kept to avoid locking out current admins.
-// New admins should be granted via Firebase custom claims:
-//   admin.auth().setCustomUserClaims(uid, { admin: true })
-// See docs/SECURITY.md.
-const ADMIN_EMAILS = ['agency.elovisiondigital@gmail.com', 'admin@adsmart.app']
+// After any sign-in / sign-up / link operation, force a refresh of the ID
+// token so custom claims provisioned server-side (admin: true) appear in
+// the client without requiring sign-out/sign-in. See docs/Decisions.md
+// ADR-016 §R10.
+async function refreshAuthState(user: User): Promise<void> {
+  await user.getIdToken(true)
+  await user.reload()
+}
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
@@ -59,20 +62,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
 
-      // Admin access is authoritative via Firebase custom claims
-      // (admin.auth().setCustomUserClaims(uid, { admin: true })).
-      // The ADMIN_EMAILS allowlist is retained as a legacy fallback
-      // so current admins are not locked out before claims are provisioned.
       void (async () => {
-        const emailIsAllowlisted = !!user.email && ADMIN_EMAILS.includes(user.email)
-
         try {
-          const tokenResult = await user.getIdTokenResult()
-          const hasClaim = tokenResult.claims.admin === true
-          setIsAdmin(hasClaim || emailIsAllowlisted)
+          const tokenResult = await user.getIdTokenResult(true)
+          setIsAdmin(isAdminUser(tokenResult.claims, user.email))
         } catch {
-          // If the token fetch fails, fall back to email allowlist only.
-          setIsAdmin(emailIsAllowlisted)
+          // Token fetch failed (network etc.) — fall back to email-only check.
+          setIsAdmin(isAdminUser(null, user.email))
         } finally {
           setLoading(false)
         }
@@ -82,70 +78,44 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return unsubscribe
   }, [])
 
-  const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password)
-  }
-
   const signInWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password)
+    const cred = await signInWithEmailAndPassword(auth, email, password)
+    await refreshAuthState(cred.user)
   }
 
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password)
+    const cred = await createUserWithEmailAndPassword(auth, email, password)
+    await refreshAuthState(cred.user)
   }
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider()
-    await signInWithPopup(auth, provider)
+    provider.addScope('profile')
+    provider.addScope('email')
+    provider.setCustomParameters({ prompt: 'select_account' })
+    const cred = await signInWithPopup(auth, provider)
+    await refreshAuthState(cred.user)
   }
 
   const signInWithFacebook = async () => {
-    try {
-      console.log('🔍 Iniciando login com Facebook...')
-
-      const provider = new FacebookAuthProvider()
-
-      // REMOVIDO: Não solicitar email por enquanto
-      // provider.addScope('email')
-      // provider.addScope('public_profile')
-
-      console.log('📱 Provider configurado, abrindo popup...')
-
-      const result = await signInWithPopup(auth, provider)
-
-      console.log('✅ Login com Facebook bem-sucedido!', {
-        user: result.user.email,
-        providerId: result.providerId,
-        additionalUserInfo: result.user.providerData,
-      })
-    } catch (error: any) {
-      console.error('❌ Erro no login com Facebook:', {
-        code: error.code,
-        message: error.message,
-        email: error.email,
-        credential: error.credential,
-      })
-
-      // Re-throw para ser tratado no componente
-      throw error
-    }
+    const provider = new FacebookAuthProvider()
+    provider.addScope('email')
+    provider.addScope('public_profile')
+    const cred = await signInWithPopup(auth, provider)
+    await refreshAuthState(cred.user)
   }
 
   const signOut = async () => {
     await firebaseSignOut(auth)
   }
 
-  // True when the user can change a password via updatePassword(). False for
-  // OAuth-only accounts (Google/Facebook) — those must call linkWithCredential
-  // first to attach an email/password provider, after which this flips true.
   const hasPasswordProvider = !!user?.providerData.some((p) => p.providerId === 'password')
 
-  const value = {
+  const value: AuthContextType = {
     user,
     loading,
     isAdmin,
     hasPasswordProvider,
-    signIn,
     signInWithEmail,
     signUp,
     signInWithGoogle,
@@ -153,5 +123,5 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signOut,
   }
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
