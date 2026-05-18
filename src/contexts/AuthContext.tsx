@@ -66,8 +66,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
           const tokenResult = await user.getIdTokenResult(true)
           setIsAdmin(isAdminUser(tokenResult.claims, user.email))
-        } catch {
+        } catch (err) {
           // Token fetch failed (network etc.) — fall back to email-only check.
+          // Surface as warn so monitoring catches sustained Identity Toolkit
+          // outages instead of silent degradation. See ADR-016 §R10.
+          console.warn('[auth] token refresh failed; falling back to allowlist', err)
           setIsAdmin(isAdminUser(null, user.email))
         } finally {
           setLoading(false)

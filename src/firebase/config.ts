@@ -52,13 +52,19 @@ if (appCheckSiteKey && typeof window !== 'undefined') {
     ).FIREBASE_APPCHECK_DEBUG_TOKEN = true
   }
   // Dynamic import keeps the App Check chunk out of the initial bundle
-  // when the env var is unset (most dev environments today).
-  void import('firebase/app-check').then(({ initializeAppCheck, ReCaptchaEnterpriseProvider }) => {
-    initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
-      isTokenAutoRefreshEnabled: true,
+  // when the env var is unset (most dev environments today). The .catch
+  // surfaces init failures (ad-blocker, invalid site key, network) as a
+  // warn so monitor mode metrics aren't the only signal. See ADR-016.
+  void import('firebase/app-check')
+    .then(({ initializeAppCheck, ReCaptchaEnterpriseProvider }) => {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
+        isTokenAutoRefreshEnabled: true,
+      })
     })
-  })
+    .catch((err) => {
+      console.warn('[app-check] initialization failed', err)
+    })
 }
 
 export const db = getFirestore(app)
