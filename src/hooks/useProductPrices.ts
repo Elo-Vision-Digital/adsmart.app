@@ -1,73 +1,40 @@
+import {
+  DEFAULT_PRODUCT_PRICES,
+  type ProductPrice,
+  type ProductPriceCategory,
+  type ProductPriceType,
+} from '@adsmart/shared'
 import { httpsCallable } from 'firebase/functions'
 import { useEffect, useState } from 'react'
 import { functions } from '@/firebase/config'
 
-export interface ProductPrice {
-  id: string
-  name: string
-  description: string
-  price: number
-  category: 'google' | 'meta'
-  type: 'lancamento' | 'negocio_local'
-  isActive: boolean
-  updatedAt?: any
-  updatedBy?: string
-}
+// Re-export so existing consumers (TemplateCard, GenerateReportPage) keep
+// the same import surface — ADR-016: types flow from @adsmart/shared.
+export type { ProductPrice }
 
 interface UseProductPricesReturn {
   prices: ProductPrice[]
   loading: boolean
   error: string | null
   getPriceByCategory: (
-    category: 'google' | 'meta',
-    type: 'lancamento' | 'negocio_local'
+    category: ProductPriceCategory,
+    type: ProductPriceType
   ) => ProductPrice | undefined
 }
+
+// Materialize with a placeholder Timestamp so the type matches without
+// reaching into firebase/firestore Timestamp here.
+const PLACEHOLDER_TS = { toDate: () => new Date(0) } as unknown as ProductPrice['updatedAt']
+const DEFAULT_PRICES: ProductPrice[] = DEFAULT_PRODUCT_PRICES.map((price) => ({
+  ...price,
+  updatedAt: PLACEHOLDER_TS,
+  updatedBy: 'system',
+}))
 
 export function useProductPrices(): UseProductPricesReturn {
   const [prices, setPrices] = useState<ProductPrice[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // Definir preços padrão
-  const DEFAULT_PRICES: ProductPrice[] = [
-    {
-      id: 'google_lancamento',
-      name: 'Dashboard Google Ads - Lançamento',
-      description: 'Dashboard para campanhas de lançamento no Google Ads',
-      price: 10.0,
-      category: 'google',
-      type: 'lancamento',
-      isActive: true,
-    },
-    {
-      id: 'meta_lancamento',
-      name: 'Dashboard Meta Ads - Lançamento',
-      description: 'Dashboard para campanhas de lançamento no Meta Ads',
-      price: 10.0,
-      category: 'meta',
-      type: 'lancamento',
-      isActive: true,
-    },
-    {
-      id: 'google_negocio_local',
-      name: 'Dashboard Google Ads - Negócios Locais',
-      description: 'Dashboard para negócios locais no Google Ads',
-      price: 5.0,
-      category: 'google',
-      type: 'negocio_local',
-      isActive: true,
-    },
-    {
-      id: 'meta_negocio_local',
-      name: 'Dashboard Meta Ads - Negócios Locais',
-      description: 'Dashboard para negócios locais no Meta Ads',
-      price: 5.0,
-      category: 'meta',
-      type: 'negocio_local',
-      isActive: true,
-    },
-  ]
 
   // Buscar preços quando o componente montar.
   // Padrão "ignore flag" recomendado por React 18 docs (synchronizing-with-effects)
@@ -111,10 +78,7 @@ export function useProductPrices(): UseProductPricesReturn {
   }, [])
 
   // Função auxiliar para buscar preço específico
-  const getPriceByCategory = (
-    category: 'google' | 'meta',
-    type: 'lancamento' | 'negocio_local'
-  ) => {
+  const getPriceByCategory = (category: ProductPriceCategory, type: ProductPriceType) => {
     return prices.find((p) => p.category === category && p.type === type)
   }
 

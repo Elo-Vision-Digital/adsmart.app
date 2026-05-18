@@ -1,21 +1,20 @@
-// Tipos principais do sistema
-
-export interface User {
-  id: string
-  email: string
-  displayName?: string
-  photoURL?: string
-  createdAt: Date
-  updatedAt: Date
-}
-
-// Source of truth: src/schemas/adAccount.ts (Zod schema).
-// Source of truth: src/schemas/campaign.ts (Zod schema).
-// Source of truth: src/schemas/report.ts (Zod schema). Reexported here so
-// existing `import type { Report } from '@/types'` callers continue working.
-// Source of truth: src/schemas/transaction.ts (Zod schema).
-// Source of truth: src/schemas/userWallet.ts (Zod schema).
-export type { AdAccount, Campaign, Report, Transaction, UserWallet } from '@adsmart/shared'
+// All shared Firestore document types flow from @adsmart/shared (ADR-009 +
+// ADR-018). Re-exported here so `import type { ... } from '@/types'` callers
+// keep working without each file having to import from the workspace package.
+//
+// Note: `User.displayName` / `User.photoURL` are NOT part of the Firestore
+// shape — they live on Firebase Auth (`user.displayName`, `user.photoURL`)
+// and were stale local fields prior to ADR-018.
+export type {
+  AdAccount,
+  Campaign,
+  DocumentType,
+  Report,
+  Transaction,
+  User,
+  UserClientUpdate,
+  UserWallet,
+} from '@adsmart/shared'
 
 // `ReportTemplate` interface removed in C6.5 — the `reportTemplates/{id}`
 // Firestore collection had zero readers/writers in app code; templates are
