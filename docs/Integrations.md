@@ -15,7 +15,7 @@ Index of every third-party service AdSmart talks to, with the dedicated doc, the
 | **Meta Ads API (OAuth + Reporting)** | Connect ad account, generate Looker reports | Active | [OAUTH.md](OAUTH.md) | `functions/src/metaAdsOAuth.ts` |
 | **Looker Studio** | Embedded report dashboards | Active | [DOMAIN.md](DOMAIN.md) | Template IDs in `.env.production` (`VITE_LOOKER_*`) |
 | **Google Tag Manager** | Analytics + marketing pixels | Active | — | `src/lib/gtm.ts` |
-| **SuitPay** | Payment provider (PIX) | **Deprecated** — do not extend | [PAYMENTS.md](PAYMENTS.md) | `functions/src/suitpayPayment.ts` |
+| **SuitPay** | Payment provider (PIX) | **Removed** (ADR-021, 2026-05-18) — do not restore | [PAYMENTS.md](PAYMENTS.md) | — |
 | **Asaas** | Payment provider (replacement for SuitPay) | Planned | [PAYMENTS.md](PAYMENTS.md) | TBD |
 | **GitHub Actions** | CI + auto-deploy | Active | [DEPLOYMENT.md](DEPLOYMENT.md), [ENVIRONMENT.md](ENVIRONMENT.md) | `.github/workflows/ci.yml`, `.github/workflows/deploy.yml` |
 
