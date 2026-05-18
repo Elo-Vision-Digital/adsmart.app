@@ -75,7 +75,10 @@
       "saveProfile": "Error saving profile",
       "changePassword": "Error changing password",
       "sendVerificationEmail": "Error sending email. Please try again later.",
-      "wrongPassword": "Incorrect current password"
+      "wrongPassword": "Incorrect current password",
+      "network": "Connection error. Check your internet.",
+      "requiresReauth": "For security, sign in again and try once more.",
+      "appCheckFailed": "Could not verify this device."
     },
     "warning": {
       "testAccount": "Test account identified - ReCAPTCHA disabled",
@@ -140,8 +143,19 @@
       "invalidCredentials": "Invalid email or password",
       "emailInUse": "This email is already in use",
       "weakPasswordDetails": "Password must contain at least 8 characters, including uppercase, lowercase, numbers and special characters",
-      "socialLoginFailed": "Social login failed. Please try again."
+      "socialLoginFailed": "Social login failed. Please try again.",
+      "popupBlocked": "Pop-up was blocked. Enable pop-ups and try again.",
+      "popupClosed": "Login window closed before completion.",
+      "accountConflict": "An account with this email already exists using another sign-in method.",
+      "credentialInUse": "This sign-in is already linked to another account."
     }
+  },
+  "passwordPolicy": {
+    "tooShort": "Password must be at least 8 characters long.",
+    "requireUppercase": "Include at least one uppercase letter.",
+    "requireLowercase": "Include at least one lowercase letter.",
+    "requireNumber": "Include at least one number.",
+    "requireSpecial": "Include at least one special character (!@#$%^&*)."
   },
   "homePage": {
     "hero": {

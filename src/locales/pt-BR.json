@@ -75,7 +75,10 @@
       "saveProfile": "Erro ao salvar perfil",
       "changePassword": "Erro ao alterar senha",
       "sendVerificationEmail": "Erro ao enviar email. Tente novamente mais tarde.",
-      "wrongPassword": "Senha atual incorreta"
+      "wrongPassword": "Senha atual incorreta",
+      "network": "Erro de conexão. Verifique sua internet.",
+      "requiresReauth": "Por segurança, faça login novamente e tente outra vez.",
+      "appCheckFailed": "Não foi possível verificar este dispositivo."
     },
     "warning": {
       "testAccount": "Conta de teste identificada - ReCAPTCHA desabilitado",
@@ -140,8 +143,19 @@
       "invalidCredentials": "Email ou senha inválidos",
       "emailInUse": "Este email já está em uso",
       "weakPasswordDetails": "A senha deve conter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais",
-      "socialLoginFailed": "Erro ao fazer login social. Tente novamente."
+      "socialLoginFailed": "Erro ao fazer login social. Tente novamente.",
+      "popupBlocked": "Pop-up bloqueado. Habilite pop-ups e tente novamente.",
+      "popupClosed": "Janela de login fechada antes da conclusão.",
+      "accountConflict": "Já existe uma conta com este email usando outro método de login.",
+      "credentialInUse": "Este login já está associado a outra conta."
     }
+  },
+  "passwordPolicy": {
+    "tooShort": "A senha deve ter pelo menos 8 caracteres.",
+    "requireUppercase": "Inclua pelo menos uma letra maiúscula.",
+    "requireLowercase": "Inclua pelo menos uma letra minúscula.",
+    "requireNumber": "Inclua pelo menos um número.",
+    "requireSpecial": "Inclua pelo menos um caractere especial (!@#$%^&*)."
   },
   "homePage": {
     "hero": {

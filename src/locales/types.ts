@@ -79,6 +79,9 @@ export interface Translations {
       changePassword: string
       sendVerificationEmail: string
       wrongPassword: string
+      network: string
+      requiresReauth: string
+      appCheckFailed: string
     }
     warning: {
       testAccount: string
@@ -152,7 +155,20 @@ export interface Translations {
       emailInUse: string
       weakPasswordDetails: string
       socialLoginFailed: string
+      popupBlocked: string
+      popupClosed: string
+      accountConflict: string
+      credentialInUse: string
     }
+  }
+
+  // Password policy translations (mirrors PasswordValidationResult.errors keys from @adsmart/shared)
+  passwordPolicy: {
+    tooShort: string
+    requireUppercase: string
+    requireLowercase: string
+    requireNumber: string
+    requireSpecial: string
   }
 
   // HomePage translations
