@@ -35,37 +35,13 @@ export const auth = initializeAuth(app, {
   popupRedirectResolver: browserPopupRedirectResolver,
 })
 
-// App Check (reCAPTCHA Enterprise) — gated by VITE_APPCHECK_SITE_KEY.
-// Without a site key set, App Check is NOT initialized at all (no silent
-// fallback). Identity Toolkit enforcement starts in monitor mode in the
-// Firebase Console; see docs/DEPLOYMENT.md Phase H for the rollout plan.
-//
-// Dev: set `self.FIREBASE_APPCHECK_DEBUG_TOKEN = true` in DevTools BEFORE
-// the page initializes Firebase, then copy the debug token printed in the
-// console into Firebase Console → App Check → Debug tokens. Validated
-// against /firebase/firebase-js-sdk via Context7 (2026-05-17).
-const appCheckSiteKey = import.meta.env.VITE_APPCHECK_SITE_KEY
-if (appCheckSiteKey && typeof window !== 'undefined') {
-  if (import.meta.env.DEV) {
-    ;(
-      self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }
-    ).FIREBASE_APPCHECK_DEBUG_TOKEN = true
-  }
-  // Dynamic import keeps the App Check chunk out of the initial bundle
-  // when the env var is unset (most dev environments today). The .catch
-  // surfaces init failures (ad-blocker, invalid site key, network) as a
-  // warn so monitor mode metrics aren't the only signal. See ADR-016.
-  void import('firebase/app-check')
-    .then(({ initializeAppCheck, ReCaptchaEnterpriseProvider }) => {
-      initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
-        isTokenAutoRefreshEnabled: true,
-      })
-    })
-    .catch((err) => {
-      console.warn('[app-check] initialization failed', err)
-    })
-}
+// Firebase App Check was removed in ADR-019. The previous setup
+// (reCAPTCHA Enterprise provider gated by VITE_APPCHECK_SITE_KEY) was
+// scaffolded but never activated — no site key was ever provisioned in
+// any environment and no callable had enforceAppCheck enabled. Per the
+// same reasoning as ADR-013 (drop reCAPTCHA from auth), we rely on
+// Firebase Auth + per-action rate limiting + Firestore rules as the
+// abuse-prevention surface. See docs/SECURITY.md.
 
 export const db = getFirestore(app)
 export const functions = getFunctions(app, 'us-central1')

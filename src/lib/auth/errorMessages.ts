@@ -35,9 +35,6 @@ export const AUTH_ERROR_KEY_MAP: Record<string, string> = {
 
   // Re-auth required
   'auth/requires-recent-login': 'common.error.requiresReauth',
-
-  // App Check rejection
-  'auth/firebase-app-check-token-is-invalid': 'common.error.appCheckFailed',
 }
 
 export function authErrorToTKey(err: unknown): string {
