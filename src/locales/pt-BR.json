@@ -150,6 +150,14 @@
       "credentialInUse": "Este login já está associado a outra conta."
     }
   },
+  "forgotPasswordPage": {
+    "title": "Esqueceu sua senha?",
+    "subtitle": "Informe seu email e enviaremos um link para redefinir a senha.",
+    "button": "Enviar link",
+    "sending": "Enviando...",
+    "success": "Email enviado. Se sua conta existir, você receberá o link em breve.",
+    "backToLogin": "Voltar ao login"
+  },
   "passwordPolicy": {
     "tooShort": "A senha deve ter pelo menos 8 caracteres.",
     "requireUppercase": "Inclua pelo menos uma letra maiúscula.",

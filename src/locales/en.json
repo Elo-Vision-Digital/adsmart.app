@@ -150,6 +150,14 @@
       "credentialInUse": "This sign-in is already linked to another account."
     }
   },
+  "forgotPasswordPage": {
+    "title": "Forgot your password?",
+    "subtitle": "Enter your email and we'll send a link to reset it.",
+    "button": "Send link",
+    "sending": "Sending...",
+    "success": "Email sent. If your account exists, you'll receive the link shortly.",
+    "backToLogin": "Back to login"
+  },
   "passwordPolicy": {
     "tooShort": "Password must be at least 8 characters long.",
     "requireUppercase": "Include at least one uppercase letter.",

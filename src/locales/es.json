@@ -150,6 +150,14 @@
       "credentialInUse": "Este acceso ya está vinculado a otra cuenta."
     }
   },
+  "forgotPasswordPage": {
+    "title": "¿Olvidaste tu contraseña?",
+    "subtitle": "Ingresa tu email y te enviaremos un enlace para restablecerla.",
+    "button": "Enviar enlace",
+    "sending": "Enviando...",
+    "success": "Email enviado. Si tu cuenta existe, recibirás el enlace en breve.",
+    "backToLogin": "Volver al login"
+  },
   "passwordPolicy": {
     "tooShort": "La contraseña debe tener al menos 8 caracteres.",
     "requireUppercase": "Incluye al menos una letra mayúscula.",

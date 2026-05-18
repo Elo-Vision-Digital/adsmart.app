@@ -162,6 +162,16 @@ export interface Translations {
     }
   }
 
+  // ForgotPasswordPage specific translations
+  forgotPasswordPage: {
+    title: string
+    subtitle: string
+    button: string
+    sending: string
+    success: string
+    backToLogin: string
+  }
+
   // Password policy translations (mirrors PasswordValidationResult.errors keys from @adsmart/shared)
   passwordPolicy: {
     tooShort: string
