@@ -10,6 +10,40 @@ Format conventions:
 
 ---
 
+## [2026-05-18] — Harness modernization: AGENTS.md canonical, CLAUDE.md slim, CHANGES.md rotated
+
+Aligned the AI harness with 2026-Q2 best practices to reduce per-turn token cost and eliminate drift between agent-facing files.
+
+**Why:** Karaca 2026 documented 83% cost reduction after slimming CLAUDE.md; InfoQ Mar 2026 showed monolithic "architecture overview" sections do not help agents; Linux Foundation adopted AGENTS.md (Dec 2025) as cross-tool standard. Pre-modernization: CLAUDE.md 304 lines + CHANGES.md 1054 lines = heavy context tax on every agent turn.
+
+**What changed:**
+
+- `CLAUDE.md`: 304 → 63 lines. Design system extracted to `docs/UI-DESIGN.md`. Firebase Conventions Pack inventory extracted to `docs/FIREBASE-CONVENTIONS.md`. Tool-agnostic conventions consolidated into AGENTS.md (Zod 4 idioms, schema-change 4-step flow). Now contains Claude-only orientation: skills, slash commands, memory pointer.
+- `AGENTS.md`: 107 → 108 lines. Absorbed Zod 4 idioms + schema-change flow rules. Read-first map for `scripts/migrations/` now inline (was pointing at REFACTOR-PLAN.md).
+- `docs/CHANGES.md`: 1054 → 604 lines. Rotated. Active log now Q2-only. Pre-2026-04-26 entries archived to `docs/changelog/2026-Q1.md` (461 lines).
+- `docs/superpowers/{specs,plans,notes}/`: 16 concluded work products moved to `docs/superpowers/archive/`. Active dirs contain only WIP (functions-config-modernization + this harness plan).
+- `docs/index.md`: updated for new doc locations + changelog rotation + active/archive split.
+- `docs/REFACTOR-PLAN.md`: re-labeled as historical in index (work complete since 2026-04-26; ADR-009/016/018 are canonical decision record).
+- Memories deleted: `auth_hardening_continuation_2026_05_18`, `phase_5_status`, `phase_5_prereqs_done`, `phase_3_status`, `admin_subprojeto2_continuation` — all transient continuation/status memories whose own notes said "delete after X lands".
+
+**What did NOT change:**
+
+- `.claude/agents/`, `.claude/commands/`, `.claude/settings.json` hooks: validated as best-practice in 2026-Q2 research; kept as-is.
+- `.cursor/rules/`: kept (rule-porter migration deferred — out of scope here).
+- ADRs in `docs/Decisions.md`: untouched (canonical decision record).
+- `packages/shared/` canonical schemas: untouched.
+
+**Sources informing the design:**
+
+- [InfoQ — AGENTS.md value review (Mar 2026)](https://www.infoq.com/news/2026/03/agents-context-file-value-review/)
+- [Karaca — 42k tokens per conversation fix](https://medium.com/@cem.karaca/my-claude-md-was-eating-42-000-tokens-per-conversation-heres-how-i-fixed-it-85ffba809bd4)
+- [agents.md (Linux Foundation)](https://agents.md/)
+- [Anthropic — Effective Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
+
+**Plan:** [docs/superpowers/plans/2026-05-18-harness-modernization.md](superpowers/plans/2026-05-18-harness-modernization.md)
+
+---
+
 ## [2026-05-18] — Hard rules: no hardcoded environment values, no unnecessary comments
 
 User-elevated conventions to hard rules after a self-audit of the same-day defineString migration revealed two violations the prior commit had introduced:
