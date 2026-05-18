@@ -25,12 +25,7 @@ Firestore database for project `adsmart-app`. All monetary values are in **BRL c
 | `oauth_states/{stateId}` | CSRF state tokens (ephemeral) | Admin SDK only |
 | `temporary_oauth_tokens/{id}` | Tokens pending account selection (30-min TTL) | Admin SDK only |
 | `adminActivity/{email_date}` | Daily admin action tracking | Admin SDK only |
-| `webhook_logs/{id}` | SuitPay webhook payloads (deprecated) | Admin SDK only |
-| `pendingPayments/{id}` | PIX payments awaiting confirmation (deprecated) | Admin SDK only |
-| `payments/{id}` | Confirmed payments (deprecated) | Admin SDK only |
-| `orphan_payments/{id}` | Payments without matching user (deprecated) | Admin SDK only |
-
-Collections marked **(deprecated)** belong to the SuitPay integration being replaced by Asaas.
+SuitPay-era payment collections (`webhook_logs`, `pendingPayments`, `payments`, `orphan_payments`) were used by the now-removed SuitPay integration (ADR-021, 2026-05-18). Any residual production documents are read-only legacy data; new payment work targets Asaas and will define its own collections — see [PAYMENTS.md](PAYMENTS.md).
 
 ---
 
@@ -99,7 +94,7 @@ Source of truth: [packages/shared/src/schemas/userWallet.ts](../packages/shared/
 Client rule: `allow write: if false` (enforced by subcollection rule for `wallet`). Writes are server-only:
 
 - **Bootstrap** (`balance: 0`) — seeded together with `users/{uid}` by the [bootstrapUser](../functions/src/bootstrapUser.ts) Auth blocking trigger (`beforeUserCreated`, single batched write). See [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for rationale.
-- **Credit / debit** — via Admin SDK in [adminWalletManager](../functions/src/adminWalletManager.ts) and the (deprecated) [suitpayWebhook](../functions/src/suitpayWebhook.ts).
+- **Credit / debit** — via Admin SDK in [adminWalletManager](../functions/src/adminWalletManager.ts). The SuitPay webhook path was removed in ADR-021; Asaas replacement will plug in here when wired.
 
 The [useWallet hook](../src/hooks/useWallet.ts) only **reads**. As a defensive fallback, if the snapshot reports the document missing the hook surfaces a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) without writing — but post-trigger every signup arrives with a real doc.
 
@@ -144,12 +139,12 @@ Note: ownership is encoded in the path; no `userId` field is stored on the doc.
 
 ## users/{uid}/oauth_tokens/google_ads
 
-Stores base64-encoded (not truly encrypted — see TODO in `googleAdsOAuthV2.ts`) OAuth tokens.
+Stores AES-256-GCM encrypted OAuth tokens (ADR-019). The `encryptionKey` secret is bound on every callable that touches these tokens. Encryption/decryption flows through [functions/src/lib/oauthCrypto.ts](../functions/src/lib/oauthCrypto.ts); a `detectAndDecrypt` helper transparently reads any pre-ADR-019 base64-encoded legacy values during migration.
 
 ```
 {
-  accessToken: string,   // base64 encoded
-  refreshToken: string,  // base64 encoded
+  accessToken: string,   // AES-256-GCM envelope (v1)
+  refreshToken: string,  // AES-256-GCM envelope (v1)
   expiresAt: number,     // Unix ms
   scope: string,
   updatedAt: Timestamp
