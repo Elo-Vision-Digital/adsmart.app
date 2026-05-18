@@ -12,15 +12,53 @@ Run this checklist before every production deploy. Check each item manually unle
 - [ ] `cd functions && bun run test` — all functions tests pass (emulators required)
 - [ ] GitHub Actions CI is green on the deploy branch
 
-## Authentication
+## Authentication (post-ADR-020)
 
-- [ ] Sign in with Google works
-- [ ] Sign in with Facebook works
+### Sign-in / sign-up
+
+- [ ] Sign in with Google works — popup opens, `prompt: 'select_account'` forces account picker even with one logged-in Google account, redirect to `/dashboard` on success
+- [ ] Sign in with Facebook works — popup opens, requests `email` + `public_profile` scopes, `users/{uid}.email` is populated after first signup (no `email: ''`)
 - [ ] Sign in with email/password works (no reCAPTCHA — removed 2026-05-17, see [Decisions.md ADR-013](Decisions.md#adr-013-drop-google-recaptcha-from-authentication))
-- [ ] `useRateLimit` blocks after 5 failed attempts in a 15-minute window
-- [ ] After sign-out, all protected routes redirect to `/login`
-- [ ] Admin user (`agency.elovisiondigital@gmail.com`) sees admin panel at `/admin`
+- [ ] Signup enforces shared password policy: 8 chars min + uppercase + lowercase + number + special. Try `weak` → expect 4 separate rules listed in pt-BR.
+- [ ] Sign-up with already-used email shows "Já existe uma conta com este email" (loginPage.error.emailInUse)
+- [ ] Sign-in with wrong password shows the generic "Credenciais inválidas" message (collapsed with `user-not-found` and `invalid-credential` — privacy)
+- [ ] `useRateLimit` blocks after 5 failed attempts in a 15-minute window (client-side guard — Firebase Auth has its own server throttle as defense-in-depth)
+- [ ] After sign-out, all protected routes redirect to `/login` (via `<Navigate replace>` — no `/login` accumulating in history)
+
+### Route guards + loading
+
+- [ ] On cold load, route guards (`PrivateRoute`, `AdminRoute`) render `<AuthLoadingFallback />` (centered spinner with `aria-label="Carregando"`) until `onAuthStateChanged` resolves. No white screen flash, no flicker redirect.
+- [ ] Admin user (`agency.elovisiondigital@gmail.com` OR any user with custom claim `admin: true`) sees admin panel at `/admin`
 - [ ] Non-admin user is redirected from `/admin` to `/dashboard`
+- [ ] After `setCustomUserClaims(uid, { admin: true })`, the next sign-in picks up admin without requiring a manual sign-out/sign-in cycle (force-refresh via `AuthContext.refreshAuthState`)
+
+### Forgot password (`/forgot-password`)
+
+- [ ] Page renders with title "Esqueceu sua senha?"
+- [ ] Submitting a valid email shows "Email enviado. Se sua conta existir, você receberá o link em breve."
+- [ ] Submitting a NON-EXISTENT email ALSO shows the same success message (privacy collapse — no enumeration)
+- [ ] Rate limit kicks in after 5 submissions in 15 min
+- [ ] "Voltar ao login" link works
+
+### Email verification
+
+- [ ] `EmailVerificationBanner` (yellow strip on top of `<main>`) appears when `hasPasswordProvider && !user.emailVerified`
+- [ ] Banner has "Reenviar" button → click triggers `sendEmailVerification`; success message replaces the banner text
+- [ ] Banner does NOT appear for OAuth-only users (Google / Facebook without password provider)
+- [ ] After clicking the verification link in the email AND reloading the app, the banner disappears
+
+### Password change (`/settings`)
+
+- [ ] Password field placeholder shows "Mín. 8 chars + maiúscula, número e especial" (not "Mínimo 6 caracteres" — was a stale i18n key fixed in commit `f0fc264`)
+- [ ] Trying to set a weak new password (e.g. `weak`) shows the policy violations from the shared `validatePassword` — not "Erro ao processar solicitação"
+- [ ] Setting a strong new password with the correct current password succeeds; `auth/wrong-password` shows "Credenciais inválidas" (privacy-collapsed message, matching LoginPage)
+
+### Account deletion (`/privacy/delete-data`)
+
+- [ ] "Excluir minha conta permanentemente" button is **disabled** until the user types their own email exactly (case-insensitive)
+- [ ] On click: backend cascade-deletes 5 subcollections + `userDocuments/{normalizedDocId}` if present + Auth user; client signs out and redirects to `/login`
+- [ ] Cloud Logging shows a `securityLogs/{id}` entry with `eventType: USER_DELETION`, `severity: INFO`, and `subcollectionCounts`
+- [ ] Rate limit: a second `deleteUserData` call within 1h is rejected with `HttpsError('resource-exhausted')`
 
 ## Dashboard
 
