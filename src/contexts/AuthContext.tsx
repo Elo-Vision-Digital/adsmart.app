@@ -12,7 +12,7 @@ import {
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 import { auth } from '@/firebase/config'
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null
   loading: boolean
   isAdmin: boolean
@@ -24,7 +24,7 @@ interface AuthContextType {
   signOut: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function useAuth() {
   const context = useContext(AuthContext)

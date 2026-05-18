@@ -2,23 +2,22 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { AuthContext, type AuthContextType } from '@/contexts/AuthContext'
-import { AdminRoute } from './AdminRoute'
+import { PrivateRoute } from './PrivateRoute'
 
-function renderWithAuth(ctx: AuthContextType) {
+function renderWithAuth(ctx: AuthContextType, path = '/private') {
   return render(
     <AuthContext.Provider value={ctx}>
-      <MemoryRouter initialEntries={['/admin']}>
+      <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route
-            path="/admin"
+            path="/private"
             element={
-              <AdminRoute>
-                <div>ADMIN</div>
-              </AdminRoute>
+              <PrivateRoute>
+                <div>PROTECTED</div>
+              </PrivateRoute>
             }
           />
           <Route path="/login" element={<div>LOGIN</div>} />
-          <Route path="/dashboard" element={<div>DASH</div>} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>
@@ -37,26 +36,23 @@ const baseCtx: AuthContextType = {
   signOut: vi.fn(),
 }
 
-const fakeUser = { uid: 'u1', email: 'u@x.com' } as unknown as AuthContextType['user']
-
-describe('AdminRoute', () => {
+describe('PrivateRoute', () => {
   it('renders the loading fallback while loading=true', () => {
     renderWithAuth({ ...baseCtx, loading: true })
+    expect(screen.queryByText('PROTECTED')).toBeNull()
+    expect(screen.queryByText('LOGIN')).toBeNull()
     expect(screen.getByLabelText('Carregando')).toBeInTheDocument()
   })
 
-  it('redirects to /login when no user', () => {
+  it('redirects to /login when not authenticated', () => {
     renderWithAuth({ ...baseCtx, loading: false, user: null })
     expect(screen.getByText('LOGIN')).toBeInTheDocument()
+    expect(screen.queryByText('PROTECTED')).toBeNull()
   })
 
-  it('redirects to /dashboard when user is not admin', () => {
-    renderWithAuth({ ...baseCtx, loading: false, user: fakeUser, isAdmin: false })
-    expect(screen.getByText('DASH')).toBeInTheDocument()
-  })
-
-  it('renders children when user is admin', () => {
-    renderWithAuth({ ...baseCtx, loading: false, user: fakeUser, isAdmin: true })
-    expect(screen.getByText('ADMIN')).toBeInTheDocument()
+  it('renders children when authenticated', () => {
+    const fakeUser = { uid: 'u1', email: 'u@x.com' } as unknown as AuthContextType['user']
+    renderWithAuth({ ...baseCtx, loading: false, user: fakeUser })
+    expect(screen.getByText('PROTECTED')).toBeInTheDocument()
   })
 })
