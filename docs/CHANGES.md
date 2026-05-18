@@ -10,6 +10,26 @@ Format conventions:
 
 ---
 
+## [2026-05-18] — Subprojeto 2 (admin dashboard) closure validated via Cloud Logging
+
+Closing the last open Subprojeto-2 audit item: confirm the historical INTERNAL/500 on `getDashboardMetrics` is gone.
+
+**Method (no manual UI smoke test needed):** `functions/src/getDashboardMetrics.ts` runs all 7 reads through `Promise.allSettled` with per-query labels (`Q1_allCreditsTotal_agg` … `Q7_adAccountsSnap`). Each failed read logs `[dashboard:fail:<label>]` before the function throws `HttpsError('internal', ...)`. This means Cloud Logging has a deterministic signal for any failure path.
+
+**Evidence:**
+- Last `dashboard:fail` entry across all history: **`Q7_adAccountsSnap` at 2026-05-01T21:12:06`** (FAILED_PRECONDITION on collectionGroup query, missing index).
+- Fix commit: **`6bf62ec` (2026-05-01 18:29:28 -0300)** — `fix(firestore): add adAccounts.isActive fieldOverride for COLLECTION + COLLECTION_GROUP scopes`. The last failure occurred ~3h after the fix was committed (presumably ran on stale indexes before deploy propagated; 4 index deploys followed across `5dad3aa` → `04c3b37` → `6bf62ec`).
+- **Zero `dashboard:fail` entries across 262 log lines spanning 2026-05-04 → 2026-05-18.**
+- Today (2026-05-18) shows **4 authenticated invocations** at 04:49 and 05:04 (`auth: VALID`), each with the `Callable request verification passed` log line and no exception trail after.
+
+**Conclusion:** Subprojeto 2 is closed. The blocker memory `admin_subprojeto2_continuation.md` (which had been pruned by a parallel session) was stale by ~17 days — it had been written before the fix landed but never re-checked.
+
+Subprojeto 2 row in `admin_overhaul_roadmap.md` updated from "Done (pending operator validation)" → "Done (validated 2026-05-18)". The validation method itself is also captured in the same memory for future audits of similar `Promise.allSettled`-labeled callables.
+
+**Next pending in the admin roadmap:** Subprojeto 3 (painel usuários CRUD).
+
+---
+
 ## [2026-05-18] — Hygiene + firebase-functions v7 + priceManager v2 closure
 
 Three independent changes bundled for the same end-of-sprint hygiene window:
