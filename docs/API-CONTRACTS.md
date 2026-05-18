@@ -373,33 +373,9 @@ Powers `/admin/dashboard`. Runs 7 reads in parallel via `Promise.allSettled` ove
 
 ---
 
-## suitpayWebhook (deprecated)
+## Payment callables — removed
 
-**File:** `functions/src/suitpayWebhook.ts`  
-**Trigger:** `onRequest` (HTTP POST)  
-**Path:** `/suitpayWebhook`  
-
-**⚠ Deprecated.** Will be removed with Asaas migration. Do not modify except for minimum maintenance.
-
-Receives SuitPay payment status webhooks. Validates request, updates payment status in Firestore, credits wallet on confirmed payment.
-
----
-
-## createPixPayment (deprecated)
-
-**File:** `functions/src/suitpayPayment.ts`  
-**Trigger:** `onCall`  
-
-**⚠ Deprecated.** Creates a PIX payment request via SuitPay API.
-
----
-
-## checkPaymentStatus (deprecated)
-
-**File:** `functions/src/suitpayPayment.ts`  
-**Trigger:** `onCall`  
-
-**⚠ Deprecated.** Polls SuitPay for payment status by payment ID.
+SuitPay was removed end-to-end in [ADR-021](Decisions.md#adr-021-remove-suitpay-end-to-end--harden-prepare-deploy-against-secretenv-overlap) (2026-05-18). The callables `suitpayWebhook`, `createPixPayment`, and `checkPaymentStatus` no longer exist. Asaas replacement is planned but not yet wired — see [PAYMENTS.md](PAYMENTS.md).
 
 ---
 
