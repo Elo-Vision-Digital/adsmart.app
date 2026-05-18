@@ -1,6 +1,6 @@
 # Auth Flow Hardening — Handoff to Next Chat
 
-**Status:** ADR-020 SHIPPED on develop in 31 commits (`621bfab..b3ad760`). Code + docs (Decisions/SECURITY/QA-CHECKLIST/ERROR-HANDLING/AGENTS/CLAUDE/CHANGES) all complete. Browser-validated. **This file is the bridge to whoever continues the work in a new chat.**
+**Status:** ADR-020 SHIPPED on develop in 32 commits (`621bfab..afad53d`). Code + docs (Decisions/SECURITY/QA-CHECKLIST/ERROR-HANDLING/AGENTS/CLAUDE/CHANGES) all complete. Browser-validated. **This file is the bridge to whoever continues the work in a new chat.**
 
 Sibling memory: `auth_hardening_continuation_2026_05_18.md` (Claude Code memory directory). The two files are intentionally redundant — the doc lives in the repo for any agent; the memory survives compaction in Claude Code sessions.
 
@@ -10,7 +10,7 @@ Sibling memory: `auth_hardening_continuation_2026_05_18.md` (Claude Code memory 
 
 ```text
 Estou continuando o trabalho de auth flow hardening (ADR-020). Tudo foi
-shipped em develop em 31 commits (621bfab..b3ad760). Todos os docs
+shipped em develop em 32 commits (621bfab..afad53d). Todos os docs
 canônicos atualizados: Decisions, SECURITY, QA-CHECKLIST, ERROR-HANDLING,
 AGENTS, CLAUDE, CHANGES.
 
@@ -41,7 +41,7 @@ ESTADO ATUAL:
 - cd functions && bun run build ✅
 - cd functions && bun run test ❌ pré-existente (emulators offline; é
   estado conhecido, não bloqueia)
-- 31 commits empilhados em develop, NÃO pushed
+- 32 commits empilhados em develop, NÃO pushed
 - ADR-020 = auth flow (este); ADR-021 = SuitPay removal (chat paralelo).
   Stable, não renumerar.
 
@@ -131,7 +131,7 @@ Como você quer começar?
 
 **Working tree pode ter modificações não-commitadas do outro chat** (schemas/API CONTRACT). Use `git status --short` para ver. O trabalho parallel é independente do auth flow. NÃO mexer nesses arquivos sem pedido explícito.
 
-**31 commits não pushed.** Push só com autorização explícita do usuário (regra do classifier para destrutivo em prod).
+**32 commits não pushed.** Push só com autorização explícita do usuário (regra do classifier para destrutivo em prod).
 
 **Browser validation já feita.** Se for re-validar, IndexedDB tem state stale do user de teste `weakpass@test.com` no `adsmart-web-dev`. O fluxo de signup desse user criou doc em `users/{uid}` e wallet/current (R$ 0,00).
 
