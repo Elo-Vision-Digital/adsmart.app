@@ -40,7 +40,7 @@
       "weakPassword": "Password must be at least 8 characters",
       "completeRecaptcha": "Please complete the ReCAPTCHA",
       "emailCannotBeChanged": "Email cannot be changed",
-      "minimumCharacters": "Minimum 6 characters",
+      "minimumCharacters": "Min. 8 chars + uppercase, number, special",
       "invalidDocument": "Invalid {type}"
     },
     "general": {

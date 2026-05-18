@@ -28,6 +28,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { db, functions } from '@/firebase/config'
 import { authErrorToTKey } from '@/lib/auth/errorMessages'
+import { isAuthError } from '@/lib/auth/errors'
 
 interface UserProfile {
   name: string
@@ -211,7 +212,15 @@ export function SettingsPage() {
 
       setTimeout(() => setPasswordMessage(''), 3000)
     } catch (err) {
-      setPasswordError(t(authErrorToTKey(err)))
+      // Local Error throws (validation pre-Firebase) carry the already-
+      // translated message; only Firebase Auth errors go through the map.
+      if (isAuthError(err)) {
+        setPasswordError(t(authErrorToTKey(err)))
+      } else if (err instanceof Error && err.message) {
+        setPasswordError(err.message)
+      } else {
+        setPasswordError(t('common.error.generic'))
+      }
     } finally {
       setPasswordLoading(false)
     }

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useRateLimit } from '@/hooks/useRateLimit'
 import { authErrorToTKey } from '@/lib/auth/errorMessages'
+import { isAuthError } from '@/lib/auth/errors'
 import { sanitizeEmail, sanitizeInput } from '@/utils/sanitize'
 
 export function LoginPage() {
@@ -63,7 +64,15 @@ export function LoginPage() {
       }
       navigate('/dashboard')
     } catch (err) {
-      setError(t(authErrorToTKey(err)))
+      // Local Error throws (validation pre-Firebase) carry the already-
+      // translated message; only Firebase Auth errors go through the map.
+      if (isAuthError(err)) {
+        setError(t(authErrorToTKey(err)))
+      } else if (err instanceof Error && err.message) {
+        setError(err.message)
+      } else {
+        setError(t('common.error.generic'))
+      }
     } finally {
       setLoading(false)
     }
