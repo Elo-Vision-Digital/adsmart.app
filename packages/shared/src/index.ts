@@ -38,3 +38,12 @@ export {
 } from './schemas/dashboardMetrics'
 
 export { ADMIN_EMAILS, isAdminUser, type IdTokenClaims } from './auth/admin'
+
+export {
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PasswordPolicy,
+  PasswordSchema,
+  validatePassword,
+  type PasswordValidationResult,
+} from './auth/password'
