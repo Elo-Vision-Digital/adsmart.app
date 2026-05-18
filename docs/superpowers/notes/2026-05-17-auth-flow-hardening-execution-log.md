@@ -30,11 +30,11 @@ Live log of the execution of [the implementation plan](../plans/2026-05-17-auth-
 | D4 — validation.ts shim | ✅ | `9cda1ee` | DONE inline (não dispatchado). Deletou `src/utils/validation.test.ts` (10 tests legacy, mesma cobertura no shared password.test.ts). `getPasswordStrength` mantido local. |
 | E1 — bootstrapUser fallback | ✅ | `0dc4517` | Approved. Email fallback `event.data.email → providerData[].email → null`. Sem mais `email: ''` no Firestore. Telemetria estruturada JSON. |
 | E2 — USER_DELETION enum | ✅ | `98fd369` | DONE inline. 1 valor enum adicionado para E3 consumir. |
-| E3 — deleteUserData real | ⏳ pending | — | |
-| E4 — DeleteDataPage double-confirm | ⏳ pending | — | |
-| E5 — unify ADMIN_EMAILS server-side | ⏳ pending | — | |
-| F1 — COOP downgrade | ⏳ pending | — | |
-| G1-G6 — docs sweep | ⏳ pending | — | |
+| E3 — deleteUserData real | ✅ | `02bbd84` | Approved. Cascade delete em batches de 400 + 5 subcollections + userDocuments + Auth user + USER_DELETION audit log. Rate-limit 1×/hr via `checkRateLimit(uid, 'deleteUserData', 1, 60)`. |
+| E4 — DeleteDataPage double-confirm | ✅ | `7326e89` | Approved. Email-typed confirmation (case-insensitive) substitui literal "EXCLUIR MINHA CONTA". Chama `httpsCallable('deleteUserData')` em vez de delete client-side. signOut + navigate('/login', replace) após sucesso. |
+| E5 — unify ADMIN_EMAILS server-side | ✅ | `42a2af5` (amended) | Implementer original (`192c9f3`) puxou um refactor pré-existente de `priceManager.ts` do parallel chat (357 linhas mudadas) que dependia de `@adsmart/shared` exports untracked. **Rollback**: restaurado pre-E5 priceManager.ts + aplicado só o swap ADMIN_EMAILS (3 sites). Commit amended para `42a2af5`. Final diff: 3 files, +11/-26. Zero `const ADMIN_EMAILS` em todo o repo (exceto packages/shared). |
+| F1 — COOP downgrade | ✅ | `a011e4d` | DONE inline. `same-origin` → `same-origin-allow-popups` em firebase.json. Trade-off documentado em ADR-016 (Phase G). |
+| G1-G6 — docs sweep | ⏳ in progress | — | Next. Reconciliar ADR-016 com ADR-019 (App Check removido). |
 
 ## Decisões / desvios do plano
 
@@ -69,6 +69,16 @@ Reportados pelo code-quality reviewer de B4. Endereçar em Phase G ou follow-up 
 - `bun run lint` ✅ (115 warnings pré-existentes, 0 errors)
 - `bun run test --run` ✅ 68/68 passing
 - `cd functions && bun run test` ❌ pré-existente — depende de emulators offline. Não bloqueia.
+
+### Após Phase E (E3+E4+E5) + F1 (commits `02bbd84`, `7326e89`, `42a2af5`, `a011e4d`)
+- `bun run typecheck` ✅
+- `bun run test --run` ✅ 62/62 passing (sem regressões)
+- `cd functions && bun run typecheck` ✅
+- Zero `const ADMIN_EMAILS` no repo — fonte única em `@adsmart/shared/auth/admin.ts`.
+- Zero `deleteDoc`/`deleteUser` no client de exclusão de conta — toda lógica via callable.
+- COOP downgrade aplicado em hosting headers; será visível só após próximo deploy.
+
+**Lição aprendida em E5 — scope creep do subagent.** O implementer reportou DONE com 357 linhas mudadas em `priceManager.ts` porque o working tree (vindo de outro chat paralelo trabalhando em schema/API CONTRACT) já tinha um refactor que dependia de exports `@adsmart/shared/DEFAULT_PRODUCT_PRICES` ainda **untracked**. O commit teria quebrado CI em outra máquina. Detectei na inspeção pós-spec-review e fiz amend: restaurei priceManager.ts do commit pré-E5 e apliquei só o swap mínimo de ADMIN_EMAILS (3 sites). Final commit `42a2af5`. Para próximos dispatches em arquivos com working-tree drift: instruir explicitamente o subagent a checar `git diff HEAD -- <file>` antes de editar, e se houver drift, fazer rollback temporário do arquivo antes de aplicar o swap.
 
 ### Após Phase D + E1+E2 (commits `c937d26`, `0cfdc7a`, `df2f5bc`, `9cda1ee`, `0dc4517`, `98fd369`)
 - `bun run typecheck` ✅
