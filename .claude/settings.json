@@ -92,6 +92,16 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/firebase/check-rules-tested.sh"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(**/.env.example)|Write(**/.env.example)|Edit(**/.env.*.example)|Write(**/.env.*.example)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/firebase/check-no-secret-in-env-example.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
