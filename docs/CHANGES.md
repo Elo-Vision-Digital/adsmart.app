@@ -10,6 +10,23 @@ Format conventions:
 
 ---
 
+## [2026-05-18] — Repo moved to Elo-Vision-Digital org + CI fully unblocked
+
+Repo transferred from `github.com/ZenniTTy/adsmart.app` to `github.com/Elo-Vision-Digital/adsmart.app`. GitHub preserves redirects so old clones still work, but local remote was updated to the canonical new URL. PR #2 (49-commit modernization sweep) was preserved as MERGED on the new org.
+
+Billing issue that had been keeping Actions in `startup_failure` since pre-transfer is now resolved on the org account. CI started actually running for the first time today — and surfaced 4 distinct bugs in the workflow itself:
+
+1. **`bunx firebase` → `bunx firebase-tools`** in `scripts/firebase/test-rules.sh`. Local works because `firebase-tools` is globally installed; CI runner needed the canonical package name.
+2. **Java 21 missing** on `ubuntu-latest`. `firebase-tools >= 14` requires JDK 21 for the Firestore emulator. Added `actions/setup-java@v4` with Temurin 21 to both jobs.
+3. **`@adsmart/shared` not built** before `bun run typecheck` / `bun run build` in `ci.yml`. Local passes because `packages/shared/dist/` is pre-built on disk; CI fresh runner has no dist. Added explicit `cd packages/shared && bun run build` before lint/typecheck in both `ci.yml` jobs. `deploy.yml` uses Turbo so it was unaffected.
+4. **`defineString` params not present in CI** after hard-rule 2026-05-18 dropped `default:` literals. `firebase deploy` exits non-zero in non-interactive mode when any param has no value. Fix: GitHub Environments `dev` and `prod`, each with 6 repo variables (`GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_REDIRECT_URI`, `GOOGLE_ADS_REDIRECT_URI_DEV`, `META_ADS_APP_ID`, `META_ADS_REDIRECT_URI`, `META_ADS_REDIRECT_URI_DEV`). New "Write functions/.env" step runs BEFORE `Build all` so `prepare-deploy.mjs` materializes `functions/deploy/.env` correctly. Both dev and prod jobs identical.
+
+End-to-end CI run after the 4 fixes: ✅ `develop` push → CI green + Deploy → adsmart-web-dev success (~3.5 min total).
+
+`DEPLOYMENT.md` updated with the GitHub Environments prerequisite. FIREBASE_TOKEN intentionally kept repo-level (single source, same Firebase project family) — env-level segregation would be over-engineering at MVP stage.
+
+---
+
 ## [2026-05-18] — CI deploy scope fix: firestore:rules,firestore:indexes now ship via deploy.yml + emulator test gate
 
 Full prod validation after the `adsmart-web` functions deploy surfaced that `firestore.rules` in production was 9 months stale — the deployed ruleset was from `2025-08-04`, before Phase 3 hardening (`wallet`/`transactions` client-write block) and ADR-012 (`documentLocked()` CPF/CNPJ immutability) landed in source.

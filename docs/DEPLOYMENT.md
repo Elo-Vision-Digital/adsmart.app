@@ -22,6 +22,7 @@ The `firestore:rules,firestore:indexes` scope is critical: without it, rules and
 - All Firebase Secret Manager secrets provisioned in the target project
 - `adsmart-web-dev` project created and configured (see `docs/ENVIRONMENT.md`)
 - `@firebase/rules-unit-testing` installed in `functions/` (for the test-rules step)
+- GitHub Environments `dev` and `prod` exist with 6 `defineString` variables each: `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_REDIRECT_URI`, `GOOGLE_ADS_REDIRECT_URI_DEV`, `META_ADS_APP_ID`, `META_ADS_REDIRECT_URI`, `META_ADS_REDIRECT_URI_DEV`. CI step "Write functions/.env" materializes them at deploy time. Manage via `gh variable list --env <dev|prod> --repo Elo-Vision-Digital/adsmart.app`.
 
 **Manual deploy from local machine:**
 ```bash
