@@ -10,6 +10,38 @@ Format conventions:
 
 ---
 
+## [2026-05-18] — Functions config modernization: defineString for non-secret app config + prepare-deploy regression suite
+
+**Status:** Conventions + spec + plan shipped on `develop`. Code execution pending in the same session (see [plan](superpowers/plans/2026-05-18-functions-config-modernization-plan.md)).
+
+Post-audit follow-up after Sprints 1–3 + ADR-021 surfaced two residual gaps:
+
+1. **OAuth non-secret config still read via raw `process.env`** with hardcoded fallbacks duplicated across four source files (`googleAdsOAuth.ts`, `googleAdsOAuthV2.ts`, `metaAdsOAuth.ts`, `metaAdsOAuthV2.ts`). The literals re-appeared even though `config/index.ts` already centralized them — three drift surfaces (`.env` / source fallback / Cloud Run env) instead of one source of truth.
+2. **`functions/scripts/prepare-deploy.mjs` filter ships without test coverage.** The hardening that shipped in ADR-021 (commit `c67c600`) protects against the secret/env overlap deploy trap, but a future regex edit would silently break the protection — next deploy is the only signal.
+
+**Decision (research-backed, validated 2026-05-18):** Migrate non-secret config to `defineString` (canonical pattern for Functions v2 per Firebase docs + Context7 `/firebase/firebase-tools`). Extract the `prepare-deploy.mjs` filter as a pure function and add three Vitest regression tests.
+
+**Conventions updated (this commit):**
+- [AGENTS.md](../AGENTS.md) — Adds "Non-secret app config" rule (defineString-or-allowlist). Updates "what NOT to do" with the inverse.
+- [CLAUDE.md](../CLAUDE.md) — Cloud Function v2 baseline section now references `defineString` for non-secret config.
+- [.claude/agents/functions-security-reviewer.md](../.claude/agents/functions-security-reviewer.md) — Reverses the "process.env for non-secret config is OK and EXPECTED" line. New rule: enumerate Cloud Run built-in allowlist; require `defineString` / `defineSecret` for everything else.
+- [docs/OAUTH.md](OAUTH.md) — Updated Google Ads + Meta Ads "Prerequisites" sections (defineString/defineSecret refs). Token storage section corrected to reference AES-256-GCM via `oauthCrypto` (ADR-019) — previously still claimed "Base64, TODO before Phase 2".
+- [.cursor/rules/functions-config.mdc](../.cursor/rules/functions-config.mdc) — New Cursor rule mirroring the convention.
+- Spec: [docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md](superpowers/specs/2026-05-18-functions-config-modernization-design.md) — Full rationale, research findings, acceptance criteria.
+- Plan: [docs/superpowers/plans/2026-05-18-functions-config-modernization-plan.md](superpowers/plans/2026-05-18-functions-config-modernization-plan.md) — 5 tasks, ~45 min total.
+
+**Explicit non-goals (informed by research):**
+- **Not** adding `.parse()` to internal Firestore writes. Zod docs (Context7 `/colinhacks/zod`): *"validation middleware at system boundaries"*. Internal writes by code we control are not boundaries; `z.infer` types already cover compile-time. Considered + dropped.
+- **Not** broadening the `check-no-process-env-secret.sh` pre-commit hook. False-positive risk on Cloud Run built-ins (`GCLOUD_PROJECT`, etc).
+- **Not** rotating `GOOGLE_ADS_DEVELOPER_TOKEN`. Repo private; user explicitly deferred.
+
+**Refs:**
+- Context7 `/firebase/firebase-tools` queried 2026-05-18.
+- [Firebase — Configure your environment](https://firebase.google.com/docs/functions/config-env).
+- ADR-019 (OAuth crypto), ADR-021 (SuitPay removal + prepare-deploy hardening).
+
+---
+
 ## [2026-05-18] — Auth flow hardening: surgical refactor of Google/Facebook/Email-Password flows (ADR-020)
 
 **Status:** Shipped on `develop` in 28 commits (`621bfab` … `957cf11`). Plan executed via `superpowers:subagent-driven-development`. Browser-validated via Playwright + Chrome DevTools end-to-end. Two real bugs detected via browser validation and fixed in commit `f0fc264` (catch handlers + stale i18n key). Decision recorded in [ADR-020](Decisions.md#adr-020-auth-flow-hardening-2026-05-approach-a--surgical-refactor).

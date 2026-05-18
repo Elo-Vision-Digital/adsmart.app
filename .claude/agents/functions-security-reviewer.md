@@ -25,7 +25,16 @@ calibrated against the project's REAL patterns, not generic Firebase advice.
 - Zero occurrences of `process.env.[A-Z_]+_SECRET` in `functions/src/`.
 - All secrets declared via `defineSecret('NAME')` in `functions/src/config/index.ts`.
 - Secrets passed via `secrets: [...]` in `onCall` options when used.
-- `process.env` use for NON-secret config (project ID, region, OAuth client IDs, redirect URIs) is OK and EXPECTED — see `config/index.ts`.
+
+#### Non-secret config (post-2026-05-18 convention)
+
+App-level config values (OAuth client IDs, redirect URIs, public API endpoints) flow through `defineString('NAME', { default: '...' })` in `functions/src/config/index.ts`, consumed via `.value()`. **Do NOT read these directly from `process.env`** in `functions/src/*` — go through the param export.
+
+`process.env` reads inside `functions/src/` are limited to this allowlist:
+- Cloud Run built-ins: `GCLOUD_PROJECT`, `FUNCTION_REGION`, `FUNCTION_TARGET`, `NODE_ENV`
+- Test/debug flags: `*_TEST_MODE`, `FIREBASE_DEBUG_MODE`
+
+Anything else is a review blocker — propose a `defineString` migration instead. See [docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md](../../docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md) for rationale.
 
 #### HttpsError codes
 

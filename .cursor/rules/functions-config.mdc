@@ -1,0 +1,57 @@
+---
+description: AdSmart non-secret config in Cloud Functions — defineString, not process.env
+globs: functions/**/*.ts
+alwaysApply: false
+---
+
+# Functions non-secret config (AdSmart)
+
+Non-secret app config (OAuth client IDs, redirect URIs, public endpoints) goes through `defineString` in `functions/src/config/index.ts` and is read via `.value()` at runtime. NEVER read these from `process.env` directly.
+
+## Canonical pattern
+
+```typescript
+// functions/src/config/index.ts
+import { defineString } from 'firebase-functions/params'
+
+export const googleAdsClientId = defineString('GOOGLE_ADS_CLIENT_ID', {
+  default: '422483165860-npdsq...apps.googleusercontent.com',
+})
+```
+
+```typescript
+// functions/src/googleAdsOAuthV2.ts
+import { googleAdsClientId } from './config'
+
+const params = new URLSearchParams({
+  client_id: googleAdsClientId.value(),
+  // ...
+})
+```
+
+## `process.env` allowlist in `functions/src/`
+
+These are OK because they are Cloud Run runtime built-ins or test flags:
+
+- `process.env.GCLOUD_PROJECT`
+- `process.env.FUNCTION_REGION`
+- `process.env.FUNCTION_TARGET`
+- `process.env.NODE_ENV`
+- `process.env.*_TEST_MODE` (e.g. `GOOGLE_ADS_TEST_MODE`)
+- `process.env.FIREBASE_DEBUG_MODE`
+
+Everything else — including OAuth client IDs, redirect URIs, public API endpoints — goes through `defineString`. Secrets go through `defineSecret` (see `firebase-secrets.mdc`).
+
+## Why
+
+- CLI blocks deployment when a param has no value and no default — typed contract enforced at deploy time.
+- Single source of truth: no more duplicated fallbacks across multiple source files.
+- Values survive function redeploys without source-code changes (Cloud Run metadata).
+- Removes drift between `functions/.env`, source fallbacks, and Cloud Run env.
+
+## Refs
+
+- `functions/src/config/index.ts` — canonical declarations.
+- `docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md` — rationale + research.
+- https://firebase.google.com/docs/functions/config-env — Firebase canonical docs.
+- Functions SDK 6.0.0+ deprecates `functions.config()`. Do not use it.

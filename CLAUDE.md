@@ -60,6 +60,7 @@ Every new callable follows the pattern in [functions/src/reserveUserDocument.ts]
 - `onCall` from `firebase-functions/v2/https` (never v1 `functions.https.onCall`)
 - `region: config.project.region` explicit in options
 - `secrets: [...]` declared in options when the function needs them
+- Non-secret app config (OAuth client IDs, redirect URIs, public endpoints) read via `defineString(...).value()` from `config/index.ts` — never `process.env.X` directly. `process.env` reads in `functions/src/` are limited to Cloud Run built-ins + `*_TEST_MODE` flags. See [docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md](docs/superpowers/specs/2026-05-18-functions-config-modernization-design.md).
 - Auth check first, `HttpsError('unauthenticated', ...)` if missing
 - `isAdminUser(...)` for admin-only callables
 - Zod input validation via `safeParse(MyInputSchema)` from `@adsmart/shared`; `HttpsError('invalid-argument', issues[0]?.message)` on failure
