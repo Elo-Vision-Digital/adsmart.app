@@ -33,9 +33,6 @@ jobs:
           key: ${{ runner.os }}-turbo-deploy-dev-${{ github.sha }}
           restore-keys: ${{ runner.os }}-turbo-deploy-dev-
 
-      - name: Build all (web + functions)
-        run: bun run build:all
-
       - name: Write functions/.env (defineString params consumed by firebase-tools at deploy time)
         run: |
           {
@@ -53,6 +50,9 @@ jobs:
           META_ADS_APP_ID: ${{ vars.META_ADS_APP_ID }}
           META_ADS_REDIRECT_URI: ${{ vars.META_ADS_REDIRECT_URI }}
           META_ADS_REDIRECT_URI_DEV: ${{ vars.META_ADS_REDIRECT_URI_DEV }}
+
+      - name: Build all (web + functions)
+        run: bun run build:all
 
       - name: Test Firestore rules (emulator)
         run: bash scripts/firebase/test-rules.sh
@@ -89,9 +89,6 @@ jobs:
           key: ${{ runner.os }}-turbo-deploy-prod-${{ github.sha }}
           restore-keys: ${{ runner.os }}-turbo-deploy-prod-
 
-      - name: Build all (web + functions)
-        run: bun run build:all
-
       - name: Write functions/.env (defineString params consumed by firebase-tools at deploy time)
         run: |
           {
@@ -109,6 +106,9 @@ jobs:
           META_ADS_APP_ID: ${{ vars.META_ADS_APP_ID }}
           META_ADS_REDIRECT_URI: ${{ vars.META_ADS_REDIRECT_URI }}
           META_ADS_REDIRECT_URI_DEV: ${{ vars.META_ADS_REDIRECT_URI_DEV }}
+
+      - name: Build all (web + functions)
+        run: bun run build:all
 
       - name: Test Firestore rules (emulator)
         run: bash scripts/firebase/test-rules.sh
