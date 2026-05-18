@@ -1,18 +1,12 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
-import { TransactionSchema, UserWalletSchema } from '@adsmart/shared'
+import { TransactionSchema, UserWalletSchema, isAdminUser } from '@adsmart/shared'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
 
 // Inicializar admin se ainda não foi
 if (!admin.apps.length) {
   admin.initializeApp()
 }
-
-// ✅ Lista de emails de administradores (mesma do priceManager)
-const ADMIN_EMAILS = [
-  'agency.elovisiondigital@gmail.com', // ✅ Seu Gmail atual (Firebase)
-  'admin@adsmart.app', // ✅ Email corporativo futuro
-]
 
 // 🔒 CONFIGURAÇÕES DE SEGURANÇA
 const SECURITY_CONFIG = {
@@ -134,9 +128,7 @@ export const addUserCredits = onCall(async (request) => {
 
   // Verificar se é admin
   const adminEmail = request.auth.token.email || ''
-  const isAdmin = request.auth.token.admin || ADMIN_EMAILS.includes(adminEmail)
-  
-  if (!isAdmin) {
+  if (!isAdminUser(request.auth.token, adminEmail)) {
     // Registrar tentativa não autorizada
     await securityLogger.logEvent(
       SecurityEventType.UNAUTHORIZED_ACCESS,
