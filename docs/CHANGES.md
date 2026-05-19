@@ -2,6 +2,34 @@
 
 Append-only log of significant changes. Most recent at the top. Each entry uses the parseable header `## [YYYY-MM-DD] — Title` for tooling/lint.
 
+## [2026-05-19] — Redesign Fase 0c (foundation-memory) shipped
+
+Sprint 0c completa via dogfood do harness (terceira dogfood, depois da 0a e 0b). 16 items entregues em 3 waves com validator agent PASS em cada wave.
+
+**Nota crítica**: memórias vivem em `~/.claude/projects/.../memory/` — state local fora do repo. Este PR contém apenas os artifacts da sprint + EXECUTION-CHECKLIST update + CHANGES (próprio); o efeito real das memórias (1 delete + 3 updates + 10 creates) só visível na máquina do dev. Design intencional dessa fase.
+
+**Wave 1 — Cleanup (4 items)**:
+- Deletado: `suitpay_deprecated.md` (SuitPay removido em ADR-021; memória vira ruído; histórico em `docs/Decisions.md`)
+- Atualizado: `firebase_secrets.md` com bloco "Planned secrets" documentando `ANTHROPIC_API_KEY` + `DEEPSEEK_API_KEY` (status: planned, Fase 3.5)
+- Atualizado: `admin_overhaul_roadmap.md` com cross-link para `docs/redesign/EXECUTION-CHECKLIST.md` (Subprojetos 3+ antes da Fase 1)
+- Atualizado: `MEMORY.md` index (sem suitpay + 10 entries novas) — 19 bullets totais
+
+**Wave 2 — 10 memórias novas em `.claude/projects/.../memory/`**:
+- **Planned (Fase 3.5)**: `llm_combo_strategy` (Anthropic primary + DeepSeek fallback), `report_flow_v2` (FLOW-3, 6 passos), `credits_system` (1 crédito = R$5), `share_link_pattern` (UUID v4 + Firestore public + snapshot), `playwright_pdf` (Playwright headless em Cloud Function)
+- **Active**: `oauth_mfa_google` (Google Ads MFA desde 21/abr/2026), `i18n_three_langs` (pt-BR+en+es, princípio 7), `harness_pattern` (SPEC→CONTRACT→waves→EVALUATION), `progress_files_discipline` (PROGRESS antes de /compact), `multi_process_agents` (Implementer ≠ Validator, princípio 13)
+- Cada memória: frontmatter `name`/`description`/`metadata.type`/`status`/`references`; body com **Why** + **How to apply** + cross-links `[[name]]` formando grafo coerente
+
+**Wave 3 — Validação**:
+- Zero regressão: `cd packages/shared && bun run test` → 195/195; `bun run typecheck` exit 0; `bun run lint` 0 errors; zero `.ts`/`.tsx` da app modificado
+- Validator agent (2 passes intermediários + 1 final): PASS 4/4 + 10/10 + 2/2
+- EVALUATION.md `verdict: pass`
+
+**Scope discipline**: nenhuma memória `feedback_*` tocada (preferências do user preservadas); nenhuma mudança em `firestore.rules`/indexes/código TS; nenhum ADR criado (Fase 0d).
+
+**Próximo passo**: Fase 0d — ADRs publicados em `docs/Decisions.md` (Harness Engineering, Multi-process agents, Stack 2026, etc.).
+
+---
+
 ## [2026-05-19] — Redesign Fase 0b (foundation-tooling) shipped
 
 Sprint 0b completa via dogfood do harness. 37 items entregues em 4 waves com validator agent PASS em cada wave.
