@@ -25,7 +25,16 @@ Firestore database for project `adsmart-app`. All monetary values are in **BRL c
 | `oauth_states/{stateId}` | CSRF state tokens (ephemeral) | Admin SDK only |
 | `temporary_oauth_tokens/{id}` | Tokens pending account selection (30-min TTL) | Admin SDK only |
 | `adminActivity/{email_date}` | Daily admin action tracking | Admin SDK only |
-SuitPay-era payment collections (`webhook_logs`, `pendingPayments`, `payments`, `orphan_payments`) were used by the now-removed SuitPay integration (ADR-021, 2026-05-18). Any residual production documents are read-only legacy data; new payment work targets Asaas and will define its own collections — see [PAYMENTS.md](PAYMENTS.md).
+| `users/{uid}/reports/{id}/platforms/{platform}` | **Planned (FOUND-1)** — dados específicos por plataforma do relatório (FLOW-6) | Owner read; Function write |
+| `users/{uid}/reports/{id}/insights/{platform}` | **Planned (FOUND-1)** — output LLM por plataforma (`AIReportInsight`) | Owner read; Function write |
+| `publicReportShares/{shareId}` | **Planned (FOUND-1)** — share-link público com UUID v4 (SHARE-2) | Public get (sem auth) · no list · Function write |
+| `publicReportShares/{shareId}/snapshot/data` | **Planned (FOUND-1)** — snapshot dos dados renderizáveis | Public get · Function write |
+| `processedRequests/{requestId}` | **Planned (FOUND-1)** — idempotency keys (Harness Engineering) | Admin SDK only |
+| `llmCalls/{callId}` | **Planned (FOUND-1)** — observabilidade chamadas LLM (custo/tokens/latência) | Admin SDK only |
+
+SuitPay-era payment collections (`webhook_logs`, `pendingPayments`, `payments`, `orphan_payments`) eram da integração SuitPay removida (ADR-021, 2026-05-18). Documentos residuais são read-only legacy. Decisão atualizada (2026-05-19): Asaas **NÃO** será implementado — Stripe substitui ambos quando FUTURE §8 entrar (ver [docs/redesign/FUTURE-IDEAS.md §8](redesign/FUTURE-IDEAS.md)). Roadmap inicial NÃO tem gateway de pagamento ativo — créditos só via admin (`addUserCredits`).
+
+> **Foundation Schemas (Sprint -1 — concluída 2026-05-19)**: schemas Zod source-of-truth criados em [packages/shared/src/schemas/](../packages/shared/src/schemas/) (`businessType.ts`, `processedRequest.ts`, `publicReportShare.ts`, `aiReportInsight.ts`, `llmCall.ts`, `reportPlatformData.ts`). Refactor aditivo de `report.ts`, `transaction.ts`, `userWallet.ts`, `productPrice.ts` adicionou campos opcionais novos sem remover legacy. Collections marcadas como "Planned" acima são populadas a partir da Fase 3.5 (novo fluxo de relatório).
 
 ---
 
@@ -364,3 +373,164 @@ Daily admin action log. Document ID: `{adminEmail}_{YYYY-MM-DD}`.
 ```
 
 Limits enforced: max R$ 5.000 / day, max 50 transactions / day per admin.
+
+---
+
+# Foundation Collections — Planned (FOUND-1)
+
+> Definidas em Sprint -1 do roadmap (2026-05-19). Schemas Zod source-of-truth criados; collections serão populadas a partir da Fase 3.5 (novo fluxo de relatório). Detalhes em [docs/redesign/FEATURES-INVENTORY.md FOUND-1](redesign/FEATURES-INVENTORY.md).
+
+## users/{uid}/reports/{reportId}/platforms/{platform}
+
+Dados específicos por plataforma do relatório (FLOW-6 do roadmap — Report Detail com tabs). Subcoleção mantém o doc principal de `report` leve (< 100KB) para list queries rápidas; UI faz fetch on-demand quando usuário troca de tab.
+
+Source of truth: [packages/shared/src/schemas/reportPlatformData.ts](../packages/shared/src/schemas/reportPlatformData.ts) (`ReportPlatformDataSchema`).
+
+```
+{
+  id: 'google_ads' | 'meta_ads',       // = platform
+  platform: 'google_ads' | 'meta_ads',
+  accountId: string,
+  campaignIds: string[],
+  kpis: {
+    invested: number,
+    revenue?: number,
+    roas?: number,
+    cpa?: number,
+    clicks?: number,
+    impressions?: number,
+    conversions?: number,
+    ctr?: number
+  },
+  revenueOverTime: Array<{ date: string, value: number }>,
+  campaigns: Array<{
+    campaignId: string,
+    campaignName: string,
+    invested: number,
+    revenue?: number,
+    roas?: number,
+    cpa?: number,
+    clicks?: number,
+    impressions?: number,
+    conversions?: number,
+    ctr?: number
+  }>,
+  fetchedAt: Timestamp,
+  dataFingerprint?: string             // hash do payload bruto — detecta mudanças
+}
+```
+
+## users/{uid}/reports/{reportId}/insights/{platform}
+
+Output estruturado da LLM (combo Anthropic + DeepSeek, INF-1) gerado para a plataforma específica. Validado contra `AIReportInsightSchema` antes do save.
+
+Source of truth: [packages/shared/src/schemas/aiReportInsight.ts](../packages/shared/src/schemas/aiReportInsight.ts).
+
+```
+{
+  id: string,                          // geralmente = platform name
+  summary: string,                     // 20-800 chars, executive summary
+  topMetrics: Array<{
+    key: string,                       // 'revenue', 'roas', 'cpa', ...
+    label: string,                     // localizado
+    value: number,
+    deltaPercent?: number | null,
+    sentiment: 'positive' | 'negative' | 'neutral'
+  }>,                                  // 1-8 items
+  recommendations: Array<{
+    title: string,
+    rationale: string,
+    impact: 'high' | 'medium' | 'low'
+  }>,                                  // 0-5 items
+  promptVersion: string,               // 'analyze_report-v1.2'
+  model: string,                       // 'claude-sonnet-4-6', 'deepseek-v4-flash'
+  generatedAt: Timestamp
+}
+```
+
+## publicReportShares/{shareId}
+
+Share-link público de relatório (SHARE-1/2/3 do roadmap). Top-level collection — sem `users/{uid}/...` na hierarquia porque rules em hierarquia exigiriam auth.
+
+**Segurança via `shareId` imprevisível** (UUID v4 = 122 bits entropia). `firestore.rules` permite `allow get: if !exists() || resource.data.revokedAt == null` e `allow list: if false` (anti-enumeração). Cliente nunca escreve — só callables via Admin SDK.
+
+Source of truth: [packages/shared/src/schemas/publicReportShare.ts](../packages/shared/src/schemas/publicReportShare.ts).
+
+```
+{
+  id: string,                          // UUID v4
+  reportId: string,                    // referência a users/{ownerId}/reports/{reportId}
+  ownerId: string,
+  visibleMetrics: string[],            // keys de métricas visíveis na página pública
+  visibleSections: string[],           // seções visíveis (overview, kpis, chart, ...)
+  viewCount: number,                   // incrementado via callable rate-limited
+  revokedAt?: Timestamp,               // null = ativo; preenchido = revogado
+  expiresAt?: Timestamp,               // opcional — sem default
+  createdAt: Timestamp
+}
+```
+
+### Subcoleção: publicReportShares/{shareId}/snapshot/data
+
+Snapshot do dado renderizável no momento da criação do share. Mantém o link estável mesmo se o owner re-gerar o relatório (consistência). Estrutura espelha o conteúdo do Report Detail (KPIs, charts, breakdown, insights).
+
+## processedRequests/{requestId}
+
+Idempotency keys para callables mutativos (Harness Engineering pattern — [research/01](research/01-firebase-stack.md) §1). Toda callable que muta estado verifica este doc em transação ANTES de executar — se já processado, retorna o resultado armazenado.
+
+Top-level collection — webhooks futuros (FUTURE §8 Stripe) também usam aqui com `event.id` como key.
+
+Source of truth: [packages/shared/src/schemas/processedRequest.ts](../packages/shared/src/schemas/processedRequest.ts).
+
+```
+{
+  id: string,                          // UUID v4 do cliente OU event.id do webhook
+  source: 'callable' | 'stripe_webhook' | 'scheduled',
+  handler: string,                     // 'createReport', 'refreshReport', ...
+  userId?: string,
+  result?: unknown,                    // resultado para retornar em chamadas duplicadas
+  processedAt: Timestamp
+}
+```
+
+Cliente NUNCA escreve — só Admin SDK. Cliente lê apenas para verificar status.
+
+## llmCalls/{callId}
+
+Observabilidade de chamadas LLM (INF-1 — combo Anthropic Claude + DeepSeek). Toda chamada registra um doc com tokens consumidos, custo USD, latência, promptVersion. Permite análises agregadas: custo por usuário/feature/modelo, qualidade vs versão de prompt.
+
+Write-only via Admin SDK. Cliente nunca lê.
+
+Source of truth: [packages/shared/src/schemas/llmCall.ts](../packages/shared/src/schemas/llmCall.ts).
+
+```
+{
+  id: string,
+  provider: 'anthropic' | 'deepseek',
+  model: string,                       // 'claude-sonnet-4-6', 'claude-haiku-4-5', 'deepseek-v4-flash'
+  task: 'analyze_report' | 'classify' | 'summarize' | 'parse_data' | 'generate_copy' | 'extract_metrics',
+  userId?: string,
+  resourceId?: string,                 // reportId, shareId, etc.
+  promptVersion: string,
+  inputTokens: number,
+  outputTokens: number,
+  cachedInputTokens: number,           // cached via prompt caching (default 0)
+  costUsd: number,
+  latencyMs: number,
+  errorMessage?: string,
+  calledAt: Timestamp
+}
+```
+
+---
+
+# Composite indexes necessários (a adicionar em `firestore.indexes.json` nas próximas fases)
+
+- `users/{uid}/reports` — `(status, createdAt desc)` para lista filtrada por status
+- `users/{uid}/reports` — `(businessType, createdAt desc)` para lista filtrada por tipo
+- `users/{uid}/reports` — `(nextAutoRefreshAt asc)` para `refreshActiveReports` scheduler
+- `publicReportShares` — `(ownerId, createdAt desc)` para `listReportShares`
+- `processedRequests` — TTL policy (opcional, 30 dias)
+- `llmCalls` — `(userId, calledAt desc)` para análise por usuário
+- `llmCalls` — `(task, calledAt desc)` para análise por feature
+- `llmCalls` — `(model, calledAt desc)` para análise por modelo

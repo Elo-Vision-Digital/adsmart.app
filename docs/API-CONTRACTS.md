@@ -395,3 +395,187 @@ SuitPay was removed end-to-end in [ADR-021](Decisions.md#adr-021-remove-suitpay-
 ## getMetaAdsCampaigns (V1 — deprecated)
 
 **File:** `functions/src/metaAdsOAuth.ts`
+
+---
+
+# Foundation Callables — Planned (FOUND-1)
+
+> Callables planejados para o redesign (referência [docs/redesign/FEATURES-INVENTORY.md FOUND-2](redesign/FEATURES-INVENTORY.md)). Schemas Zod source-of-truth já criados em [packages/shared/src/schemas/](../packages/shared/src/schemas/) na Sprint -1. Implementação concreta vem nas Fases 0a (harness) e 3.5 (novo fluxo de relatório).
+
+Padrões obrigatórios para TODA callable nova (princípios 9-12 + 13-16 do roadmap):
+
+- `firebase-functions/logger` estruturado em todas as branches (não `console.log`)
+- Idempotência via `processedRequests/{clientRequestId}` em transação Firestore
+- `checkRateLimit(uid, action, max, window)` chamado antes da lógica de negócio
+- Exponential backoff em chamadas externas (Google Ads API, Meta Marketing API, LLM providers)
+- Zod parse no input do request + no output (quando aplicável)
+- Secrets via `defineSecret` em `functions/src/config/index.ts` (nunca `process.env.X_SECRET`)
+- Validator agent (subagent separado em processo isolado) audita o output antes do commit
+
+## createReport
+
+**File:** `functions/src/reports/createReport.ts` (planned)
+**Trigger:** `onCall`
+**Auth required:** Yes (request.auth.uid)
+**Rate limit:** 5 reports / 5 minutes per uid
+**Idempotency:** via `clientRequestId` UUID v4 do cliente
+
+Substitui o `addDoc(collection(db, 'reports'), ...)` atualmente feito direto no [src/pages/GenerateReportPage.tsx](../src/pages/GenerateReportPage.tsx) (FLOW-4 do roadmap). Server-side fica responsável por validar, debitar créditos, criar o `report` e subcoleções de `platforms`, e disparar a callable interna `analyzeReportData` para gerar insights via LLM.
+
+**Input** (Zod `CreateReportInputSchema` a ser criado):
+```typescript
+{
+  clientRequestId: string,            // UUID v4 do cliente
+  platforms: AdPlatform[],            // ['google_ads'] ou ['google_ads', 'meta_ads'] etc.
+  businessType: BusinessType,         // 'launch' | 'local' | 'evergreen' | ...
+  accountIds: Record<AdPlatform, string>,
+  campaignIds: Record<AdPlatform, string[]>,
+  dateRange: { startDate: string, endDate: string },
+  name: string,
+}
+```
+
+**Output:**
+```typescript
+{ reportId: string, cost: number }   // cost em créditos (1 por plataforma)
+```
+
+**Errors:**
+- `unauthenticated`
+- `permission-denied` — usuário não tem créditos suficientes
+- `failed-precondition` — conta de anúncios não conectada para alguma plataforma
+- `invalid-argument` — período sem dados / payload inválido
+- `resource-exhausted` — rate limit
+
+**Side-effects:**
+- Cria `users/{uid}/reports/{reportId}`
+- Cria `processedRequests/{clientRequestId}` (idempotência)
+- Debita créditos em `users/{uid}/wallet/current` (em transação)
+- Cria `users/{uid}/transactions/{txId}` com `type: 'debit'`
+- Dispara processing async para popular `users/{uid}/reports/{reportId}/platforms/{platform}` + `insights/`
+
+## refreshReport
+
+**File:** `functions/src/reports/refreshReport.ts` (planned)
+**Trigger:** `onCall`
+**Auth required:** Yes
+**Rate limit:** cooldown manual configurável (GATE-REFRESH — provisional 5min)
+
+Re-fetches dados das APIs Google/Meta para um relatório já gerado e atualiza subcoleção `platforms/`. Não debita créditos (refresh é gratuito).
+
+**Input:** `{ reportId: string }`
+**Output:** `{ refreshedAt: Timestamp, platformsUpdated: AdPlatform[] }`
+**Errors:** `unauthenticated`, `not-found`, `permission-denied`, `resource-exhausted` (cooldown)
+
+## refreshActiveReports (scheduled)
+
+**File:** `functions/src/reports/refreshActiveReports.ts` (planned)
+**Trigger:** `onSchedule('every X minutes')` — GATE-REFRESH define X
+**Region:** `us-central1`
+
+Busca reports com `nextAutoRefreshAt <= now` e re-fetches dados em background. Idempotente via timestamps no doc.
+
+## createReportShare
+
+**File:** `functions/src/reports/createReportShare.ts` (planned)
+**Trigger:** `onCall`
+**Auth required:** Yes (must be owner of reportId)
+**Rate limit:** 10 shares / minute per uid
+
+Cria share-link público com UUID v4 (122 bits entropia). Snapshot dos dados renderizáveis copiado para subcoleção `publicReportShares/{shareId}/snapshot/data` — link estável mesmo se owner re-gerar.
+
+**Input:** `CreateReportShareInputSchema` (já criado em FOUND-1 — ver `packages/shared/src/schemas/publicReportShare.ts`)
+**Output:** `{ shareId: string, shareUrl: string }`
+
+## revokeReportShare
+
+**File:** `functions/src/reports/revokeReportShare.ts` (planned)
+**Trigger:** `onCall`
+**Auth required:** Yes (owner only)
+
+Marca `revokedAt` em `publicReportShares/{shareId}` — `firestore.rules` nega get após isso.
+
+**Input:** `{ shareId: string }`
+**Output:** `{ ok: true }`
+
+## listReportShares
+
+**File:** `functions/src/reports/listReportShares.ts` (planned)
+**Trigger:** `onCall`
+**Auth required:** Yes
+
+Lista shares ativos do usuário (com viewCount). Composite index em `(ownerId, createdAt desc)`.
+
+**Input:** `{ reportId?: string }`
+**Output:** `{ shares: PublicReportShare[] }`
+
+## recordShareView
+
+**File:** `functions/src/reports/recordShareView.ts` (planned)
+**Trigger:** `onCall` ou `onRequest` (pixel-style)
+**Auth required:** No (público)
+**Rate limit:** por IP — 60 req/min
+
+Incrementa `viewCount` em `publicReportShares/{shareId}` com rate-limit anti-abuse. App Check recomendado.
+
+## exportReportPDF
+
+**File:** `functions/src/reports/exportReportPDF.ts` (planned)
+**Trigger:** `onCall`
+**Auth required:** Yes (owner only)
+**Memory:** 2GiB · **CPU:** 1 · **Timeout:** 120s
+**Rate limit:** 10 PDFs/min, 100 PDFs/dia per uid
+
+Playwright + `@sparticuz/chromium` (research/05). Navega para `/reports/:id/render?token={signedJWT}`, gera PDF, sobe para Cloud Storage `gs://adsmart-pdf-exports/pdfs/{uid}/{reportId}/{ts}.pdf` (lifecycle 24h), retorna signed URL com 1h de validade.
+
+**Input:** `{ reportId: string }`
+**Output:** `{ downloadUrl: string, expiresAt: Timestamp }`
+
+## analyzeReportData (internal)
+
+**File:** `functions/src/ai/analyzeReportData.ts` (planned)
+**Trigger:** Função interna (não exportada como callable)
+**Chamada por:** `createReport` (async após gerar dados) e `refreshReport`
+
+LLM call combo Anthropic + DeepSeek (research/02). Roteamento:
+- DeepSeek V4 Flash: parsing/sumarização de dados brutos
+- Claude Sonnet 4.6: geração final do `AIReportInsight` (user-facing)
+
+Output validado contra `AIReportInsightSchema` antes do save. Registra `llmCalls/{callId}` com tokens/custo/latência.
+
+**Input (interno):** `{ uid, reportId, platform, businessType, platformData }`
+**Side-effects:**
+- Cria/atualiza `users/{uid}/reports/{reportId}/insights/{platform}`
+- Cria `llmCalls/{callId}` (1+ por chamada, dependendo do roteamento)
+
+## getAvailableDataPeriods
+
+**File:** `functions/src/reports/getAvailableDataPeriods.ts` (planned)
+**Trigger:** `onCall`
+**Auth required:** Yes
+**Rate limit:** 30 req/min per uid
+
+Consulta APIs Google Ads / Meta Marketing para descobrir quais períodos têm dados disponíveis para as contas+campanhas selecionadas. Retorna lista usada pelo date picker do FLOW-2 (decisão do usuário: detecção automática).
+
+**Input:**
+```typescript
+{
+  platform: AdPlatform,
+  accountId: string,
+  campaignIds: string[]
+}
+```
+**Output:**
+```typescript
+{
+  availableDays: string[],            // ['2026-05-01', '2026-05-02', ...]
+  earliestData: string | null,        // ISO date ou null se nunca houve dados
+  latestData: string | null
+}
+```
+
+---
+
+## Stripe webhook (FUTURE §8 — NÃO entra no roadmap inicial)
+
+Documentado em [docs/research/08-stripe-future.md](research/08-stripe-future.md) para referência futura. Quando FUTURE §8 entrar, callable `stripeWebhook` (onRequest com signature verify) + idempotência via `processedRequests/{event.id}`.
