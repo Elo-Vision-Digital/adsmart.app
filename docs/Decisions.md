@@ -1135,3 +1135,180 @@ Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `
 - Princípio: não preempt Tailwind v4 syntax antes de Fase 1 mergear — `src/AGENTS.md` § Current vs target stack documenta
 
 ---
+
+## ADR-028: Adotar Harness Engineering (Fowler taxonomy)
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** O ciclo de desenvolvimento do AdSmart adota **Harness Engineering** (Martin Fowler, abr/2026) como padrão de trabalho com agentes IA: **Guides** (feedforward, antes da execução) + **Sensors** (feedback, depois da execução), com separação computacional/inferencial.
+
+**Rationale:**
+
+- O AdSmart é desenvolvido por uma pessoa coordenando múltiplos agentes IA. Sem disciplina, isso degrada rapidamente para "código bonito que não passa em produção" (loop infinito de retrabalho).
+- Harness Engineering dá vocabulário e estrutura: SPEC + CONTRACT são guides feedforward; lint + typecheck + tests + validator agent são sensors feedback.
+- Score binário (passou/não passou) elimina o cinza "85% pronto" que normalmente vira tech debt.
+- Separação computacional/inferencial mapeia direto para as ferramentas: sensors computacionais (hooks bash, lefthook, vitest) cobrem o determinístico; sensors inferenciais (validator agent) cobrem coerência semântica.
+
+**Trade-offs:**
+
+- Overhead inicial de criar SPEC + CONTRACT + EVALUATION per sprint. Aceitável: a Fase 0a/0b/0c mostraram que ~30min de setup poupa horas de retrabalho.
+- Curva de aprendizado para entender o vocabulário (Implementer, Validator, contract, wave, sensor).
+- Para mudanças triviais (single-line bugfix) o overhead é desproporcional — usar judgement.
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` (research completa, fundamentação Fowler + GSD + Anthropic Agent SDK)
+- See `docs/HARNESS-RUNBOOK.md` (workflow canônico de sprint)
+- See memory `harness_pattern` (active)
+- Implementado nas Fases 0a (harness + 6 agents), 0b (skills + commands + hooks), 0c (memory cleanup)
+
+---
+
+## ADR-029: Multi-process agents (Implementer ≠ Validator)
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** O agente que faz `Edit/Write` (Implementer) **não pode** ser o agente que verifica o output (Validator). Enforcement é mecânico via campo `tools:` no frontmatter de `.claude/agents/*.md` — Validator não tem permissões de `Edit` nem `Write`.
+
+**Rationale:**
+
+- Bias do auto-julgamento é irreduzível: o mesmo agente que escreveu o código racionaliza decisões para PASS quando avalia. Padrão consistente em research/09 (Fowler + GSD framework + Anthropic Agent SDK).
+- Enforcement no nível do tooling (não no prompt) é mais robusto: prompts podem ser ignorados sob pressão; tool absence não.
+- Fresh 200k context per Agent invocation isola o validator do reasoning artifacts do implementer.
+- Forçar o validator a ler arquivos + sensor outputs (em vez de aceitar narrativa) gera evidência citável.
+
+**Trade-offs:**
+
+- 6 agents em `.claude/agents/` (orchestrator, researcher, planner, implementer, validator, debugger) adicionam complexidade conceitual.
+- Custo: cada Agent invocation é uma chamada LLM separada (~$0.50-2 por validator pass em sprint média).
+- Operational gotcha: criar novo `.claude/agents/*.md` mid-session NÃO carrega — precisa Reload Window (descoberto em Fase 0a; documentado em memory `multi_process_agents`).
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 4 (Multi-process pattern, GSD-inspired)
+- See `.claude/agents/validator.md` (tools field restritivo: Read, Grep, Glob, Bash — sem Edit/Write/Agent)
+- See `.claude/agents/implementer.md` (com Edit/Write mas sem Agent — não pode spawnar subagents)
+- See memory `multi_process_agents` (active)
+- Hook `check-implementer-not-validator.sh` (warn-only) reforça o princípio em runtime
+
+---
+
+## ADR-030: Contracts negotiation antes da execução
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** Toda sprint tem um arquivo `CONTRACT.md` com lista de items atômicos (2-4h cada) + acceptance test computacional por item. CONTRACT é **negociado** Implementer↔Validator antes do `status: locked`. Nenhum `Edit/Write` na sprint folder antes do CONTRACT estar locked (hook `check-contract-exists.sh` bloqueia).
+
+**Rationale:**
+
+- "Programar sem spec" + "validar depois" cria loop infinito: implementer alucina escopo, validator descobre tarde, retrabalho.
+- Atomic items (2-4h cada) com acceptance test computacional eliminam ambiguidade: ou o `grep -q` retorna 0, ou retorna 1. Sem "85% pronto".
+- Negotiation Implementer↔Validator pré-execução força ambos a alinharem expectativas. Validator que reviu o CONTRACT não pode reclamar de scope no final.
+- "Conservation laws" do harness: o validator só pode PASS items que estão no CONTRACT — não pode adicionar items mid-sprint para forçar FAIL.
+
+**Trade-offs:**
+
+- Sprints curtas (~1h) têm overhead desproporcional de criar CONTRACT formal.
+- Negotiation pode levar tempo (validator agent + iteração). Mitigado: a Fase 0a-0d mostram que o CONTRACT geralmente fecha em 1 pass do validator.
+- Items que viram "mais complexos do que pareciam" durante implementação NÃO podem escapar do CONTRACT — devem ser quebrados em items menores via update do CONTRACT antes de continuar.
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 5 (Contracts entre agentes — arxiv 2026 "Agent Contracts")
+- See `.claude/skills/negotiate-contract/SKILL.md` (workflow detalhado do ciclo)
+- See `.claude/commands/negotiate-contract.md` (slash command de entry)
+- Hook `check-contract-exists.sh` bloqueia Edit/Write em `docs/specs/{id}/` sem CONTRACT locked
+- Sprints exemplares: docs/specs/0a/0b/0c/0d — todas com CONTRACT locked antes de Wave 1
+
+---
+
+## ADR-031: Progress files + Bootstrap script (memory entre sessions)
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** Cada sprint mantém `PROGRESS.md` versionado em `docs/specs/{id}/`. `PROGRESS.md` é atualizado antes de `/compact` ou fim de sessão. Bootstrap script (`scripts/harness/bootstrap-session.sh`) lê `PROGRESS.md` no início da próxima sessão, reconstrói contexto em < 5k tokens.
+
+**Rationale:**
+
+- `/compact` reescreve histórico mas NÃO preserva state on-disk que não exista. Conteúdo só "na conversa" é perdido.
+- Sem PROGRESS discipline: 30% de contexto perdido por compactação em sprints multi-dia, requerendo re-explicação.
+- Com PROGRESS discipline: near-zero loss; bootstrap restaura branch + sprint + sensores + carry-over em <200 palavras.
+- Score binário aplica: ou o PROGRESS está atualizado quando você compacta, ou está stale (e você perde state).
+
+**Trade-offs:**
+
+- Overhead disciplinar: lembrar de update PROGRESS antes de compact (memory `progress_files_discipline` ajuda; hook `check-progress-updated.sh` warn-only ajuda).
+- PROGRESS pode virar verbose se incluir trivialidades — convenção é "non-obvious decisions + blockers + carry-overs", não "git log mirror".
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 6 (Persistent state)
+- See `scripts/harness/bootstrap-session.sh` (script source)
+- See `.claude/commands/update-progress.md` (slash command de checkpoint)
+- See memory `progress_files_discipline` (active)
+- See user feedback memory `feedback_document_before_advancing` (regra hard do usuário: checkpoint cada ~3 commits)
+
+---
+
+## ADR-032: Sensor enforcement via hooks bloqueantes (score binário)
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0b — implementado)
+
+**Decision:** Sensores computacionais críticos são enforced via **PreToolUse hooks bash** em `.claude/settings.json`. Hooks falham (exit 2) quando uma regra é violada, bloqueando a operação `Edit/Write/Bash` em runtime. Score é binário: o hook passa ou bloqueia.
+
+**Rationale:**
+
+- Princípios escritos em AGENTS.md / docs ficam stale (alguém vai violar quando estiver com pressa). Hooks no runtime impedem mecanicamente.
+- Score binário (exit 0 vs exit 2) elimina cinza: ou o commit passa, ou não passa.
+- Hooks são auditáveis (bash scripts em `scripts/firebase/` e `scripts/hooks/`) — qualquer dev pode ler para entender por quê foi bloqueado.
+- Stderr messages devem citar princípio + propor fix concreto + linkar refs (não só "blocked").
+
+**Trade-offs:**
+
+- False positives podem virar friction. Mitigação: hooks têm exceções explícitas (ex: `.test.tsx` no check-no-hardcoded-literal); 3 hooks da Fase 0b são deliberadamente warn-only (check-progress-updated, check-sensors-passed, check-implementer-not-validator) para evitar atrito enquanto a heurística amadurece.
+- Manutenção: hook que vira fonte de friction precisa ser refinado ou removido — não toleramos hooks "que sempre falham erradamente".
+- Caveat conhecido: `check-rules-tested.sh` (legado) tem false positive em comandos bash complexos (multi-command, heredoc). Workaround: comandos simples + refresh stamp via `/firestore-rules-test`.
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 8.4 (Hooks PreToolUse)
+- See `.claude/settings.json` (12 PreToolUse hooks — 4 legados em `scripts/firebase/` + 8 novos em `scripts/hooks/`)
+- Hooks documentados em memory `multi_process_agents` (lista completa)
+- Princípio 15 do roadmap (FEATURES-INVENTORY § Princípios)
+
+---
+
+## ADR-033: Estrutura de specs por sprint
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** Cada sprint vive em **`docs/specs/{id}-{name}/`** com 4 artifacts canônicos: **SPEC.md** (feedforward), **CONTRACT.md** (negotiated → locked), **PROGRESS.md** (memory), **EVALUATION.md** (sensor feedback / verdict). Templates em `docs/specs/_templates/` instanciados via `bash scripts/harness/new-sprint.sh <id> <name>`.
+
+**Rationale:**
+
+- Single source of truth por sprint: alguém entrando na sprint lê esses 4 arquivos e tem 100% do contexto.
+- Frontmatter YAML (`sprint-id`, `status`, `verdict`) permite agregação programática (futuro: dashboard de sprints).
+- Append-only nos artifacts evita ambiguidade — SPEC.md fica como veio do planning; mudanças mid-sprint ficam em PROGRESS.md "Decisions taken".
+- Templates garantem que cada sprint tem a mesma estrutura — bootstrap script + validator agent sabem onde procurar (`## Outcomes`, `## Items`, `verdict: pass`).
+
+**Trade-offs:**
+
+- 4 arquivos por sprint adiciona overhead a um workflow já com PROGRESS+CONTRACT. Aceitável porque cada um tem propósito distinto e não duplica.
+- Templates podem virar bottleneck — mudança em formato exige update + retroactive cleanup. Mitigação: format mudou zero vezes desde Fase 0a; estável.
+- Sprints muito pequenas (<2h) talvez não precisem dos 4 artifacts — usar judgement.
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 8.1 (Estrutura de pastas)
+- See `docs/specs/_templates/` (4 templates canônicos)
+- See `scripts/harness/new-sprint.sh` (scaffolder)
+- See `.claude/commands/new-sprint.md` (slash command)
+- Sprints exemplares (dogfood): docs/specs/-1/0a/0b/0c/0d — todas seguem o padrão
+
+---

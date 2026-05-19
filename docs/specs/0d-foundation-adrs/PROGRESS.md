@@ -2,8 +2,8 @@
 sprint-id: "0d"
 name: "foundation-adrs"
 started: "2026-05-19"
-status: in-progress
-current-step: implement
+status: done
+current-step: ship
 ---
 
 # Sprint 0d — foundation-adrs — PROGRESS

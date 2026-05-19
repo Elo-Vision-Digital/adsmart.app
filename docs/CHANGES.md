@@ -2,6 +2,44 @@
 
 Append-only log of significant changes. Most recent at the top. Each entry uses the parseable header `## [YYYY-MM-DD] — Title` for tooling/lint.
 
+## [2026-05-19] — Redesign Fase 0d (foundation-adrs) shipped
+
+Sprint 0d completa via dogfood do harness (quarta dogfood, depois de 0a, 0b, 0c). 14 items entregues em 3 waves com validator agent PASS em cada wave. 12 ADRs novos (ADR-022 a ADR-033) publicados em `docs/Decisions.md`.
+
+**Wave 1 — 6 ADRs de domínio (Planned, Fase 1+/3.5)**:
+- ADR-022: Render in-app substitui Google Data Studio (Planned, Fase 3.5)
+- ADR-023: Sistema de Créditos 1 cr=R$5, 1 plataforma=1 cr (Planned, Fase 3.5)
+- ADR-024: LLM combo Anthropic + DeepSeek roteamento per-call (Planned, Fase 3.5) — research/02
+- ADR-025: Share-link via UUID v4 + snapshot em subcoleção (Planned, Fase 3.5) — research/04
+- ADR-026: Playwright em Cloud Function para Export PDF (Planned, Fase 3.5) — research/05
+- ADR-027: Tailwind v4 + Apple SF Pro como design system (Planned, Fase 1) — research/03
+
+**Wave 2 — 6 ADRs de Harness Engineering (Accepted, Fase 0a/0b)**:
+- ADR-028: Adotar Harness Engineering (Fowler taxonomy) — research/09
+- ADR-029: Multi-process agents (Implementer ≠ Validator) — Fase 0a
+- ADR-030: Contracts negotiation antes da execução — Fase 0a
+- ADR-031: Progress files + Bootstrap script (memory entre sessions) — Fase 0a
+- ADR-032: Sensor enforcement via hooks bloqueantes (score binário) — Fase 0b
+- ADR-033: Estrutura de specs por sprint (SPEC/CONTRACT/PROGRESS/EVALUATION) — Fase 0a
+
+Cada ADR: padrão do repo (`## ADR-NNN: Title` + `**Date**` + `**Status**` + Decision + Rationale + Trade-offs + References) + cross-link com research/* + memórias (planned ou active) + implementação real do repo (paths concretos). Tom conciso (20-35 linhas por ADR).
+
+**Wave 3 — Validação**:
+- Zero regressão: sprint só tocou `docs/Decisions.md` + sprint folder + checklist + CHANGES; zero `.ts`/`.tsx` modificado
+- Validator agent (2 passes intermediários + 1 final): PASS 6/6 + 6/6 + 2/2
+
+**Lessons learned (dogfood #4)**:
+- Erro de ordem inicial: ADRs 028-033 inseridos antes do ADR-027 que já existia. Detectado em review, corrigido (mover ADR-027 antes do bloco harness). Lesson: ao append em arquivo longo, conferir contexto da inserção.
+- Hook false-positive `check-rules-tested.sh` continua causando friction — documentado em ADR-032.
+- Validator agent 2+1 passes: padrão validado pela 4ª vez. Excelente cost-benefit.
+- 12 ADRs em ~3h (incluindo erro de ordem) — sprint pequena com escopo bem delimitado pelo checklist.
+
+**Branch strategy**: `feat/redesign-foundation-adrs` stacked sobre `feat/redesign-foundation-memory` aguardando merge de PR #6. PR #7 (este) será retargetado para `develop` após merge de PR #6.
+
+**Próximo passo**: Fase 0.5 — Cleanup textual (remover refs Asaas/SuitPay/Google Data Studio em docs/UI sem implementar nada novo).
+
+---
+
 ## [2026-05-19] — Redesign Fase 0c (foundation-memory) shipped
 
 Sprint 0c completa via dogfood do harness (terceira dogfood, depois da 0a e 0b). 16 items entregues em 3 waves com validator agent PASS em cada wave.
