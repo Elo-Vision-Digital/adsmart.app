@@ -80,6 +80,58 @@ export {
 
 export { RateLimitSchema, type RateLimit } from './schemas/rateLimit'
 
+// Foundation schemas adicionados para o redesign (Fase -1 do roadmap).
+// Detalhes em docs/redesign/FEATURES-INVENTORY.md FOUND-1.
+
+export { BusinessTypeSchema, type BusinessType } from './schemas/businessType'
+
+export {
+  ProcessedRequestSchema,
+  ProcessedRequestSourceSchema,
+  type ProcessedRequest,
+  type ProcessedRequestSource,
+} from './schemas/processedRequest'
+
+export {
+  CreateReportShareInputSchema,
+  PublicReportShareSchema,
+  type CreateReportShareInput,
+  type PublicReportShare,
+} from './schemas/publicReportShare'
+
+export {
+  AIReportInsightSchema,
+  AIReportRecommendationSchema,
+  AIReportTopMetricSchema,
+  InsightImpactSchema,
+  InsightSentimentSchema,
+  type AIReportInsight,
+  type AIReportRecommendation,
+  type AIReportTopMetric,
+  type InsightImpact,
+  type InsightSentiment,
+} from './schemas/aiReportInsight'
+
+export {
+  LLMCallSchema,
+  LLMProviderSchema,
+  LLMTaskSchema,
+  type LLMCall,
+  type LLMProvider,
+  type LLMTask,
+} from './schemas/llmCall'
+
+export {
+  CampaignBreakdownSchema,
+  PlatformKPIsSchema,
+  ReportPlatformDataSchema,
+  TimeSeriesPointSchema,
+  type CampaignBreakdown,
+  type PlatformKPIs,
+  type ReportPlatformData,
+  type TimeSeriesPoint,
+} from './schemas/reportPlatformData'
+
 export { ADMIN_EMAILS, isAdminUser, type IdTokenClaims } from './auth/admin'
 
 export {
