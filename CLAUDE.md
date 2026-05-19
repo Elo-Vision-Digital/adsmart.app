@@ -7,6 +7,11 @@ Claude Code-specific guidance. Tool-agnostic project rules live in [AGENTS.md](A
 - Design system → [docs/UI-DESIGN.md](docs/UI-DESIGN.md)
 - Firebase Conventions Pack (slash commands, agents, hooks, cursor mirror) → [docs/FIREBASE-CONVENTIONS.md](docs/FIREBASE-CONVENTIONS.md)
 - Decision history → [docs/Decisions.md](docs/Decisions.md)
+- **Redesign roadmap** → [docs/redesign/EXECUTION-CHECKLIST.md](docs/redesign/EXECUTION-CHECKLIST.md) (status geral + tasks por fase)
+- **Project principles** → [docs/redesign/FEATURES-INVENTORY.md § Princípios](docs/redesign/FEATURES-INVENTORY.md#princípios-do-projeto-regras-invioláveis) (16 invioláveis)
+- **Research notes** → [docs/research/](docs/research/) (decisões fundamentadas: 01-firebase-stack, 02-llm-strategy, 03-frontend-stack, 09-harness-engineering, etc.)
+- **Sprint specs** → [docs/specs/](docs/specs/) (uma pasta por sprint com SPEC + CONTRACT + PROGRESS + EVALUATION)
+- **Harness workflow** → [docs/HARNESS-RUNBOOK.md](docs/HARNESS-RUNBOOK.md) (sprint lifecycle, agents multi-process, sensors)
 
 ## Contexts
 

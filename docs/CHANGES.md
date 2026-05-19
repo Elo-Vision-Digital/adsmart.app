@@ -2,6 +2,36 @@
 
 Append-only log of significant changes. Most recent at the top. Each entry uses the parseable header `## [YYYY-MM-DD] — Title` for tooling/lint.
 
+## [2026-05-19] — Redesign Fase 0b (foundation-tooling) shipped
+
+Sprint 0b completa via dogfood do harness. 37 items entregues em 4 waves com validator agent PASS em cada wave.
+
+**Wave 1 — Sub-AGENTS + root docs (5 items)**:
+- `src/AGENTS.md` atualizado: bloco "Current vs target stack" (não preempt Tailwind v4 / React 19 antes da Fase 1) + seção i18n mandatory
+- `functions/AGENTS.md`: novas seções `## Idempotência` (padrão `processedRequests/{id}` com code sample) e `## Structured logging` (`logger.info` v2, snake_case events, regras sobre PII/secrets)
+- `packages/shared/AGENTS.md` criado: propósito + estrutura + Zod 4 idioms + tests co-located mandatórios + 4-step flow + auth helpers + What NOT to do
+- `AGENTS.md` root: bloco "Sub-AGENTS by area" + tabela Current/Target stack + seção "Princípios do projeto" (16) linkando FEATURES-INVENTORY + "Sprint workflow" linkando HARNESS-RUNBOOK
+- `CLAUDE.md` root: refs para redesign/, FEATURES-INVENTORY § Princípios, research/, docs/specs/, HARNESS-RUNBOOK
+
+**Wave 2 — 7 skills novas em `.claude/skills/`**:
+- redesign-screen, new-zod-schema, new-report-business-type, verify-i18n, validate-llm-call, negotiate-contract, bootstrap-fresh-session
+- Cada SKILL.md: frontmatter name + description (gatilhos PT-BR+EN), corpo com passos numerados + bash/code samples, anti-patterns, cross-refs
+
+**Wave 3 — 13 slash commands em `.claude/commands/`**:
+- Workflow harness (8): /new-sprint, /research-sprint, /plan-sprint, /negotiate-contract, /execute-sprint, /validate-sprint, /ship-sprint, /update-progress
+- Workflow domínio (5): /new-screen-redesign, /check-i18n, /check-no-hardcoded, /new-ai-prompt-version, /run-research
+
+**Wave 4 — 8 hooks PreToolUse + settings.json + smoke**:
+- 8 bash scripts em `scripts/hooks/` (pasta nova): check-no-hardcoded-literal, check-zod-schema-test, check-llm-call-via-logger, check-firestore-rule-defaults-deny, check-contract-exists, check-progress-updated (warn), check-sensors-passed (warn), check-implementer-not-validator (warn)
+- `.claude/settings.json` atualizado: 12 PreToolUse entries (4 legados + 8 novos)
+- Smoke test documentado em `docs/specs/0b-foundation-tooling/PROGRESS.md`
+
+**Sensores**: `cd packages/shared && bun run test` 195/195 verde, `bun run typecheck` exit 0, `bun run lint` 0 errors. Zero `.ts`/`.tsx` da app modificado.
+
+**Aprendizados**: skills + commands carregam dinamicamente (sem precisar Reload Window — comportamento diferente dos agents da Fase 0a). Validator agent multi-process funcionou bem com 4 passes intermediários + 1 final, evitando retrabalho.
+
+**Próximo passo**: Fase 0c — memória cleanup + criação. Ver [docs/redesign/EXECUTION-CHECKLIST.md § FASE 0c](redesign/EXECUTION-CHECKLIST.md).
+
 Format conventions:
 - One section per logical change set (a phase, a migration, an incident, a major decision).
 - Use bullet points for individual changes; group by area when long (Frontend / Functions / Rules / Docs).

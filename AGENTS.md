@@ -6,7 +6,17 @@ This file is the entry point for AI agents and engineers working on AdSmart. Rea
 
 AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising campaigns. Users connect their Google Ads and Meta Ads accounts via OAuth, generate Looker Studio report dashboards, and pay per report using a prepaid wallet system. The platform is Portuguese-first (pt-BR) with en/es support.
 
+## Sub-AGENTS.md by area
+
+Each folder declares its own conventions. Read the relevant sub-guide alongside this file:
+
+- [src/AGENTS.md](src/AGENTS.md) — frontend conventions (React, Tailwind, i18n, routing, services)
+- [functions/AGENTS.md](functions/AGENTS.md) — Cloud Functions v2 conventions (secrets, idempotência, structured logging, rate limit)
+- [packages/shared/AGENTS.md](packages/shared/AGENTS.md) — Zod schemas as source of truth (`z.infer`, co-located tests, strict subsets)
+
 ## Stack
+
+**Current** (production code as of 2026-05-19):
 
 | Layer | Technology | Version |
 |---|---|---|
@@ -29,6 +39,50 @@ AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising 
 | Git hooks | lefthook | — |
 | Test framework | Vitest | 4.x |
 | CI | GitHub Actions | — |
+
+**Target** (after the redesign roadmap — see `docs/redesign/EXECUTION-CHECKLIST.md`):
+
+| Layer | Target | Lands in |
+|---|---|---|
+| Frontend runtime | React 19 (Actions, `use`, ref as prop) | Fase 1 |
+| Styling | Tailwind v4 (`@theme`, `@utility`, CSS-first config) | Fase 1 |
+| Typography | SF Pro (variable) | Fase 1 |
+| LLM stack | Anthropic Claude (primary) + DeepSeek (fallback for cost) | Fase 3.5 |
+| PDF generation | Playwright headless render | Fase 3.5 |
+| Spec-driven development | docs/specs/{id}-{name}/ with SPEC + CONTRACT + PROGRESS + EVALUATION | ✅ Live since Fase 0a |
+| Multi-process harness | 6 agents in `.claude/agents/` (orchestrator + researcher + planner + implementer + validator + debugger) | ✅ Live since Fase 0a |
+
+Do not preemptively use target-stack syntax until the relevant phase lands — it would break the current code.
+
+## Princípios do projeto (invioláveis)
+
+16 princípios definidos em [docs/redesign/FEATURES-INVENTORY.md § Princípios](docs/redesign/FEATURES-INVENTORY.md#princípios-do-projeto-regras-invioláveis). Resumo dos mais frequentes em revisão:
+
+1. **Context7 antes de propor** — toda lib/padrão/refactor consulta documentação atual antes de virar proposta (regra do usuário).
+2. **Schemas + API Contracts são source of truth** — `packages/shared/src/schemas/` + `docs/API-CONTRACTS.md` antes de qualquer código de produto.
+3. **IA-coded antes de produto** — AGENTS/CLAUDE/sub-AGENTS/skills/commands/hooks atualizados ANTES do primeiro PR de produto.
+4. **Mobile-first** — design e código começam no mobile e escalam para desktop com os mesmos tokens.
+7. **i18n nas 3 línguas** — toda string nova vai em `pt-BR.json` + `en.json` + `es.json`. Zero literal hardcoded em JSX/TSX (hook bloqueia).
+9. **Callable nova segue padrões** — `firebase-functions/logger` estruturado + idempotência via `processedRequests/{id}` ou `event.id` + `checkRateLimit` + Zod no input.
+10. **Toda nova coleção Firestore tem rule explícita** — default deny + permissions específicas. Cliente nunca escreve em `reports/*`, `transactions/*`, `wallet/*`, `publicReportShares/*`.
+11. **Sem hardcoded** — zero env-specific literals; zero credenciais em código; secrets via `defineSecret` em `functions/src/config/index.ts`.
+13. **Multi-process agents** — Implementer e Validator em subagents separados. Validator não tem `Edit/Write`.
+14. **Contracts antes da execução** — toda sprint tem `CONTRACT.md` locked antes do primeiro `Edit/Write` (hook `check-contract-exists.sh` bloqueia).
+15. **Score binário** — sensors passam ou não passam. Não há "tá bom o suficiente".
+16. **Progress persistido** — cada sprint tem `PROGRESS.md` em `docs/specs/{id}-{name}/`. Bootstrap script reconstrói contexto em nova sessão.
+
+## Sprint workflow (harness)
+
+Esta camada está documentada em [docs/HARNESS-RUNBOOK.md](docs/HARNESS-RUNBOOK.md). Resumo:
+
+1. `bash scripts/harness/new-sprint.sh <id> <name>` cria `docs/specs/{id}-{name}/` com 4 templates.
+2. Preencher `SPEC.md` (feedforward: outcomes, scope, constraints, prior decisions, task breakdown).
+3. Negociar `CONTRACT.md` (items atômicos com acceptance tests), lock antes da execução.
+4. Implementer executa em waves; Validator (subagent separado) verifica ao fim de cada wave.
+5. Atualizar `PROGRESS.md` a cada checkpoint (sobrevive a `/compact`).
+6. `EVALUATION.md` com `verdict: pass` fecha a sprint.
+
+Sprints fechadas: `docs/specs/-1-foundation-schemas/`, `docs/specs/0a-foundation-harness/`. Em curso: `docs/specs/0b-foundation-tooling/`.
 
 ## Read-first map
 

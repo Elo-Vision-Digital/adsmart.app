@@ -102,6 +102,86 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/firebase/check-no-secret-in-env-example.sh"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(src/**/*.tsx)|Write(src/**/*.tsx)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/check-no-hardcoded-literal.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(packages/shared/src/schemas/**/*.ts)|Write(packages/shared/src/schemas/**/*.ts)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/check-zod-schema-test.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(functions/src/**/*.ts)|Write(functions/src/**/*.ts)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/check-llm-call-via-logger.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(firestore.rules)|Write(firestore.rules)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/check-firestore-rule-defaults-deny.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(docs/specs/**)|Write(docs/specs/**)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/check-contract-exists.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(*git commit*)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/check-progress-updated.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(*gh pr create*)|Bash(*git push*origin*)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/check-sensors-passed.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(**/EVALUATION.md)|Write(**/EVALUATION.md)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/hooks/check-implementer-not-validator.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [

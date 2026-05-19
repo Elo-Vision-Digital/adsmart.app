@@ -2,6 +2,14 @@
 
 Read [../AGENTS.md](../AGENTS.md) for the project-wide overview. This file covers frontend-specific conventions.
 
+## Current vs target stack
+
+Current code targets **React 18.3 + Tailwind 3.x**. The redesign roadmap upgrades to **React 19 + Tailwind v4 + SF Pro** in Fase 1 (`docs/redesign/EXECUTION-CHECKLIST.md` § FASE 1). When editing, follow the conventions that exist NOW; do not preemptively use Tailwind v4 syntax (`@theme`, `@utility`) until Fase 1 lands. Same for React 19 features (Actions, `use`, ref as prop) — wait for Fase 1.
+
+## i18n is mandatory (princípio 7)
+
+All user-visible strings go through `t('namespace.key')` and must exist in **all three locales** (`pt-BR.json`, `en.json`, `es.json`) before merge. Zero literal hardcoded strings in JSX/TSX. The `check-no-hardcoded-literal.sh` hook (Fase 0b) blocks commits that violate this. `pt-BR` is the source language — write the key there first, then translate.
+
 ## Directory structure
 
 ```
