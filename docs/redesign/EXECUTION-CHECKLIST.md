@@ -11,8 +11,8 @@
 | Fase | Descrição | Status | Prioridade |
 |---|---|---|---|
 | **Fase -2** | Pesquisa Context7 + WebSearch (Harness, LLM, Firebase, etc.) | ✅ **COMPLETA** | — |
-| **Fase -1** | Schemas + API Contracts (source of truth) | ⏳ A iniciar | 🔴 Crítica |
-| **Fase 0a** | Foundation Harness (multi-agents + contracts + bootstrap) | ⏳ A iniciar | 🔴 Crítica |
+| **Fase -1** | Schemas + API Contracts (source of truth) | ✅ **COMPLETA** (PR [#3](https://github.com/Elo-Vision-Digital/adsmart.app/pull/3) aguardando merge) | 🔴 Crítica |
+| **Fase 0a** | Foundation Harness (multi-agents + contracts + bootstrap) | ✅ **COMPLETA** (branch `feat/redesign-foundation-harness`) | 🔴 Crítica |
 | **Fase 0b** | Sub-AGENTS, skills, slash commands, hooks | ⏳ A iniciar | 🔴 Crítica |
 | **Fase 0c** | Memória cleanup + criação | ⏳ A iniciar | 🟡 Alta |
 | **Fase 0d** | ADRs publicados | ⏳ A iniciar | 🟡 Alta |
@@ -23,7 +23,7 @@
 | **Fase 3.5** | Novo fluxo de relatório (6 passos) | ⏳ A iniciar | 🔴 Crítica |
 | **Fase 4** | Validação funcional end-to-end | ⏳ A iniciar | 🔴 Crítica |
 
-**Próximo passo recomendado**: Sua aprovação da documentação → disparar **Fase -1**.
+**Próximo passo recomendado**: revisão + merge do PR #3 (Fase -1) → revisão + merge do PR Fase 0a → disparar **Fase 0b** (sub-AGENTS, skills, slash commands, hooks).
 
 ---
 
@@ -54,15 +54,17 @@ Saídas geradas:
 
 ---
 
-## 🔴 FASE -1 — Schemas + API Contracts (source of truth)
+## ✅ FASE -1 — Schemas + API Contracts (source of truth) — CONCLUÍDA
+
+**Status**: concluída em **2026-05-19** via PR [#3](https://github.com/Elo-Vision-Digital/adsmart.app/pull/3). Detalhes em [docs/specs/-1-foundation-schemas/PROGRESS.md](../specs/-1-foundation-schemas/PROGRESS.md). 4 commits, 195/195 testes verdes, refactor aditivo (legacy preservado para Fase 0.5).
 
 **Objetivo**: deixar a fonte da verdade preparada **antes** de qualquer código de produto. Toda feature futura herda destes contratos.
 
 **Pré-requisitos**:
 - ✅ Fase -2 completa
-- ⏳ Aprovação dos docs `redesign/` + `research/`
+- ✅ Aprovação dos docs `redesign/` + `research/`
 
-**Estimativa**: 5-7 dias (1 PR atômico por schema)
+**Estimativa original**: 5-7 dias · **Real**: 1 dia (refactor aditivo, sem migração de dados)
 
 ### Tasks
 
@@ -148,14 +150,16 @@ Documentar com signature + auth + side-effects para CADA callable:
 
 ---
 
-## 🔴 FASE 0a — Foundation Harness (multi-agents + contracts + bootstrap)
+## ✅ FASE 0a — Foundation Harness (multi-agents + contracts + bootstrap) — CONCLUÍDA
+
+**Status**: concluída em **2026-05-19** (branch `feat/redesign-foundation-harness`). Detalhes em [docs/specs/0a-foundation-harness/PROGRESS.md](../specs/0a-foundation-harness/PROGRESS.md) + EVALUATION `verdict: pass`. Runbook em [docs/HARNESS-RUNBOOK.md](../HARNESS-RUNBOOK.md). 6 agents + 4 templates + 3 scripts + dogfood, zero regressão (test 195/195, typecheck verde).
 
 **Objetivo**: instalar a infraestrutura de Harness Engineering. Sem isso, todas as outras fases sofrem com entropia.
 
 **Pré-requisitos**:
-- ⏳ Fase -1 completa (schemas existem para os agents trabalharem com)
+- ✅ Fase -1 completa (schemas existem para os agents trabalharem com)
 
-**Estimativa**: 3-5 dias
+**Estimativa original**: 3-5 dias · **Real**: 1 dia (escopo bem definido, zero código TS tocado)
 
 **Referência**: [docs/research/09-harness-engineering.md](../research/09-harness-engineering.md)
 
