@@ -140,6 +140,71 @@ if (!admin.apps.length) {
 
 This is safe because `index.ts` also calls `admin.initializeApp()` first. The guard prevents double-init in tests where files are imported independently.
 
+## Idempotência
+
+Toda callable que muda estado externo (cobrança, webhook, OAuth callback, criação de relatório) DEVE ser idempotente. Padrões aceitos:
+
+1. **`processedRequests/{requestId}` collection** — cliente envia `requestId` (UUID v4), callable abre transação, lê `processedRequests/{requestId}`. Se já existir, retorna o output cacheado. Senão, executa + grava resultado dentro da transação.
+2. **`event.id`** (triggers Pub/Sub, Firestore, webhook): use `event.id` como chave em `processedRequests/`. Firebase entrega o mesmo `event.id` no retry.
+
+```typescript
+import { onCall, HttpsError } from 'firebase-functions/v2/https'
+import * as admin from 'firebase-admin'
+
+export const charge = onCall(async (request) => {
+  const { requestId, amount } = request.data
+  if (!requestId) throw new HttpsError('invalid-argument', 'requestId required')
+
+  const db = admin.firestore()
+  const ref = db.collection('processedRequests').doc(requestId)
+
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref)
+    if (snap.exists) return snap.data()!.result
+    const result = await doCharge(amount)
+    tx.set(ref, { result, processedAt: admin.firestore.FieldValue.serverTimestamp() })
+    return result
+  })
+})
+```
+
+Schema em `packages/shared/src/schemas/processedRequest.ts`. TTL de cleanup em `firestore.indexes.json` (futuro). Cliente pode retentar com o mesmo `requestId` sem cobrar duas vezes.
+
+## Structured logging
+
+Use `logger` de `firebase-functions/v2` (NÃO `console.log`). Cada log tem `severity` + structured fields para indexar no Cloud Logging.
+
+```typescript
+import { logger } from 'firebase-functions/v2'
+
+logger.info('charge_started', {
+  userId,
+  requestId,
+  amountCents: amount,
+  region: 'us-central1',
+})
+
+try {
+  // ...
+} catch (err: any) {
+  logger.error('charge_failed', {
+    userId,
+    requestId,
+    error: err.message,
+    code: err.code,
+  })
+  throw err
+}
+```
+
+Convenções:
+- **event name** como `snake_case` no primeiro arg (ex: `charge_started`, `oauth_token_refreshed`).
+- **structured fields** no segundo arg. Sempre inclua `userId` quando aplicável.
+- **NÃO logar secrets** (tokens, senhas, payloads de cartão).
+- **NÃO logar PII** sem necessidade (CPF/CNPJ vão em log apenas em incidente).
+
+Chamadas LLM têm regra adicional: o hook `check-llm-call-via-logger.sh` (Fase 0b) bloqueia callable LLM sem `logger.info` estruturado com `modelId`, `tokensIn`, `tokensOut`, `latencyMs`.
+
 ## Testing
 
 Tests are in `functions/test/`. They hit real emulators — no mocks. See `docs/TESTING.md`.
