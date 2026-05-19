@@ -2,13 +2,31 @@
 sprint-id: "0a"
 name: "foundation-harness"
 started: "2026-05-19"
-status: done
+status: done-pending-verify
 current-step: ship
 ---
 
 # Sprint 0a — Foundation Harness — PROGRESS
 
 > Memory artifact. Atualiza ANTES de compactar contexto.
+
+## ⚠️ Carry-over para próxima sessão (compactação 2026-05-19)
+
+**Critério #1 do EXECUTION-CHECKLIST § Fase 0a** ("6 agents criados e testados — cada um responde a invocação") **não foi cumprido na sessão de implementação**.
+
+**Razão**: Claude Code carrega `.claude/agents/*.md` apenas no START da sessão. Os 6 agents (orchestrator, researcher, planner, implementer, validator, debugger) foram criados mid-session, então não entraram na lista runtime do tool `Agent`. Invocação tentada → todos retornaram `Agent type 'X' not found`.
+
+**Diagnóstico**: não é defeito dos agents. Os 3 agents legados do repo (`firestore-*-reviewer`, `functions-security-reviewer`) usam **o mesmo padrão de frontmatter** e estão na lista runtime — confirma que o formato funciona. Os 6 novos só precisam de uma sessão fresca para serem carregados.
+
+**Primeira ação na nova sessão**:
+1. Rodar `bash scripts/harness/bootstrap-session.sh` para restaurar contexto
+2. Invocar 1 agent como smoke test:
+   ```
+   Agent(subagent_type: "researcher", prompt: "Smoke test — confirme em até 50 palavras seu name + tools field do frontmatter.")
+   ```
+3. Se responder → todos os 6 funcionam (mesma origem de formato). Repetir para os outros 5 rapidamente em paralelo.
+4. Se falhar → diagnose (provavelmente sintaxe de frontmatter ou loader path).
+5. Atualizar este PROGRESS + EVALUATION.md (mover `status: done-pending-verify` → `status: done`; marcar Sign-off completo).
 
 ## Status
 

@@ -96,13 +96,35 @@ Vazio (verdict: pass).
 
 ## Sign-off
 
-- [x] Validator concluiu análise item-a-item (19/19 PASS)
-- [x] Computational sensors rodados (test, typecheck, lint, smoke tests)
+- [x] Validator concluiu análise item-a-item (19/19 PASS — **acceptance tests baseados em formato/grep, ver "Lacuna conhecida" abaixo**)
+- [x] Computational sensors rodados (test, typecheck, lint, smoke tests dos scripts)
 - [x] Inferencial check (runbook coerência + convention + scope discipline)
-- [x] Verdict registrado: PASS
+- [x] Verdict registrado: PASS (no nível do CONTRACT)
 - [x] Implementer commitou 4 waves (`25c650c`, `99f9569`, `c2c44b1`, `0ac3217`)
 - [x] Push + PR aberto: [#4](https://github.com/Elo-Vision-Digital/adsmart.app/pull/4) (stacked on [#3](https://github.com/Elo-Vision-Digital/adsmart.app/pull/3))
+- [ ] **PENDING (próxima sessão)**: invocação real dos 6 agents via tool `Agent` (ver "Lacuna conhecida" + carry-over em [PROGRESS.md](PROGRESS.md))
 - [ ] Human revisou (PR para `develop`)
+
+## Lacuna conhecida (post-validation, 2026-05-19)
+
+**Critério #1 do EXECUTION-CHECKLIST § Fase 0a** diz "6 agents criados **e testados (cada um responde a invocação)**". O CONTRACT desta sprint testou itens 1-6 por **formato apenas** (`grep '^name:'`, `grep '^tools:'`, ausência de Edit/Write/Agent conforme o papel) — não por invocação real do tool `Agent`.
+
+Quando tentei invocar (`Agent(subagent_type: "orchestrator", ...)` e os outros 5) ao fim da sessão de implementação, todos retornaram:
+
+```
+Agent type 'orchestrator' not found. Available agents: [...firestore-query-reviewer, firestore-rules-reviewer, functions-security-reviewer...]
+```
+
+**Causa**: Claude Code popula a lista de subagent_types do tool `Agent` no START da sessão a partir de `.claude/agents/*.md`. Arquivos criados mid-session ficam no disco mas não entram na lista runtime até nova sessão.
+
+**Por que não é defeito**:
+- Os 3 agents legados (firestore-*, functions-*) estão na lista — usam exatamente o mesmo padrão de frontmatter (`name, description, tools, model: sonnet`). Confirma formato válido.
+- `bash -n` dos prompts de cada agent não revelou erro.
+- Smoke test do formato (item 1-6 do CONTRACT) passou.
+
+**Mitigação**: registrado como carry-over em [PROGRESS.md](PROGRESS.md) — primeira ação da próxima sessão é invocar 1 agent (researcher é o mais barato). Se responder, os outros 5 funcionam pelo mesmo motivo (mesma origem de formato).
+
+**Impacto no verdict**: mantenho `verdict: pass` no nível do CONTRACT (porque seus 19 acceptance tests são computacionais e passaram), mas o critério mais amplo do EXECUTION-CHECKLIST não está 100% fechado até a verificação de invocação na próxima sessão.
 
 ## Notas para próximas sprints (lessons learned do dogfood)
 
