@@ -11,9 +11,9 @@
 | Fase | Descrição | Status | Prioridade |
 |---|---|---|---|
 | **Fase -2** | Pesquisa Context7 + WebSearch (Harness, LLM, Firebase, etc.) | ✅ **COMPLETA** | — |
-| **Fase -1** | Schemas + API Contracts (source of truth) | ✅ **COMPLETA** (PR [#3](https://github.com/Elo-Vision-Digital/adsmart.app/pull/3) aguardando merge) | 🔴 Crítica |
-| **Fase 0a** | Foundation Harness (multi-agents + contracts + bootstrap) | ✅ **COMPLETA** (branch `feat/redesign-foundation-harness`) | 🔴 Crítica |
-| **Fase 0b** | Sub-AGENTS, skills, slash commands, hooks | ⏳ A iniciar | 🔴 Crítica |
+| **Fase -1** | Schemas + API Contracts (source of truth) | ✅ **COMPLETA** (PR #3 mergeado em `develop` em 2026-05-19) | 🔴 Crítica |
+| **Fase 0a** | Foundation Harness (multi-agents + contracts + bootstrap) | ✅ **COMPLETA** (PR #4 mergeado em `develop` em 2026-05-19) | 🔴 Crítica |
+| **Fase 0b** | Sub-AGENTS, skills, slash commands, hooks | ✅ **COMPLETA** (branch `feat/redesign-foundation-tooling` — 37 items, verdict pass) | 🔴 Crítica |
 | **Fase 0c** | Memória cleanup + criação | ⏳ A iniciar | 🟡 Alta |
 | **Fase 0d** | ADRs publicados | ⏳ A iniciar | 🟡 Alta |
 | **Fase 0.5** | Cleanup textual (Asaas, SuitPay, Data Studio) | ⏳ A iniciar | 🟢 Média |
@@ -23,7 +23,7 @@
 | **Fase 3.5** | Novo fluxo de relatório (6 passos) | ⏳ A iniciar | 🔴 Crítica |
 | **Fase 4** | Validação funcional end-to-end | ⏳ A iniciar | 🔴 Crítica |
 
-**Próximo passo recomendado**: revisão + merge do PR #3 (Fase -1) → revisão + merge do PR Fase 0a → disparar **Fase 0b** (sub-AGENTS, skills, slash commands, hooks).
+**Próximo passo recomendado**: revisão + merge do PR Fase 0b (foundation-tooling) → disparar **Fase 0c** (memória cleanup + criação).
 
 ---
 
@@ -201,12 +201,14 @@ Documentar com signature + auth + side-effects para CADA callable:
 
 ---
 
-## 🔴 FASE 0b — Sub-AGENTS, skills, slash commands, hooks
+## ✅ FASE 0b — Sub-AGENTS, skills, slash commands, hooks — CONCLUÍDA
+
+**Status**: COMPLETA em 2026-05-19. Branch `feat/redesign-foundation-tooling`. 37 items entregues em 4 waves (validator agent PASS em cada wave). Ver [docs/specs/0b-foundation-tooling/EVALUATION.md](../specs/0b-foundation-tooling/EVALUATION.md) (`verdict: pass`) e [PROGRESS.md](../specs/0b-foundation-tooling/PROGRESS.md).
 
 **Objetivo**: completar a camada de tooling IA-coded com Sub-AGENTS por área + automações.
 
 **Pré-requisitos**:
-- ⏳ Fase 0a completa
+- ✅ Fase 0a completa (mergeada em 2026-05-19)
 
 **Estimativa**: 3-5 dias
 

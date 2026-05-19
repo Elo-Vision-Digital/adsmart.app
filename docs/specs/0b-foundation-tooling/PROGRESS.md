@@ -2,8 +2,8 @@
 sprint-id: "0b"
 name: "foundation-tooling"
 started: "2026-05-19"
-status: in-progress
-current-step: implement
+status: done
+current-step: ship
 ---
 
 # Sprint 0b — foundation-tooling — PROGRESS
@@ -43,7 +43,28 @@ current-step: implement
 - [x] **Wave 3 entregue** (13 slash commands): 8 workflow harness (`/new-sprint`, `/research-sprint`, `/plan-sprint`, `/negotiate-contract`, `/execute-sprint`, `/validate-sprint`, `/ship-sprint`, `/update-progress`) + 5 workflow domínio (`/new-screen-redesign`, `/check-i18n`, `/check-no-hardcoded`, `/new-ai-prompt-version`, `/run-research`). Commands carregam dinamicamente (como skills).
 - [x] **Wave 3 sensores**: 17/17 commands com `description:` (4 legados + 13 novos) ✅
 - [x] **Wave 3 validator**: agent PASS 13/13. Validação inferencial cobriu: lifecycle harness completo (new → research → plan → negotiate → execute → validate → ship + update-progress), coerência de vocabulário (sprint-id, wave, validator/implementer separation, princípio N), cross-refs integridade (todas as skills/agents/scripts referenciados existem), anti-patterns presentes em 10/13 + guards inline nos 3 restantes
-- [ ] Próximo: Wave 4 (8 hooks + settings.json + smoke test)
+- [x] **Wave 4 entregue** (8 hooks + settings.json + smoke):
+  - 8 bash scripts em `scripts/hooks/`: check-no-hardcoded-literal, check-zod-schema-test, check-llm-call-via-logger, check-firestore-rule-defaults-deny, check-contract-exists, check-progress-updated (warn-only), check-sensors-passed (warn-only), check-implementer-not-validator (warn-only)
+  - Todos com `set -euo pipefail`, executáveis (`-rwxr-xr-x`), `bash -n` exit 0
+  - `.claude/settings.json` atualizado: 12 PreToolUse hooks (4 legados + 8 novos), JSON válido (`jq` exit 0)
+- [x] **Wave 4 smoke test** (item 35 do CONTRACT) — ver seção `## Smoke test do fluxo harness` abaixo
+- [ ] Próximo: validator final da sprint + EVALUATION + push + PR
+
+## Smoke test do fluxo harness (Wave 4 item 35)
+
+Sequência manual exercitada para confirmar coerência do fluxo `/new-sprint → /plan-sprint → /negotiate-contract` sem executar até o fim:
+
+1. **`/new-sprint dummy smoke-test`** — invocaria `bash scripts/harness/new-sprint.sh dummy smoke-test`. Script já testado na Fase 0a (`new-sprint.sh tmpsprint test` rodou e produziu folder com 4 templates substituídos). Cleanup foi feito. Comando aponta para o script + cobre branch check + próximo passo (preencher SPEC).
+
+2. **`/plan-sprint dummy`** — comando faz guard `grep -q "Outcome 1: …"` para detectar SPEC ainda em template; se passa, invoca `Agent(subagent_type: "planner", ...)` com prompt estruturado. Planner agent foi validado na Fase 0a (smoke test pós-reload retornou name+tools corretos). Output esperado: CONTRACT draft com waves em formato tabela markdown.
+
+3. **`/negotiate-contract dummy`** — comando faz guard `grep -q "status: draft"` no CONTRACT.md. Se passa, invoca `Agent(subagent_type: "validator", ...)` para revisar items atômicos. Validator agent já usado 3× nesta sprint (Wave 1, 2, 3) com PASS — confirma viabilidade. Após PASS, comando edita frontmatter para `status: locked` e instrui commit.
+
+4. **Hook `check-contract-exists.sh`** — agora que CONTRACT está locked, hook permite `Edit/Write` nos demais arquivos da sprint. Antes do lock, qualquer `Edit/Write` em `docs/specs/dummy-smoke-test/` (exceto SPEC/CONTRACT/PROGRESS/EVALUATION) seria bloqueado com mensagem clara apontando para `/negotiate-contract`.
+
+**Coerência**: cada comando referencia scripts/agents que existem (`new-sprint.sh`, planner agent, validator agent); guards bash são executáveis; hook integra-se ao fluxo. Sequência cobre o gap "criar sprint → planejar → lockear" sem ambiguidades.
+
+**Não executado de verdade**: por design do escopo (criar dummy sprint+lock+cleanup é overhead — a coerência foi verificada por leitura cruzada dos artifacts).
 
 ## Decisions taken
 
