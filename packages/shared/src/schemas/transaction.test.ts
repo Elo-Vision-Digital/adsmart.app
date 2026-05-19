@@ -1,6 +1,11 @@
 import { fakeTimestamp } from './test-helpers'
 import { describe, expect, it } from 'vitest'
-import { TransactionSchema, TransactionStatusSchema, TransactionTypeSchema } from './transaction'
+import {
+  TransactionProviderSchema,
+  TransactionSchema,
+  TransactionStatusSchema,
+  TransactionTypeSchema,
+} from './transaction'
 
 const validTransaction = {
   id: 'tx-001',
@@ -103,5 +108,43 @@ describe('TransactionStatusSchema', () => {
     for (const s of ['pending', 'completed', 'failed'] as const) {
       expect(TransactionStatusSchema.parse(s)).toBe(s)
     }
+  })
+})
+
+describe('TransactionProviderSchema', () => {
+  it.each(['admin', 'stripe', 'legacy'])('parses provider %s', (p) => {
+    expect(TransactionProviderSchema.safeParse(p).success).toBe(true)
+  })
+
+  it('rejects unknown provider', () => {
+    expect(TransactionProviderSchema.safeParse('asaas').success).toBe(false)
+    expect(TransactionProviderSchema.safeParse('suitpay').success).toBe(false)
+  })
+})
+
+describe('TransactionSchema — campos novos do redesign (FOUND-1)', () => {
+  it('parses transaction with provider and clientRequestId', () => {
+    const tx = {
+      ...validTransaction,
+      provider: 'admin' as const,
+      clientRequestId: 'd1bcad8e-1a4f-4f0c-b3e0-2ad7b6e9b0e1',
+    }
+    expect(TransactionSchema.safeParse(tx).success).toBe(true)
+  })
+
+  it('parses transaction with stripe future fields (preparation only)', () => {
+    const tx = {
+      ...validTransaction,
+      provider: 'stripe' as const,
+      stripePaymentIntentId: 'pi_1ABC123',
+      stripeCustomerId: 'cus_XYZ',
+      stripeChargeId: 'ch_DEF456',
+    }
+    expect(TransactionSchema.safeParse(tx).success).toBe(true)
+  })
+
+  it('rejects clientRequestId longer than 64 chars', () => {
+    const tx = { ...validTransaction, clientRequestId: 'x'.repeat(65) }
+    expect(TransactionSchema.safeParse(tx).success).toBe(false)
   })
 })

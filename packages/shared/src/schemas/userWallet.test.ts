@@ -48,4 +48,26 @@ describe('UserWalletSchema', () => {
     const result = UserWalletSchema.parse({ ...validWallet, updatedAt: ts })
     expect(result.updatedAt).toBeInstanceOf(Date)
   })
+
+  it('parses wallet with new creditsBalance field (FOUND-1)', () => {
+    const result = UserWalletSchema.safeParse({ ...validWallet, creditsBalance: 200 })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.creditsBalance).toBe(200)
+  })
+
+  it('parses wallet WITHOUT creditsBalance (legacy compat)', () => {
+    const result = UserWalletSchema.safeParse(validWallet)
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.creditsBalance).toBeUndefined()
+  })
+
+  it('rejects negative creditsBalance', () => {
+    const result = UserWalletSchema.safeParse({ ...validWallet, creditsBalance: -5 })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects non-integer creditsBalance', () => {
+    const result = UserWalletSchema.safeParse({ ...validWallet, creditsBalance: 5.5 })
+    expect(result.success).toBe(false)
+  })
 })
