@@ -89,3 +89,42 @@ describe('ReportStatusSchema', () => {
     }
   })
 })
+
+describe('ReportSchema — campos novos do redesign (FOUND-1)', () => {
+  it('parses report with new multi-platform fields', () => {
+    const { templateId: _t, lookerStudioUrl: _l, ...rest } = validReport
+    const newFlowReport = {
+      ...rest,
+      platforms: ['google_ads', 'meta_ads'] as const,
+      businessType: 'launch' as const,
+      accountIds: { google_ads: 'acc-google-1', meta_ads: 'acc-meta-1' },
+      creditsByPlatform: { google_ads: 1, meta_ads: 1 },
+      lastRefreshedAt: new Date('2026-05-19T15:00:00Z'),
+      nextAutoRefreshAt: new Date('2026-05-19T15:30:00Z'),
+      shareIds: ['share-uuid-1'],
+    }
+    const result = ReportSchema.safeParse(newFlowReport)
+    expect(result.success).toBe(true)
+  })
+
+  it('parses report without templateId (new-flow report)', () => {
+    const { templateId: _t, ...withoutTemplate } = validReport
+    const result = ReportSchema.safeParse(withoutTemplate)
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects unknown businessType', () => {
+    const invalid = { ...validReport, businessType: 'subscription' }
+    expect(ReportSchema.safeParse(invalid).success).toBe(false)
+  })
+
+  it('rejects unknown platform in platforms[]', () => {
+    const invalid = { ...validReport, platforms: ['tiktok_ads'] }
+    expect(ReportSchema.safeParse(invalid).success).toBe(false)
+  })
+
+  it('rejects creditsByPlatform with non-positive value', () => {
+    const invalid = { ...validReport, creditsByPlatform: { google_ads: 0 } }
+    expect(ReportSchema.safeParse(invalid).success).toBe(false)
+  })
+})

@@ -75,3 +75,35 @@ describe('DEFAULT_PRODUCT_PRICES', () => {
     }
   })
 })
+
+describe('ProductPriceSchema — campos novos do redesign (FOUND-1)', () => {
+  it('parses doc with new creditsPerReport field', () => {
+    const withCredits = { ...validStored, creditsPerReport: 1 }
+    expect(ProductPriceSchema.safeParse(withCredits).success).toBe(true)
+  })
+
+  it('parses doc WITHOUT creditsPerReport (legacy compat)', () => {
+    expect(ProductPriceSchema.safeParse(validStored).success).toBe(true)
+  })
+
+  it('rejects creditsPerReport = 0', () => {
+    const invalid = { ...validStored, creditsPerReport: 0 }
+    expect(ProductPriceSchema.safeParse(invalid).success).toBe(false)
+  })
+
+  it('rejects negative creditsPerReport', () => {
+    const invalid = { ...validStored, creditsPerReport: -1 }
+    expect(ProductPriceSchema.safeParse(invalid).success).toBe(false)
+  })
+
+  it('rejects non-integer creditsPerReport', () => {
+    const invalid = { ...validStored, creditsPerReport: 1.5 }
+    expect(ProductPriceSchema.safeParse(invalid).success).toBe(false)
+  })
+
+  it('UpdateProductPriceInputSchema accepts creditsPerReport in admin update', () => {
+    const update = { ...validStored, creditsPerReport: 2 }
+    const result = UpdateProductPriceInputSchema.safeParse(update)
+    expect(result.success).toBe(true)
+  })
+})
