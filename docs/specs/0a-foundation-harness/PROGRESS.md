@@ -12,21 +12,28 @@ current-step: ship
 
 ## ⚠️ Carry-over para próxima sessão (compactação 2026-05-19)
 
-**Critério #1 do EXECUTION-CHECKLIST § Fase 0a** ("6 agents criados e testados — cada um responde a invocação") **não foi cumprido na sessão de implementação**.
+**Critério #1 do EXECUTION-CHECKLIST § Fase 0a** ("6 agents criados e testados — cada um responde a invocação") **ainda não cumprido**.
 
-**Razão**: Claude Code carrega `.claude/agents/*.md` apenas no START da sessão. Os 6 agents (orchestrator, researcher, planner, implementer, validator, debugger) foram criados mid-session, então não entraram na lista runtime do tool `Agent`. Invocação tentada → todos retornaram `Agent type 'X' not found`.
+**Diagnóstico refinado (após tentativa pós-compactação 2026-05-19 04:19)**:
 
-**Diagnóstico**: não é defeito dos agents. Os 3 agents legados do repo (`firestore-*-reviewer`, `functions-security-reviewer`) usam **o mesmo padrão de frontmatter** e estão na lista runtime — confirma que o formato funciona. Os 6 novos só precisam de uma sessão fresca para serem carregados.
+Tentativa 1 (mid-session, antes de `/compact`): `Agent type 'researcher' not found`.
+Tentativa 2 (pós-`/compact`, mesma sessão): **mesmo erro**. Lista de agents disponíveis idêntica nas duas tentativas — só os 3 legados + os pacotes (`feature-dev:*`, `pr-review-toolkit:*`, `vercel:*`).
 
-**Primeira ação na nova sessão**:
-1. Rodar `bash scripts/harness/bootstrap-session.sh` para restaurar contexto
-2. Invocar 1 agent como smoke test:
+**Causa raiz confirmada**: `/compact` rebobina o histórico de mensagens mas **mantém o mesmo processo Claude Code** + a **mesma lista de subagent_types em memória**. O loader de `.claude/agents/*.md` só roda no boot do processo. Compactação não dispara reload.
+
+**Formato dos arquivos confirmado OK**:
+- `file .claude/agents/researcher.md` → UTF-8 text
+- `head -20` mostra frontmatter idêntico ao `firestore-query-reviewer.md` (que está na lista runtime): `name`, `description`, `tools` (comma list), `model: sonnet`, closer `---`.
+- Os 6 novos têm o mesmo formato dos 3 legados. Sintaxe não é o problema.
+
+**Ação para próxima sessão (de verdade — após `/exit` + reabrir Claude Code)**:
+1. Rodar `bash scripts/harness/bootstrap-session.sh`
+2. Invocar smoke test do researcher:
    ```
    Agent(subagent_type: "researcher", prompt: "Smoke test — confirme em até 50 palavras seu name + tools field do frontmatter.")
    ```
-3. Se responder → todos os 6 funcionam (mesma origem de formato). Repetir para os outros 5 rapidamente em paralelo.
-4. Se falhar → diagnose (provavelmente sintaxe de frontmatter ou loader path).
-5. Atualizar este PROGRESS + EVALUATION.md (mover `status: done-pending-verify` → `status: done`; marcar Sign-off completo).
+3. Se responder → os 5 outros funcionam pelo mesmo motivo. Invocar em paralelo para checagem rápida.
+4. Atualizar este PROGRESS (`status: done-pending-verify` → `status: done`) + EVALUATION.md (marcar Sign-off de invocação) + commit final fechando Fase 0a.
 
 ## Status
 
