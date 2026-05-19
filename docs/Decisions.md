@@ -954,3 +954,361 @@ Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `
 - [ADR-019](#adr-019-remove-firebase-app-check--aes-256-gcm-for-oauth-tokens-at-rest) — the parallel ADR whose deploy this one unblocked.
 - Firebase developer knowledge (queried 2026-05-18): "After removing function exports from `index.ts` and running `firebase deploy` without the `--only` flag, Firebase will implicitly delete the now-orphaned Cloud Functions."
 - Cloud Run docs (queried 2026-05-18, via Firebase developer-knowledge MCP search): `gcloud run services update --remove-env-vars` for selective env var removal; this command was attempted and failed due to image garbage collection, leading to the `functions:delete` path.
+
+---
+
+## ADR-022: Render in-app substitui Google Data Studio
+
+**Date:** 2026-05-19
+**Status:** Planned (Fase 3.5)
+
+**Decision:** O fluxo de geração de relatório (FLOW-3) renderiza dashboards diretamente no AdSmart (componente in-app + Cloud Function para sintetizar dados) em vez de redirecionar para Google Data Studio / Looker Studio.
+
+**Rationale:**
+
+- Looker Studio adiciona uma camada externa: o usuário sai do AdSmart, perde brand presence, e a experiência de exportação (PDF, share link) fica fora do nosso controle.
+- Migração do Google Marketing Platform para Google Cloud com mudanças repetidas em pricing/branding do Looker Studio aumenta risco de dependência.
+- A unique value do AdSmart é a síntese LLM (insights, recomendações) — entregar isso embedded com o dashboard reforça o produto; redirecionar dilui.
+- Custo de implementação: charts + tabelas in-app são commodity (Recharts/visx); a complexidade está nos dados, não no rendering.
+
+**Trade-offs:**
+
+- Precisa manter o componente de charts no app (vs delegar para Looker).
+- Performance: charts pesados em mobile precisam de cuidado com bundle size + lazy loading.
+- Templates do Looker Studio já existentes precisam ser re-implementados.
+
+**References:**
+
+- See `docs/redesign/FEATURES-INVENTORY.md` § FLOW-3
+- See memory `report_flow_v2` (planned)
+- Replaces the legacy "redirect to Looker" flow currently in `src/pages/TemplatesPage.tsx` + `src/pages/GenerateReportPage.tsx`
+
+---
+
+## ADR-023: Sistema de Créditos (1 cr = R$5, 1 plataforma = 1 cr)
+
+**Date:** 2026-05-19
+**Status:** Planned (Fase 3.5)
+
+**Decision:** Pricing model é **prepaid credits**, não subscription nem pay-per-report. Cada crédito = R$5,00. Geração de relatório custa 1 crédito por plataforma (single = 1 cr, Google + Meta = 2 cr).
+
+**Rationale:**
+
+- Agências de marketing têm uso irregular: alguns meses geram 30 relatórios, outros 3. Subscription gera friction (paga sem usar) ou caro demais (planos altos para ocasionalmente usar).
+- Pay-per-report (charge na hora) é UX pesada: fluxo de cobrança em cada geração quebra o flow.
+- Prepaid credits combina previsibilidade (top-up R$50 = 10 créditos = 5-10 relatórios) com UX leve (saldo no header, geração sem fricção quando há saldo).
+- 1 cr = R$5 dá target margin razoável considerando custo LLM (Anthropic + DeepSeek) + custos de infraestrutura por relatório.
+
+**Trade-offs:**
+
+- Precisa de wallet management server-side (já existe — `adminWalletManager.ts`).
+- Top-up implica integração de pagamento (Asaas, planejado — vide ADR-021 que removeu SuitPay).
+- Não suporta enterprise subscription se quisermos no futuro — pode coexistir adicionando esse modelo depois.
+
+**References:**
+
+- See `docs/redesign/FEATURES-INVENTORY.md` § MN-1
+- See memory `credits_system` (planned)
+- Schemas já existem: `packages/shared/src/schemas/userWallet.ts`, `transaction.ts`
+- Reference pattern: `functions/src/adminWalletManager.ts` (transação atômica wallet + transactions)
+
+---
+
+## ADR-024: LLM combo Anthropic + DeepSeek com roteamento por tarefa
+
+**Date:** 2026-05-19
+**Status:** Planned (Fase 3.5)
+
+**Decision:** Stack LLM é **dois provedores combinados**: Anthropic Claude (primary, quality-first) + DeepSeek (fallback, cost-first), com roteamento per-call baseado na tarefa.
+
+**Rationale:**
+
+- Single-provider Anthropic seria 3-5× mais caro em escala (background classification de business types, embeddings, etc. são alto volume).
+- Single-provider DeepSeek degrada qualidade dos relatórios user-visible (que é onde o cliente paga o crédito).
+- Combo permite cada modelo fazer o que faz melhor: Anthropic para síntese e relatório final; DeepSeek para classificação prévia, embeddings, batch jobs.
+- Roteamento per-call (não global) significa que uma callable `generateReport` pode chamar ambos no mesmo request — Anthropic para o passo de síntese, DeepSeek para pré-classificação do tipo de negócio.
+
+**Trade-offs:**
+
+- Duas API keys + dois SDKs para manter.
+- Lógica de routing precisa estar clara (documentado no callable / na memory `llm_combo_strategy`).
+- Observability harder: precisa logar `modelId` em cada call para attribution de custo + qualidade (vide hook `check-llm-call-via-logger.sh` Fase 0b).
+
+**References:**
+
+- See `docs/research/02-llm-strategy.md` (fundamentação completa do combo)
+- See memory `llm_combo_strategy` (planned)
+- Secrets reservados: `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY` em memory `firebase_secrets` (planned)
+- Hook `check-llm-call-via-logger.sh` (Fase 0b) bloqueia callable LLM sem `logger.info` estruturado com modelId/tokensIn/tokensOut
+
+---
+
+## ADR-025: Share-link público via UUID v4 + snapshot em subcoleção
+
+**Date:** 2026-05-19
+**Status:** Planned (Fase 3.5)
+
+**Decision:** Shareable report URLs usam **UUID v4 token + Firestore public collection com snapshot data**. URL shape: `https://adsmart.app/r/{uuid-v4}`. Coleção: `publicReportShares/{token}`. Public, no auth required.
+
+**Rationale:**
+
+- Alternativas avaliadas (`docs/research/04-share-link-patterns.md`):
+  - Signed URLs from Cloud Storage → abstração errada (data, não files).
+  - Auth-gated com magic-link → friction (recipients precisam registrar/login).
+  - Live-data share (read direto de `reports/{id}`) → permission complexity + data drift após o report original.
+  - **UUID + snapshot** venceu em: (a) zero friction para recipients, (b) data fidelity over time, (c) rules simples, (d) revogação fácil.
+- UUID v4 tem ~122 bits de entropy — unguessable na prática.
+- Snapshot data é imutável; mesmo se o report original mudar/for deletado, o share continua válido com os dados originais.
+- Firestore rule: `allow read: if true;` no path do token; `allow write: if false;` (apenas server via callable).
+
+**Trade-offs:**
+
+- Storage cost: cada share guarda um snapshot completo. Mitigado por TTL ou compactação.
+- Revogação requer flag `revoked: true` no doc (não pode "esquecer" um token uma vez emitido).
+- Schema já existe: `packages/shared/src/schemas/publicReportShare.ts` (Fase -1).
+
+**References:**
+
+- See `docs/research/04-share-link-patterns.md` (análise full)
+- See memory `share_link_pattern` (planned)
+- Schema: `packages/shared/src/schemas/publicReportShare.ts`
+- Princípio 10 (default deny + server-side write only) aplica
+
+---
+
+## ADR-026: Playwright em Cloud Function para Export PDF
+
+**Date:** 2026-05-19
+**Status:** Planned (Fase 3.5)
+
+**Decision:** Export PDF do relatório roda **Playwright headless dentro de Cloud Function v2** (não client-side jsPDF/react-pdf).
+
+**Rationale:**
+
+- jsPDF não renderiza charts reais (só shapes básicos); react-pdf força redesenhar todo o layout.
+- Playwright reutiliza o HTML/CSS que o usuário vê — pixel-perfect parity entre web e PDF.
+- Client-side libs adicionam 200-500KB ao bundle do web para operação rara.
+- Server-side render não depende de browser/zoom/fonts do usuário (consistência).
+- Cold-start mitigado: aceitar 5-10s na primeira exportação (raro), warming para casos críticos.
+
+**Trade-offs:**
+
+- Cloud Function precisa ~512MB-1GiB memory + 30-60s timeout.
+- Custo: Playwright em CF é mais caro que client-side ($0.01-0.05 por export estimado).
+- Volume: dezenas de exports/dia justificam; centenas/segundo não.
+
+**References:**
+
+- See `docs/research/05-pdf-generation.md` (comparação detalhada)
+- See memory `playwright_pdf` (planned)
+- Storage: PDFs em Cloud Storage `reportPdfs/{userId}/{reportId}-{timestamp}.pdf`
+- Alternativa de render: navegar à URL do `share_link_pattern` (ADR-025) — simplifica auth
+
+---
+
+## ADR-027: Tailwind v4 + Apple SF Pro como design system
+
+**Date:** 2026-05-19
+**Status:** Planned (Fase 1)
+
+**Decision:** Design system DS-1 da AdSmart usa **Tailwind v4** (CSS-first config via `@theme`/`@utility`) + **Apple SF Pro** (typography) + tokens semânticos + primitives novos.
+
+**Rationale:**
+
+- Tailwind v4 (lançado 2026) tem CSS-first config: tokens e utilities ficam em CSS puro via `@theme` em vez de `tailwind.config.js`. Reduz boilerplate + ferramentas externas (PostCSS auto-included).
+- SF Pro variable font: leveza visual + alta legibilidade + alinhamento com estética mobile-first iOS-like que AdSmart quer projetar. Licenciamento Apple permite uso em web.
+- Tokens semânticos (`bg-surface-2`, `text-foreground`) em vez de cores hardcoded permitem dark mode + temas sem refactor por componente.
+- Primitives novos (shadcn-like mas refinados para AdSmart) substituem progressivamente os componentes shadcn diretos onde a estética não combina.
+
+**Trade-offs:**
+
+- Migration cost de Tailwind 3.x → v4: PostCSS plugins, build pipeline, syntax changes (`@apply` semantics diferentes). Aceitável: ferramenta de migration auto cobre 80%.
+- SF Pro license restrita a contexto Apple: precisa hostar self ou via Apple Fonts Service. Aceitável.
+- Refactor visual de telas existentes (Fase 3) consome tempo significativo.
+
+**References:**
+
+- See `docs/research/03-frontend-stack.md` (Tailwind v4 + React 19 migration plan)
+- See `docs/UI-DESIGN.md` (sistema visual da AdSmart)
+- See `docs/redesign/FEATURES-INVENTORY.md` § DS-1
+- Skill `redesign-screen` (Fase 0b) automatiza refactor de tela a tela
+- Princípio: não preempt Tailwind v4 syntax antes de Fase 1 mergear — `src/AGENTS.md` § Current vs target stack documenta
+
+---
+
+## ADR-028: Adotar Harness Engineering (Fowler taxonomy)
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** O ciclo de desenvolvimento do AdSmart adota **Harness Engineering** (Martin Fowler, abr/2026) como padrão de trabalho com agentes IA: **Guides** (feedforward, antes da execução) + **Sensors** (feedback, depois da execução), com separação computacional/inferencial.
+
+**Rationale:**
+
+- O AdSmart é desenvolvido por uma pessoa coordenando múltiplos agentes IA. Sem disciplina, isso degrada rapidamente para "código bonito que não passa em produção" (loop infinito de retrabalho).
+- Harness Engineering dá vocabulário e estrutura: SPEC + CONTRACT são guides feedforward; lint + typecheck + tests + validator agent são sensors feedback.
+- Score binário (passou/não passou) elimina o cinza "85% pronto" que normalmente vira tech debt.
+- Separação computacional/inferencial mapeia direto para as ferramentas: sensors computacionais (hooks bash, lefthook, vitest) cobrem o determinístico; sensors inferenciais (validator agent) cobrem coerência semântica.
+
+**Trade-offs:**
+
+- Overhead inicial de criar SPEC + CONTRACT + EVALUATION per sprint. Aceitável: a Fase 0a/0b/0c mostraram que ~30min de setup poupa horas de retrabalho.
+- Curva de aprendizado para entender o vocabulário (Implementer, Validator, contract, wave, sensor).
+- Para mudanças triviais (single-line bugfix) o overhead é desproporcional — usar judgement.
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` (research completa, fundamentação Fowler + GSD + Anthropic Agent SDK)
+- See `docs/HARNESS-RUNBOOK.md` (workflow canônico de sprint)
+- See memory `harness_pattern` (active)
+- Implementado nas Fases 0a (harness + 6 agents), 0b (skills + commands + hooks), 0c (memory cleanup)
+
+---
+
+## ADR-029: Multi-process agents (Implementer ≠ Validator)
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** O agente que faz `Edit/Write` (Implementer) **não pode** ser o agente que verifica o output (Validator). Enforcement é mecânico via campo `tools:` no frontmatter de `.claude/agents/*.md` — Validator não tem permissões de `Edit` nem `Write`.
+
+**Rationale:**
+
+- Bias do auto-julgamento é irreduzível: o mesmo agente que escreveu o código racionaliza decisões para PASS quando avalia. Padrão consistente em research/09 (Fowler + GSD framework + Anthropic Agent SDK).
+- Enforcement no nível do tooling (não no prompt) é mais robusto: prompts podem ser ignorados sob pressão; tool absence não.
+- Fresh 200k context per Agent invocation isola o validator do reasoning artifacts do implementer.
+- Forçar o validator a ler arquivos + sensor outputs (em vez de aceitar narrativa) gera evidência citável.
+
+**Trade-offs:**
+
+- 6 agents em `.claude/agents/` (orchestrator, researcher, planner, implementer, validator, debugger) adicionam complexidade conceitual.
+- Custo: cada Agent invocation é uma chamada LLM separada (~$0.50-2 por validator pass em sprint média).
+- Operational gotcha: criar novo `.claude/agents/*.md` mid-session NÃO carrega — precisa Reload Window (descoberto em Fase 0a; documentado em memory `multi_process_agents`).
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 4 (Multi-process pattern, GSD-inspired)
+- See `.claude/agents/validator.md` (tools field restritivo: Read, Grep, Glob, Bash — sem Edit/Write/Agent)
+- See `.claude/agents/implementer.md` (com Edit/Write mas sem Agent — não pode spawnar subagents)
+- See memory `multi_process_agents` (active)
+- Hook `check-implementer-not-validator.sh` (warn-only) reforça o princípio em runtime
+
+---
+
+## ADR-030: Contracts negotiation antes da execução
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** Toda sprint tem um arquivo `CONTRACT.md` com lista de items atômicos (2-4h cada) + acceptance test computacional por item. CONTRACT é **negociado** Implementer↔Validator antes do `status: locked`. Nenhum `Edit/Write` na sprint folder antes do CONTRACT estar locked (hook `check-contract-exists.sh` bloqueia).
+
+**Rationale:**
+
+- "Programar sem spec" + "validar depois" cria loop infinito: implementer alucina escopo, validator descobre tarde, retrabalho.
+- Atomic items (2-4h cada) com acceptance test computacional eliminam ambiguidade: ou o `grep -q` retorna 0, ou retorna 1. Sem "85% pronto".
+- Negotiation Implementer↔Validator pré-execução força ambos a alinharem expectativas. Validator que reviu o CONTRACT não pode reclamar de scope no final.
+- "Conservation laws" do harness: o validator só pode PASS items que estão no CONTRACT — não pode adicionar items mid-sprint para forçar FAIL.
+
+**Trade-offs:**
+
+- Sprints curtas (~1h) têm overhead desproporcional de criar CONTRACT formal.
+- Negotiation pode levar tempo (validator agent + iteração). Mitigado: a Fase 0a-0d mostram que o CONTRACT geralmente fecha em 1 pass do validator.
+- Items que viram "mais complexos do que pareciam" durante implementação NÃO podem escapar do CONTRACT — devem ser quebrados em items menores via update do CONTRACT antes de continuar.
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 5 (Contracts entre agentes — arxiv 2026 "Agent Contracts")
+- See `.claude/skills/negotiate-contract/SKILL.md` (workflow detalhado do ciclo)
+- See `.claude/commands/negotiate-contract.md` (slash command de entry)
+- Hook `check-contract-exists.sh` bloqueia Edit/Write em `docs/specs/{id}/` sem CONTRACT locked
+- Sprints exemplares: docs/specs/0a/0b/0c/0d — todas com CONTRACT locked antes de Wave 1
+
+---
+
+## ADR-031: Progress files + Bootstrap script (memory entre sessions)
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** Cada sprint mantém `PROGRESS.md` versionado em `docs/specs/{id}/`. `PROGRESS.md` é atualizado antes de `/compact` ou fim de sessão. Bootstrap script (`scripts/harness/bootstrap-session.sh`) lê `PROGRESS.md` no início da próxima sessão, reconstrói contexto em < 5k tokens.
+
+**Rationale:**
+
+- `/compact` reescreve histórico mas NÃO preserva state on-disk que não exista. Conteúdo só "na conversa" é perdido.
+- Sem PROGRESS discipline: 30% de contexto perdido por compactação em sprints multi-dia, requerendo re-explicação.
+- Com PROGRESS discipline: near-zero loss; bootstrap restaura branch + sprint + sensores + carry-over em <200 palavras.
+- Score binário aplica: ou o PROGRESS está atualizado quando você compacta, ou está stale (e você perde state).
+
+**Trade-offs:**
+
+- Overhead disciplinar: lembrar de update PROGRESS antes de compact (memory `progress_files_discipline` ajuda; hook `check-progress-updated.sh` warn-only ajuda).
+- PROGRESS pode virar verbose se incluir trivialidades — convenção é "non-obvious decisions + blockers + carry-overs", não "git log mirror".
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 6 (Persistent state)
+- See `scripts/harness/bootstrap-session.sh` (script source)
+- See `.claude/commands/update-progress.md` (slash command de checkpoint)
+- See memory `progress_files_discipline` (active)
+- See user feedback memory `feedback_document_before_advancing` (regra hard do usuário: checkpoint cada ~3 commits)
+
+---
+
+## ADR-032: Sensor enforcement via hooks bloqueantes (score binário)
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0b — implementado)
+
+**Decision:** Sensores computacionais críticos são enforced via **PreToolUse hooks bash** em `.claude/settings.json`. Hooks falham (exit 2) quando uma regra é violada, bloqueando a operação `Edit/Write/Bash` em runtime. Score é binário: o hook passa ou bloqueia.
+
+**Rationale:**
+
+- Princípios escritos em AGENTS.md / docs ficam stale (alguém vai violar quando estiver com pressa). Hooks no runtime impedem mecanicamente.
+- Score binário (exit 0 vs exit 2) elimina cinza: ou o commit passa, ou não passa.
+- Hooks são auditáveis (bash scripts em `scripts/firebase/` e `scripts/hooks/`) — qualquer dev pode ler para entender por quê foi bloqueado.
+- Stderr messages devem citar princípio + propor fix concreto + linkar refs (não só "blocked").
+
+**Trade-offs:**
+
+- False positives podem virar friction. Mitigação: hooks têm exceções explícitas (ex: `.test.tsx` no check-no-hardcoded-literal); 3 hooks da Fase 0b são deliberadamente warn-only (check-progress-updated, check-sensors-passed, check-implementer-not-validator) para evitar atrito enquanto a heurística amadurece.
+- Manutenção: hook que vira fonte de friction precisa ser refinado ou removido — não toleramos hooks "que sempre falham erradamente".
+- Caveat conhecido: `check-rules-tested.sh` (legado) tem false positive em comandos bash complexos (multi-command, heredoc). Workaround: comandos simples + refresh stamp via `/firestore-rules-test`.
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 8.4 (Hooks PreToolUse)
+- See `.claude/settings.json` (12 PreToolUse hooks — 4 legados em `scripts/firebase/` + 8 novos em `scripts/hooks/`)
+- Hooks documentados em memory `multi_process_agents` (lista completa)
+- Princípio 15 do roadmap (FEATURES-INVENTORY § Princípios)
+
+---
+
+## ADR-033: Estrutura de specs por sprint
+
+**Date:** 2026-05-19
+**Status:** Accepted (Fase 0a — implementado)
+
+**Decision:** Cada sprint vive em **`docs/specs/{id}-{name}/`** com 4 artifacts canônicos: **SPEC.md** (feedforward), **CONTRACT.md** (negotiated → locked), **PROGRESS.md** (memory), **EVALUATION.md** (sensor feedback / verdict). Templates em `docs/specs/_templates/` instanciados via `bash scripts/harness/new-sprint.sh <id> <name>`.
+
+**Rationale:**
+
+- Single source of truth por sprint: alguém entrando na sprint lê esses 4 arquivos e tem 100% do contexto.
+- Frontmatter YAML (`sprint-id`, `status`, `verdict`) permite agregação programática (futuro: dashboard de sprints).
+- Append-only nos artifacts evita ambiguidade — SPEC.md fica como veio do planning; mudanças mid-sprint ficam em PROGRESS.md "Decisions taken".
+- Templates garantem que cada sprint tem a mesma estrutura — bootstrap script + validator agent sabem onde procurar (`## Outcomes`, `## Items`, `verdict: pass`).
+
+**Trade-offs:**
+
+- 4 arquivos por sprint adiciona overhead a um workflow já com PROGRESS+CONTRACT. Aceitável porque cada um tem propósito distinto e não duplica.
+- Templates podem virar bottleneck — mudança em formato exige update + retroactive cleanup. Mitigação: format mudou zero vezes desde Fase 0a; estável.
+- Sprints muito pequenas (<2h) talvez não precisem dos 4 artifacts — usar judgement.
+
+**References:**
+
+- See `docs/research/09-harness-engineering.md` § 8.1 (Estrutura de pastas)
+- See `docs/specs/_templates/` (4 templates canônicos)
+- See `scripts/harness/new-sprint.sh` (scaffolder)
+- See `.claude/commands/new-sprint.md` (slash command)
+- Sprints exemplares (dogfood): docs/specs/-1/0a/0b/0c/0d — todas seguem o padrão
+
+---
