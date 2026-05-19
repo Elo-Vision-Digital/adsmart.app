@@ -102,29 +102,34 @@ Vazio (verdict: pass).
 - [x] Verdict registrado: PASS (no nível do CONTRACT)
 - [x] Implementer commitou 4 waves (`25c650c`, `99f9569`, `c2c44b1`, `0ac3217`)
 - [x] Push + PR aberto: [#4](https://github.com/Elo-Vision-Digital/adsmart.app/pull/4) (stacked on [#3](https://github.com/Elo-Vision-Digital/adsmart.app/pull/3))
-- [ ] **PENDING (próxima sessão)**: invocação real dos 6 agents via tool `Agent` (ver "Lacuna conhecida" + carry-over em [PROGRESS.md](PROGRESS.md))
+- [x] **Invocação real dos 6 agents via tool `Agent`** confirmada pós-Reload Window (2026-05-19 04:30) — ver "Verificação fechada" abaixo
 - [ ] Human revisou (PR para `develop`)
 
-## Lacuna conhecida (post-validation, 2026-05-19)
+## Verificação fechada (post-Reload Window, 2026-05-19 04:30)
 
-**Critério #1 do EXECUTION-CHECKLIST § Fase 0a** diz "6 agents criados **e testados (cada um responde a invocação)**". O CONTRACT desta sprint testou itens 1-6 por **formato apenas** (`grep '^name:'`, `grep '^tools:'`, ausência de Edit/Write/Agent conforme o papel) — não por invocação real do tool `Agent`.
+Critério #1 do EXECUTION-CHECKLIST § Fase 0a ("6 agents criados **e testados (cada um responde a invocação)**") cumprido.
 
-Quando tentei invocar (`Agent(subagent_type: "orchestrator", ...)` e os outros 5) ao fim da sessão de implementação, todos retornaram:
+**Caminho até fechar**:
+1. Mid-session (antes de `/compact`): invocação retornou `Agent type 'X' not found`. Lista de agents disponíveis: só os 3 legados (`firestore-*-reviewer`, `functions-security-reviewer`) + os pacotes.
+2. Pós-`/compact`, mesma sessão: mesmo erro. Lista idêntica.
+3. **Causa raiz**: Claude Code (extension host do VS Code) carrega `.claude/agents/*.md` apenas no boot do processo. `/compact` rebobina histórico mas mantém o mesmo processo + mesmo registry em memória.
+4. **Ação que destravou**: `Cmd+Shift+P → "Developer: Reload Window"` (reinicia o extension host).
+5. Smoke test dos 6 agents pós-reload — todos retornaram `name` + `tools` exatos do frontmatter, com restrições mecânicas confirmadas (implementer sem `Agent`, validator sem `Edit/Write/Agent`, debugger sem `Edit/Write/Agent`).
 
-```
-Agent type 'orchestrator' not found. Available agents: [...firestore-query-reviewer, firestore-rules-reviewer, functions-security-reviewer...]
-```
+**Tabela de evidência**:
 
-**Causa**: Claude Code popula a lista de subagent_types do tool `Agent` no START da sessão a partir de `.claude/agents/*.md`. Arquivos criados mid-session ficam no disco mas não entram na lista runtime até nova sessão.
+| Agent | `name` | `tools` retornado | Restrições | Status |
+|---|---|---|---|---|
+| researcher | researcher | Read, Grep, Glob, WebSearch, WebFetch, mcp__plugin_context7_*, mcp__plugin_firebase_developerknowledge_* | sem Edit/Write/Agent | ✅ |
+| orchestrator | orchestrator | Agent, Read, Grep, Glob, TodoWrite, Bash | com Agent, sem Edit/Write | ✅ |
+| planner | planner | Read, Grep, Glob, TodoWrite, Write | com Write, sem Agent | ✅ |
+| implementer | implementer | Read, Edit, Write, Grep, Glob, Bash, TodoWrite | com Edit+Write, sem Agent | ✅ |
+| validator | validator | Read, Grep, Glob, Bash | sem Edit/Write/Agent | ✅ |
+| debugger | debugger | Read, Grep, Glob, Bash, TodoWrite | sem Edit/Write/Agent | ✅ |
 
-**Por que não é defeito**:
-- Os 3 agents legados (firestore-*, functions-*) estão na lista — usam exatamente o mesmo padrão de frontmatter (`name, description, tools, model: sonnet`). Confirma formato válido.
-- `bash -n` dos prompts de cada agent não revelou erro.
-- Smoke test do formato (item 1-6 do CONTRACT) passou.
+**Impacto no verdict**: `verdict: pass` no nível do CONTRACT e no critério mais amplo do EXECUTION-CHECKLIST. Fase 0a entregue.
 
-**Mitigação**: registrado como carry-over em [PROGRESS.md](PROGRESS.md) — primeira ação da próxima sessão é invocar 1 agent (researcher é o mais barato). Se responder, os outros 5 funcionam pelo mesmo motivo (mesma origem de formato).
-
-**Impacto no verdict**: mantenho `verdict: pass` no nível do CONTRACT (porque seus 19 acceptance tests são computacionais e passaram), mas o critério mais amplo do EXECUTION-CHECKLIST não está 100% fechado até a verificação de invocação na próxima sessão.
+**Aprendizado para o `HARNESS-RUNBOOK.md`** (próximo update): após criar novos agents em `.claude/agents/`, **reiniciar o extension host (Reload Window)** é mandatório antes do primeiro smoke test. `/compact` não basta.
 
 ## Notas para próximas sprints (lessons learned do dogfood)
 

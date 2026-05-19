@@ -2,38 +2,37 @@
 sprint-id: "0a"
 name: "foundation-harness"
 started: "2026-05-19"
-status: done-pending-verify
-current-step: ship
+status: done
+current-step: closed
 ---
 
 # Sprint 0a — Foundation Harness — PROGRESS
 
 > Memory artifact. Atualiza ANTES de compactar contexto.
 
-## ⚠️ Carry-over para próxima sessão (compactação 2026-05-19)
+## ✅ Verification fechada (2026-05-19, pós-Reload Window)
 
-**Critério #1 do EXECUTION-CHECKLIST § Fase 0a** ("6 agents criados e testados — cada um responde a invocação") **ainda não cumprido**.
+Critério #1 do EXECUTION-CHECKLIST § Fase 0a ("6 agents criados e testados — cada um responde a invocação") **cumprido**.
 
-**Diagnóstico refinado (após tentativa pós-compactação 2026-05-19 04:19)**:
+**Caminho até fechar**:
+1. Mid-session (antes de `/compact`): invocação retornou `Agent type 'X' not found`.
+2. Pós-`/compact`, mesma sessão: mesmo erro.
+3. **Diagnóstico**: `/compact` rebobina histórico mas mantém o mesmo processo do extension host → mesma lista de subagent_types em memória. Loader de `.claude/agents/*.md` só roda no boot do processo.
+4. Usuário fez `Cmd+Shift+P → "Developer: Reload Window"` no VS Code → extension host reiniciou → registry recarregado.
+5. Smoke test dos 6 agents pós-reload: **todos PASS**.
 
-Tentativa 1 (mid-session, antes de `/compact`): `Agent type 'researcher' not found`.
-Tentativa 2 (pós-`/compact`, mesma sessão): **mesmo erro**. Lista de agents disponíveis idêntica nas duas tentativas — só os 3 legados + os pacotes (`feature-dev:*`, `pr-review-toolkit:*`, `vercel:*`).
+**Smoke test results (2026-05-19 04:30)**:
 
-**Causa raiz confirmada**: `/compact` rebobina o histórico de mensagens mas **mantém o mesmo processo Claude Code** + a **mesma lista de subagent_types em memória**. O loader de `.claude/agents/*.md` só roda no boot do processo. Compactação não dispara reload.
+| Agent | `name` retornado | `tools` retornado | Restrições verificadas |
+|---|---|---|---|
+| researcher | ✅ researcher | ✅ Read, Grep, Glob, WebSearch, WebFetch, mcp__plugin_context7_*, mcp__plugin_firebase_developerknowledge_* | sem Edit/Write/Agent ✅ |
+| orchestrator | ✅ orchestrator | ✅ Agent, Read, Grep, Glob, TodoWrite, Bash | com Agent (coordena), sem Edit/Write ✅ |
+| planner | ✅ planner | ✅ Read, Grep, Glob, TodoWrite, Write | com Write (docs/specs), sem Agent ✅ |
+| implementer | ✅ implementer | ✅ Read, Edit, Write, Grep, Glob, Bash, TodoWrite | com Edit+Write, sem Agent ✅ |
+| validator | ✅ validator | ✅ Read, Grep, Glob, Bash | sem Edit/Write/Agent ✅ |
+| debugger | ✅ debugger | ✅ Read, Grep, Glob, Bash, TodoWrite | sem Edit/Write/Agent ✅ |
 
-**Formato dos arquivos confirmado OK**:
-- `file .claude/agents/researcher.md` → UTF-8 text
-- `head -20` mostra frontmatter idêntico ao `firestore-query-reviewer.md` (que está na lista runtime): `name`, `description`, `tools` (comma list), `model: sonnet`, closer `---`.
-- Os 6 novos têm o mesmo formato dos 3 legados. Sintaxe não é o problema.
-
-**Ação para próxima sessão (de verdade — após `/exit` + reabrir Claude Code)**:
-1. Rodar `bash scripts/harness/bootstrap-session.sh`
-2. Invocar smoke test do researcher:
-   ```
-   Agent(subagent_type: "researcher", prompt: "Smoke test — confirme em até 50 palavras seu name + tools field do frontmatter.")
-   ```
-3. Se responder → os 5 outros funcionam pelo mesmo motivo. Invocar em paralelo para checagem rápida.
-4. Atualizar este PROGRESS (`status: done-pending-verify` → `status: done`) + EVALUATION.md (marcar Sign-off de invocação) + commit final fechando Fase 0a.
+**Aprendizado para o RUNBOOK** (próximo update do `docs/HARNESS-RUNBOOK.md`): após criar novos agents em `.claude/agents/`, **reiniciar o extension host** (Reload Window) é mandatório antes do primeiro smoke test. `/compact` não basta.
 
 ## Status
 
