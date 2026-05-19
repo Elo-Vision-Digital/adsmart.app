@@ -10,6 +10,39 @@ Format conventions:
 
 ---
 
+## [2026-05-19] — Redesign Fase -1 (foundation schemas) + Fase 0a (foundation harness)
+
+Início real da execução do redesign do AdSmart. Duas fases entregues no mesmo dia, em branches separadas, sem usuários em prod (refactor estrutural autorizado).
+
+**Fase -1 — Foundation Schemas** (PR [#3](https://github.com/Elo-Vision-Digital/adsmart.app/pull/3), branch `feat/redesign-foundation-schemas`):
+
+- **6 schemas Zod novos** em `packages/shared/src/schemas/`: `businessType`, `processedRequest`, `publicReportShare`, `aiReportInsight`, `llmCall`, `reportPlatformData`
+- **4 schemas refatorados aditivamente** (legacy preservado para Fase 0.5): `report.ts` (`templateId` agora optional + `platforms[]`, `businessType`, `accountIds`, `creditsByPlatform`, `lastRefreshedAt`, `nextAutoRefreshAt`, `shareIds`), `transaction.ts` (provider enum + clientRequestId + stripe fields opcionais), `userWallet.ts` (`creditsBalance` opcional), `productPrice.ts` (`creditsPerReport` opcional)
+- **API-CONTRACTS.md** estendido com seção "Foundation Callables — Planned (FOUND-1)" listando 10 callables planejados (createReport, refreshReport, refreshActiveReports, createReportShare, revokeReportShare, listReportShares, recordShareView, exportReportPDF, analyzeReportData, getAvailableDataPeriods)
+- **DATA-MODEL.md** estendido com index das 6 collections novas + composite indexes necessários
+- **Testes**: 195/195 verde em `packages/shared` (+101 testes novos: 79 schemas novos + 22 refactors)
+- Cleanup textual (Asaas/SuitPay/Looker Studio) e remoção de campos legacy (`lookerStudioUrl`, `payerName`, `payerCpf`, `templateId` required) ficaram para **Fase 0.5** com refactor dos callers
+- Detalhes em [docs/specs/-1-foundation-schemas/PROGRESS.md](specs/-1-foundation-schemas/PROGRESS.md)
+
+**Fase 0a — Foundation Harness** (branch `feat/redesign-foundation-harness`):
+
+Instalação da infraestrutura de Harness Engineering (Martin Fowler abr/2026 + GSD framework + Anthropic SDK). Base para zero entropia em todo o roadmap restante.
+
+- **6 agents multi-process** em `.claude/agents/`: `orchestrator` (coordena, tem `Agent`), `researcher` (read-only, Context7+WebSearch+Firebase MCP), `planner` (Write apenas em `docs/specs/`), `implementer` (`Edit/Write` mas **sem `Agent`** — não spawna), `validator` (`Read/Bash`, **sem `Edit/Write`** — só julga), `debugger` (diagnose + fix plan, **sem `Edit/Write`**)
+- **4 templates de sprint** em `docs/specs/_templates/`: `SPEC.md` (feedforward), `CONTRACT.md` (negociado Implementer×Validator), `PROGRESS.md` (memory entre sessions), `EVALUATION.md` (score binário)
+- **3 scripts de coordenação** em `scripts/harness/`: `bootstrap-session.sh` (< 5k tokens de contexto restaurado por session), `update-progress.sh` (append timestamped), `new-sprint.sh <id> <name>` (scaffold de sprint)
+- **[docs/HARNESS-RUNBOOK.md](HARNESS-RUNBOOK.md)** — canônico end-to-end com Anatomy, Typical sprint flow (Phase 1-7), Hard rules, Failure modes & escalation
+- **Dogfood**: a própria Sprint 0a tem SPEC + CONTRACT (`status: locked`) + PROGRESS + EVALUATION (`verdict: pass` — 19/19 items) preenchidos com os templates novos. Primeira EVALUATION real do harness.
+- Detalhes em [docs/specs/0a-foundation-harness/PROGRESS.md](specs/0a-foundation-harness/PROGRESS.md) e EVALUATION
+
+**Princípios 13-16** introduzidos no roadmap (já estavam em FEATURES-INVENTORY.md desde Fase -2): multi-process agents · contracts before execution · score binário · progress files persistidos.
+
+**Sensors verdes em ambas as fases**: `bun run test` (packages/shared) 195/195, `bun run typecheck` verde, `bun run lint` 0 errors (112 warnings pré-existentes), `bun run build` (functions) verde. Zero regressão.
+
+**Próximo passo**: Fase 0b — Sub-AGENTS.md por área (`src/`, `functions/`, `packages/shared/`) + 7 skills novas em `.claude/skills/` + 13 slash commands em `.claude/commands/` + 8 hooks PreToolUse novos. Ver [EXECUTION-CHECKLIST.md § FASE 0b](redesign/EXECUTION-CHECKLIST.md).
+
+---
+
 ## [2026-05-18] — Subprojeto 2 (admin dashboard) closure validated via Cloud Logging
 
 Closing the last open Subprojeto-2 audit item: confirm the historical INTERNAL/500 on `getDashboardMetrics` is gone.
