@@ -100,8 +100,8 @@ Vazio (verdict: pass).
 - [x] Computational sensors rodados (test, typecheck, lint, smoke tests)
 - [x] Inferencial check (runbook coerência + convention + scope discipline)
 - [x] Verdict registrado: PASS
-- [ ] Implementer commita waves
-- [ ] Push + PR aberto
+- [x] Implementer commitou 4 waves (`25c650c`, `99f9569`, `c2c44b1`, `0ac3217`)
+- [x] Push + PR aberto: [#4](https://github.com/Elo-Vision-Digital/adsmart.app/pull/4) (stacked on [#3](https://github.com/Elo-Vision-Digital/adsmart.app/pull/3))
 - [ ] Human revisou (PR para `develop`)
 
 ## Notas para próximas sprints (lessons learned do dogfood)
