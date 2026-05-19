@@ -37,7 +37,10 @@ current-step: implement
 - [x] **Wave 1 entregue** (5 itens): src/AGENTS.md (current vs target + i18n), functions/AGENTS.md (Idempotência + Structured logging com code samples), packages/shared/AGENTS.md (criado, 4-step flow + Zod 4 idioms + strict subsets), AGENTS.md root (sub-AGENTS links + Current/Target stack + 16 princípios + Sprint workflow), CLAUDE.md root (refs para redesign/, research/, specs/, HARNESS-RUNBOOK)
 - [x] **Wave 1 sensores**: 5/5 grep acceptance tests PASS, typecheck exit 0, test packages/shared 195/195 ✅
 - [x] **Wave 1 validator**: agent PASS com evidências linha-por-linha (sem issues)
-- [ ] Próximo: Wave 2 (7 skills novas)
+- [x] **Wave 2 entregue** (7 skills): redesign-screen, new-zod-schema, new-report-business-type, verify-i18n, validate-llm-call, negotiate-contract, bootstrap-fresh-session. Skills carregaram dinamicamente sem precisar Reload Window (diferente dos agents).
+- [x] **Wave 2 sensores**: 9/9 SKILL.md com `name:` + `description:` (7 novas + 2 legadas) ✅
+- [x] **Wave 2 validator**: agent PASS 7/7 com observações granulares (description com gatilhos PT-BR+EN, corpo com passos numerados + bash, anti-patterns, refs cruzadas, terminologia coerente)
+- [ ] Próximo: Wave 3 (13 slash commands)
 
 ## Decisions taken
 
