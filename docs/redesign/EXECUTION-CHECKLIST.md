@@ -14,8 +14,8 @@
 | **Fase -1** | Schemas + API Contracts (source of truth) | ✅ **COMPLETA** (PR #3 mergeado em `develop` em 2026-05-19) | 🔴 Crítica |
 | **Fase 0a** | Foundation Harness (multi-agents + contracts + bootstrap) | ✅ **COMPLETA** (PR #4 mergeado em `develop` em 2026-05-19) | 🔴 Crítica |
 | **Fase 0b** | Sub-AGENTS, skills, slash commands, hooks | ✅ **COMPLETA** (PR #5 mergeado em `develop` em 2026-05-19) | 🔴 Crítica |
-| **Fase 0c** | Memória cleanup + criação | ✅ **COMPLETA** (branch `feat/redesign-foundation-memory` — 16 items, verdict pass) | 🟡 Alta |
-| **Fase 0d** | ADRs publicados | ⏳ A iniciar | 🟡 Alta |
+| **Fase 0c** | Memória cleanup + criação | ✅ **COMPLETA** (PR #6 aberto, aguardando merge) | 🟡 Alta |
+| **Fase 0d** | ADRs publicados | ✅ **COMPLETA** (branch `feat/redesign-foundation-adrs` — 14 items, verdict pass, 12 ADRs novos) | 🟡 Alta |
 | **Fase 0.5** | Cleanup textual (Asaas, SuitPay, Data Studio) | ⏳ A iniciar | 🟢 Média |
 | **Fase 1** | Design System (Tailwind v4 + SF Pro + tokens + primitives) | ⏳ A iniciar | 🔴 Crítica |
 | **Fase 2** | Layout global (BottomNav · Sidebar · TopBar) | ⏳ A iniciar | 🟡 Alta |
@@ -23,7 +23,7 @@
 | **Fase 3.5** | Novo fluxo de relatório (6 passos) | ⏳ A iniciar | 🔴 Crítica |
 | **Fase 4** | Validação funcional end-to-end | ⏳ A iniciar | 🔴 Crítica |
 
-**Próximo passo recomendado**: revisão + merge do PR Fase 0c (foundation-memory) → disparar **Fase 0d** (ADRs publicados em `docs/Decisions.md`).
+**Próximo passo recomendado**: revisão + merge do PR Fase 0c + Fase 0d → disparar **Fase 0.5** (cleanup textual: Asaas/SuitPay/Data Studio em docs/UI).
 
 ---
 
@@ -324,12 +324,14 @@ Existentes (manter, validar funcionam):
 
 ---
 
-## 🟡 FASE 0d — ADRs publicados
+## ✅ FASE 0d — ADRs publicados — CONCLUÍDA
+
+**Status**: COMPLETA em 2026-05-19. Branch `feat/redesign-foundation-adrs`. 12 ADRs (ADR-022 a ADR-033) publicados em `docs/Decisions.md`. 14 items do CONTRACT em 3 waves (validator agent PASS em cada wave). Ver [docs/specs/0d-foundation-adrs/EVALUATION.md](../specs/0d-foundation-adrs/EVALUATION.md) (`verdict: pass`).
 
 **Objetivo**: registrar decisões arquiteturais críticas em `docs/Decisions.md`.
 
 **Pré-requisitos**:
-- ⏳ Fase 0a completa (Harness ADRs precisam de implementation refs)
+- ✅ Fase 0a completa (Harness ADRs com implementation refs)
 
 **Estimativa**: 1 dia
 
