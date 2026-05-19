@@ -40,7 +40,10 @@ current-step: implement
 - [x] **Wave 2 entregue** (7 skills): redesign-screen, new-zod-schema, new-report-business-type, verify-i18n, validate-llm-call, negotiate-contract, bootstrap-fresh-session. Skills carregaram dinamicamente sem precisar Reload Window (diferente dos agents).
 - [x] **Wave 2 sensores**: 9/9 SKILL.md com `name:` + `description:` (7 novas + 2 legadas) ✅
 - [x] **Wave 2 validator**: agent PASS 7/7 com observações granulares (description com gatilhos PT-BR+EN, corpo com passos numerados + bash, anti-patterns, refs cruzadas, terminologia coerente)
-- [ ] Próximo: Wave 3 (13 slash commands)
+- [x] **Wave 3 entregue** (13 slash commands): 8 workflow harness (`/new-sprint`, `/research-sprint`, `/plan-sprint`, `/negotiate-contract`, `/execute-sprint`, `/validate-sprint`, `/ship-sprint`, `/update-progress`) + 5 workflow domínio (`/new-screen-redesign`, `/check-i18n`, `/check-no-hardcoded`, `/new-ai-prompt-version`, `/run-research`). Commands carregam dinamicamente (como skills).
+- [x] **Wave 3 sensores**: 17/17 commands com `description:` (4 legados + 13 novos) ✅
+- [x] **Wave 3 validator**: agent PASS 13/13. Validação inferencial cobriu: lifecycle harness completo (new → research → plan → negotiate → execute → validate → ship + update-progress), coerência de vocabulário (sprint-id, wave, validator/implementer separation, princípio N), cross-refs integridade (todas as skills/agents/scripts referenciados existem), anti-patterns presentes em 10/13 + guards inline nos 3 restantes
+- [ ] Próximo: Wave 4 (8 hooks + settings.json + smoke test)
 
 ## Decisions taken
 
