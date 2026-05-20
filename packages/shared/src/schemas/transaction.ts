@@ -30,9 +30,11 @@ export const TransactionSchema = z.object({
   adminReason: z.string().optional(),
   adminIP: z.string().optional(),
 
-  // PIX payer metadata — kept on the schema for legacy transactions written
-  // by the pre-ADR-021 SuitPay flow. Será removido na Fase 0.5 do roadmap
-  // junto com o cleanup textual (sem usuários em prod, sem migration).
+  // PIX payer metadata — campos opcionais legacy do SuitPay (removido em
+  // ADR-021). MANTIDOS na schema (Fase 0.5 cleanup, 2026-05-19) para
+  // retro-compatibilidade do parse de transações antigas que ainda possam
+  // existir no Firestore. Serão reavaliados quando Stripe ship (FUTURE §8)
+  // — Stripe usa Customer ID + PaymentIntent ID que podem mapear diferente.
   payerName: z.string().optional(),
   payerCpf: z.string().optional(),
 

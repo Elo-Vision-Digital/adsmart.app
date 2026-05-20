@@ -37,7 +37,15 @@ current-step: implement
   - Hits restantes em Decisions.md (6): todos em contexto histórico legítimo (ADR-003 Superseded + ADR-021 incident history)
 - [x] Sensores Microsprint 0.5.1: typecheck verde + test 195/195
 - [x] Validator agent: PASS com observações granulares (substituições coerentes, ADR-003 preservado, scope discipline mantida, narrativa Stripe global consistente)
-- [ ] Próximo: PAUSA — aprovação do usuário para Microsprint 0.5.2 (SuitPay cleanup final)
+- [x] Microsprint 0.5.1 commit: `15160d7` (21 arquivos, 400+ / 46-)
+
+### 2026-05-19 — Session 2: Microsprint 0.5.2 (SuitPay cleanup final)
+
+- [x] Pre-flight: mapeamento real (4 código TS/TSX + 11 docs ativas com refs SuitPay)
+- [x] Análise: todas as refs em docs ativas são **factuais históricas** (SuitPay was REMOVED in ADR-021) — não forward-looking. Manter intactas.
+- [x] **Decisão sobre fields legacy** (`payerName`, `payerCpf`, `paymentId`): manter `.optional()` por retro-compatibilidade do parse de transações antigas no Firestore; reavaliar quando Stripe ship (FUTURE §8). Aprovado pelo usuário 2026-05-19.
+- [x] Comment em `packages/shared/src/schemas/transaction.ts` atualizado: removida intenção stale "Será removido na Fase 0.5"; adicionada razão de retro-compatibilidade + plano futuro Stripe.
+- [ ] Próximo: validator + commit + PAUSA para Microsprint 0.5.3
 
 ## Decisions taken
 
