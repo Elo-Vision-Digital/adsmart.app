@@ -37,7 +37,7 @@ The pack turns AdSmart's Firebase conventions from passive docs into active tool
 
 ## Cursor mirror (in `.cursor/rules/`)
 
-7 MDC rules mirror the same conventions for Cursor users: `firebase-secrets`, `firestore-schemas`, `firestore-rules`, `firestore-indexes`, `functions-callable`, `wallet-immutability`, `payments-asaas`.
+7 MDC rules mirror the same conventions for Cursor users: `firebase-secrets`, `firestore-schemas`, `firestore-rules`, `firestore-indexes`, `functions-callable`, `wallet-immutability`, `payments-stripe-future` (covers the planned Stripe integration per FUTURE §8; replaces a legacy payment-provider MDC).
 
 ## Helper scripts (in `scripts/firebase/`)
 

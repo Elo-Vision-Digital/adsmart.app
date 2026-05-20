@@ -46,17 +46,19 @@ Retroactive ADRs documenting key decisions made during the AdSmart modernization
 ## ADR-003: SuitPay → Asaas migration (not in current plan)
 
 **Date:** 2026-04-24
-**Status:** Deferred
+**Status:** Superseded by ADR-021 (SuitPay removed) + FUTURE §8 (Stripe is the planned replacement, not Asaas)
 
-**Decision:** Do not invest in hardening the SuitPay integration. Replace it with Asaas in a separate project phase.
+**Update 2026-05-19:** Asaas was never implemented. SuitPay was removed end-to-end in [ADR-021](#adr-021-remove-suitpay-end-to-end--harden-prepare-deploy-against-secretenv-overlap) (2026-05-18). The future payment direction is Stripe (see [FUTURE §8](redesign/FUTURE-IDEAS.md) and [docs/research/08-stripe-future.md](research/08-stripe-future.md)). The original ADR text below is preserved as historical record of the decision-making at that point in time.
 
-**Rationale:**
+**Decision (original, 2026-04-24):** Do not invest in hardening the SuitPay integration. Replace it with Asaas in a separate project phase.
+
+**Rationale (original):**
 - SuitPay webhook hash validation is optional by design — mandatory enforcement would require protocol changes.
 - IP allowlist enforcement would need SuitPay's IP range (not published).
 - Investment in a deprecated integration is waste.
 - Asaas offers PIX + Boleto and better developer tooling.
 
-**Scope of SuitPay maintenance:**
+**Scope of SuitPay maintenance (original):**
 - Keep it running (no breaking changes).
 - Reduce webhook log payload to non-sensitive headers only (done in Phase 3).
 - Add `@deprecated` JSDoc markers (done in Phase 3).
@@ -738,7 +740,7 @@ The crypto implementation lives in a new shared module `functions/src/lib/oauthC
 - **Firebase docs explicit recommendation.** "For applications storing tokens for many users, encrypting them at rest is recommended" and "for agent applications that are less security sensitive, keeping credentials in local, encrypted storage" with a key in Secret Manager is documented as a viable option. Confirmed via `firebase__developerknowledge_answer_query` 2026-05-17.
 - **Node `node:crypto` is the canonical primitive.** The AEAD pattern `createCipheriv('aes-256-gcm', key, iv, { authTagLength: 16 })` + `getAuthTag` / `setAuthTag` is the documented Node.js path. Validated against `/websites/nodejs_latest-v22_x_api` via Context7 2026-05-17.
 - **scrypt for key derivation.** `crypto.scryptSync(secret, salt, 32)` is the NIST SP 800-132 KDF appropriate when the input is a secret string (not a high-entropy random buffer). The salt is a fixed project-scoped constant because the secret itself is per-environment and high-entropy; per-record salts would buy nothing and break determinism for key equality across encryption calls.
-- **KMS overkill at this scale.** Cloud KMS envelope encryption becomes necessary when the use case demands FedRAMP / HIPAA / PCI compliance, CMEK integration, or HSM-backed keys. None apply to AdSmart pre-Asaas-launch.
+- **KMS overkill at this scale.** Cloud KMS envelope encryption becomes necessary when the use case demands FedRAMP / HIPAA / PCI compliance, CMEK integration, or HSM-backed keys. None apply to AdSmart at the current pre-payment-launch stage (Stripe planned in FUTURE §8).
 - **Versioned wire format is the rotation hedge.** `{ v: 1, ... }` lets a future ADR introduce v2 without an offline migration: `decryptField` branches on `v`, both versions coexist on disk during the window.
 
 **Rationale — backward-compat strategy (read-path migration):**
@@ -926,7 +928,7 @@ Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `
 **Trade-offs:**
 
 - **Production cleanup deferred.** Cloud Run services `suitpayWebhook`, `createPixPayment`, `checkPaymentStatus` still exist in `adsmart-web` (the prod project). They are not reachable from the production UI (UI was updated) and they have no traffic (no users). They will be deleted on the next prod deploy + explicit `functions:delete` once the operator authorizes a prod deploy.
-- **`Transaction.payerName` / `payerCpf` / `paymentId` kept in the schema** as optional fields. Historical SuitPay transactions wrote those fields, and the schema must still parse them. They'll be re-purposed for Asaas when payment lands again.
+- **`Transaction.payerName` / `payerCpf` / `paymentId` kept in the schema** as optional fields. Historical SuitPay transactions wrote those fields, and the schema must still parse them. When the next payment provider lands (Stripe planned via FUTURE §8), these fields will be re-evaluated — Stripe uses Customer + PaymentIntent IDs which may map differently.
 - **`functions/deploy/.env` filter is one-way.** It strips secret-shadow keys but does not warn the source `.env` is contaminated; it only warns at build time. Pre-commit hook could add the same scan in the future; out of scope for this ADR.
 
 **Operator follow-ups:**
@@ -937,18 +939,18 @@ Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `
    firebase deploy --only functions --project adsmart-web
    ```
    The deploy will also bring the Sprint 1 / Sprint 2 / Sprint 3 + ADR-020 codebase changes to prod (AES-256-GCM for OAuth, all the schema work, etc).
-2. **Decide on Asaas timeline.** `AddCreditsModal` placeholder is acceptable temporarily; users will see "payment in maintenance".
+2. **Decide on payment provider timeline (Stripe, FUTURE §8).** `AddCreditsModal` placeholder is acceptable temporarily; users will see "payment in maintenance".
 
 **Lessons learned (codified into memory):**
 
 - New memory: [[firebase_deploy_env_overlap_trap]] — the exact failure mode + canonical recovery.
 - New memory: [[firebase_deploy_workflow_rules]] — hard rules for any firebase deploy operation, built from the incidents that produced this ADR.
-- Updated memory: [[suitpay_removed]] (formerly `suitpay_deprecated`) — points operators at this ADR + restoration plan for Asaas.
+- Memory: `suitpay_deprecated` was deleted in Fase 0c (2026-05-19) as redundant — this ADR + `docs/PAYMENTS.md` are the authoritative sources. The next payment provider (Stripe, FUTURE §8) will have its own memory when implementation starts.
 
 **References:**
 
-- [functions/src/lib/oauthCrypto.ts](../functions/src/lib/oauthCrypto.ts) — the encryption module Sprint 3 introduced; sets the bar for "what payment integration should look like when Asaas lands".
-- [functions/src/adminWalletManager.ts](../functions/src/adminWalletManager.ts) — reference for atomic wallet credit transaction; mirror this for Asaas.
+- [functions/src/lib/oauthCrypto.ts](../functions/src/lib/oauthCrypto.ts) — the encryption module Sprint 3 introduced; sets the bar for "what an integration handling sensitive tokens should look like" (relevant when Stripe lands — FUTURE §8).
+- [functions/src/adminWalletManager.ts](../functions/src/adminWalletManager.ts) — reference for atomic wallet credit transaction; mirror this shape for the next payment provider (Stripe, FUTURE §8).
 - [functions/scripts/prepare-deploy.mjs](../functions/scripts/prepare-deploy.mjs) — hardened to filter secret-shadow keys before deploy bundle is materialized.
 - [ADR-017](#adr-017-google-ads-developer-token-rotation--future-app-check-enforcement) — token-rotation procedure cited by the deploy hardening above.
 - [ADR-019](#adr-019-remove-firebase-app-check--aes-256-gcm-for-oauth-tokens-at-rest) — the parallel ADR whose deploy this one unblocked.
@@ -1002,7 +1004,7 @@ Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `
 **Trade-offs:**
 
 - Precisa de wallet management server-side (já existe — `adminWalletManager.ts`).
-- Top-up implica integração de pagamento (Asaas, planejado — vide ADR-021 que removeu SuitPay).
+- Top-up implica integração de pagamento (Stripe, FUTURE §8 — vide ADR-021 que removeu SuitPay).
 - Não suporta enterprise subscription se quisermos no futuro — pode coexistir adicionando esse modelo depois.
 
 **References:**

@@ -52,7 +52,7 @@ Single map of every documentation file. Organized by category. Update this file 
 |---|---|
 | [Integrations.md](Integrations.md) | Index of third-party integrations and their docs |
 | [OAUTH.md](OAUTH.md) | Google Ads + Meta Ads OAuth flows (V2) |
-| [PAYMENTS.md](PAYMENTS.md) | Payment providers — SuitPay (deprecated) → Asaas |
+| [PAYMENTS.md](PAYMENTS.md) | Payment providers — SuitPay (REMOVED in ADR-021) → Stripe (planned, FUTURE §8) |
 | [I18N.md](I18N.md) | i18n architecture, locale file format, contribution flow |
 
 ## Plans & research

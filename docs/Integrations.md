@@ -16,7 +16,7 @@ Index of every third-party service AdSmart talks to, with the dedicated doc, the
 | **Looker Studio** | Embedded report dashboards | Active | [DOMAIN.md](DOMAIN.md) | Template IDs in `.env.production` (`VITE_LOOKER_*`) |
 | **Google Tag Manager** | Analytics + marketing pixels | Active | — | `src/lib/gtm.ts` |
 | **SuitPay** | Payment provider (PIX) | **Removed** (ADR-021, 2026-05-18) — do not restore | [PAYMENTS.md](PAYMENTS.md) | — |
-| **Asaas** | Payment provider (replacement for SuitPay) | Planned | [PAYMENTS.md](PAYMENTS.md) | TBD |
+| **Stripe** | Payment provider (replacement for SuitPay, FUTURE §8) | Planned | [PAYMENTS.md](PAYMENTS.md), [research/08-stripe-future.md](research/08-stripe-future.md) | TBD |
 | **GitHub Actions** | CI + auto-deploy | Active | [DEPLOYMENT.md](DEPLOYMENT.md), [ENVIRONMENT.md](ENVIRONMENT.md) | `.github/workflows/ci.yml`, `.github/workflows/deploy.yml` |
 
 ## Adding a new integration

@@ -9,7 +9,7 @@ export type TransactionStatus = z.infer<typeof TransactionStatusSchema>
 
 // Provider que originou a transação. `admin` é o atual (addUserCredits).
 // `stripe` será adicionado quando FUTURE §8 entrar. `legacy` cobre
-// transações pré-redesign (SuitPay removido, Asaas que nunca chegou).
+// transações pré-redesign (SuitPay removido em ADR-021).
 export const TransactionProviderSchema = z.enum(['admin', 'stripe', 'legacy'])
 export type TransactionProvider = z.infer<typeof TransactionProviderSchema>
 

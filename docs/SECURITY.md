@@ -15,7 +15,7 @@ Rotation checklist:
 - [ ] **Google Ads developer token** (Google Ads → Tools & Settings → API Center → Reset token) — see [ADR-017](Decisions.md#adr-017-google-ads-developer-token-rotation--future-app-check-enforcement) for the full procedure. Removing the literal from source (Sprint 1) does NOT invalidate the leaked value — only the provider reset does.
 - [ ] Google Ads OAuth Client Secret (Google Cloud Console → OAuth 2.0 Client)
 - [ ] Meta Ads App Secret (developers.facebook.com → App → Settings → Advanced → Reset)
-- [ ] SuitPay client ID + client secret (SuitPay dashboard) — will be moot once Asaas migration completes
+- [x] SuitPay client ID + client secret — REMOVED in ADR-021 (2026-05-18); Stripe replacement (FUTURE §8) will define its own secret slots when implemented
 - [ ] Any ENCRYPTION_KEY used for local data encryption (if in use)
 
 After rotation, set new values via:

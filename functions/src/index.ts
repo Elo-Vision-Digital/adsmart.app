@@ -47,8 +47,8 @@ export {
 } from './metaAdsOAuthV2'
 
 // SuitPay (suitpayWebhook, createPixPayment, checkPaymentStatus) removed
-// in ADR-021 (2026-05-18). Payment integration is pending Asaas migration.
-// See docs/PAYMENTS.md.
+// in ADR-021 (2026-05-18). Stripe integration is the planned replacement
+// (FUTURE §8 — see docs/research/08-stripe-future.md and docs/PAYMENTS.md).
 
 // ✅ NOVO: Exportar função de exclusão de dados
 export { deleteUserData } from './deleteUserData'

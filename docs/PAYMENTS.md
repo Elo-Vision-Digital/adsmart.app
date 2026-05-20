@@ -1,18 +1,18 @@
 # Payments
 
-> **Status (2026-05-18):** SuitPay was REMOVED end-to-end in [ADR-021](Decisions.md#adr-021-remove-suitpay-end-to-end--harden-prepare-deploy-against-secretenv-overlap). No payment backend is currently wired. `AddCreditsModal` shows a maintenance notice. Asaas integration is the planned replacement.
+> **Status (2026-05-19):** SuitPay was REMOVED end-to-end in [ADR-021](Decisions.md#adr-021-remove-suitpay-end-to-end--harden-prepare-deploy-against-secretenv-overlap). No payment backend is currently wired. `AddCreditsModal` shows a maintenance notice. **Stripe is the planned replacement (FUTURE §8 — see [docs/research/08-stripe-future.md](research/08-stripe-future.md))**. An earlier deferred ADR (ADR-003) considered a different replacement that was never implemented; Stripe supersedes that direction.
 
 ---
 
 ## Current state
 
 - ✅ **Wallet primitives** (`users/{uid}/wallet/current`, `users/{uid}/transactions/{txId}`) are intact and validated by `UserWalletSchema` and `TransactionSchema` in `@adsmart/shared`.
-- ✅ **Admin credit grants** still work via `addUserCredits` callable (`functions/src/adminWalletManager.ts`) — the canonical reference for "atomic Firestore transaction over wallet + transactions". Mirror this shape when Asaas lands.
-- ❌ **User-facing payment** (PIX, card, etc) has no backend. UI surfaces a maintenance-notice modal.
+- ✅ **Admin credit grants** still work via `addUserCredits` callable (`functions/src/adminWalletManager.ts`) — the canonical reference for "atomic Firestore transaction over wallet + transactions". Mirror this shape when Stripe lands (FUTURE §8).
+- ❌ **User-facing payment** (card, PIX via Stripe BR, etc) has no backend. UI surfaces a maintenance-notice modal.
 
 ## SuitPay (removed)
 
-Removed on 2026-05-18 (ADR-021). Why and how documented in the ADR. No restoration path — when payment functionality returns, it returns as Asaas, not as SuitPay.
+Removed on 2026-05-18 (ADR-021). Why and how documented in the ADR. No restoration path — when payment functionality returns, it returns as Stripe (FUTURE §8), not as SuitPay.
 
 What was deleted:
 - Cloud Functions: `suitpayWebhook`, `createPixPayment`, `checkPaymentStatus` (deleted from `adsmart-web-dev`; pending deletion from `adsmart-web`)
@@ -22,18 +22,20 @@ What was deleted:
 - `config.suitpay` block + `getWebhookUrl` / `getRedirectUrl` helpers in `functions/src/config/index.ts`
 
 What was preserved (intentional):
-- `Transaction.payerName`, `Transaction.payerCpf`, `Transaction.paymentId` — historical SuitPay transactions still parse; these fields will be re-purposed for Asaas.
-- `AddCreditsModal` — kept as a maintenance-notice placeholder. 3 callers depend on it (Header, MobileHeader, TemplatesPage); restoring takes one component edit when Asaas ships.
+- `Transaction.payerName`, `Transaction.payerCpf`, `Transaction.paymentId` — historical SuitPay transactions still parse; these fields stay optional and may be repurposed (or deprecated) when the new payment provider lands.
+- `AddCreditsModal` — kept as a maintenance-notice placeholder. 3 callers depend on it (Header, MobileHeader, TemplatesPage); restoring takes one component edit when Stripe ships (FUTURE §8).
 
-## Asaas (planned)
+## Stripe (planned — FUTURE §8)
 
-When Asaas integration lands:
+When Stripe integration lands ([FUTURE §8](redesign/FUTURE-IDEAS.md), backed by [research/08-stripe-future.md](research/08-stripe-future.md)):
 
-1. **Do not bring back `SUITPAY_*` secrets** — Asaas uses its own credentials (declare via `defineSecret('ASAAS_*')` in `functions/src/config/index.ts`).
-2. **If Asaas hands tokens for storage at rest**, use the AES-256-GCM module at `functions/src/lib/oauthCrypto.ts` (ADR-019). Do not re-implement encryption inline.
+1. **Do not bring back `SUITPAY_*` secrets** — Stripe uses its own credentials (declare via `defineSecret('STRIPE_SECRET_KEY')` and `defineSecret('STRIPE_WEBHOOK_SECRET')` in `functions/src/config/index.ts`).
+2. **Stripe handles tokenization** server-side via PaymentIntents + Customer — no raw card data crosses the boundary. The AES-256-GCM module at `functions/src/lib/oauthCrypto.ts` (ADR-019) stays scoped to OAuth tokens at rest, not payment data.
 3. **Mirror `adminWalletManager.addUserCredits`** for the credit-wallet transaction shape: read `wallet/current` + read transaction-existence guard inside a `runTransaction`, then write the credit transaction + update the wallet balance atomically.
-4. **Restore `AddCreditsModal`** with an Asaas-specific input + redirect/embed flow. The 3 call sites do not need to change.
+4. **Restore `AddCreditsModal`** with a Stripe Checkout (or Payment Element) flow — amount input + redirect/embed. The 3 call sites do not need to change.
 5. **Reuse `useWallet` hook** in the frontend — no changes needed; it reads `users/{uid}/wallet/current` via Firestore snapshot.
+
+> **Historical note:** ADR-003 (2026-04-24, Deferred) initially planned a different SuitPay replacement that was never implemented; Stripe (FUTURE §8) is now the planned direction (recorded in `docs/research/08-stripe-future.md` 2026-05-19). ADR-003 stays as historical record.
 
 ## Wallet credit paths
 

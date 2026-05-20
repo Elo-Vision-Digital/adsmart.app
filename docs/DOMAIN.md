@@ -96,4 +96,4 @@ Three languages: `pt` (default, pt-BR), `en`, `es`.
 
 ## SuitPay (deprecated)
 
-SuitPay is being replaced by Asaas. Do not add new features or harden SuitPay. The `suitpayPayment.ts` and `suitpayWebhook.ts` functions are kept alive only to avoid breaking existing flows until the Asaas migration ships. See `docs/PAYMENTS.md`.
+SuitPay was REMOVED end-to-end in ADR-021 (2026-05-18). The `suitpayPayment.ts` and `suitpayWebhook.ts` source files no longer exist; the corresponding Cloud Functions were deleted from `adsmart-web-dev`. Stripe is the planned replacement (FUTURE §8 — see `docs/research/08-stripe-future.md`). See `docs/PAYMENTS.md` for the current status and integration plan.

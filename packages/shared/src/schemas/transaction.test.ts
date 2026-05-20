@@ -117,7 +117,7 @@ describe('TransactionProviderSchema', () => {
   })
 
   it('rejects unknown provider', () => {
-    expect(TransactionProviderSchema.safeParse('asaas').success).toBe(false)
+    expect(TransactionProviderSchema.safeParse('paypal').success).toBe(false)
     expect(TransactionProviderSchema.safeParse('suitpay').success).toBe(false)
   })
 })
