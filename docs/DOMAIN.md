@@ -24,11 +24,11 @@ A user's wallet lives at `users/{uid}/wallet/current`. It is a single document w
 
 ## Reports
 
-Reports are generated via Looker Studio template links served from a hardcoded `availableTemplates` array in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts). (A `reportTemplates/{id}` Firestore collection was originally planned but never built — see the dead-code note in [DATA-MODEL.md](DATA-MODEL.md).) Generating a report:
+Reports are generated via templates served from a hardcoded `availableTemplates` array in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts). (A `reportTemplates/{id}` Firestore collection was originally planned but never built — see the dead-code note in [DATA-MODEL.md](DATA-MODEL.md).) The legacy embed via Google Data Studio / Looker Studio was removed in Fase 0.5 cleanup (2026-05-19); the redesigned flow renders reports in-app per **ADR-022**, landing in Fase 3.5 (FLOW-3.5). Generating a report:
 
 1. User selects a template and an ad account.
 2. The report function deducts the price (centavos) from `users/{uid}/wallet/current`.
-3. A `reports/{id}` document is created with the Looker Studio URL.
+3. A `reports/{id}` document is created (in-app render replaces the old external link — ADR-022).
 4. The transaction is logged in `users/{uid}/transactions/{id}`.
 
 Reports cannot be deleted (immutable after creation).

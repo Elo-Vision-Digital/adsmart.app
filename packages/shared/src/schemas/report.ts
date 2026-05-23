@@ -28,9 +28,6 @@ export const ReportSchema = z.object({
   campaignIds: z.array(z.string()).optional(),
   allCampaigns: z.boolean().default(false),
   dateRange: DateRangeSchema.default({ startDate: '', endDate: '' }),
-  // Campo legacy — manter para compat com relatórios existentes.
-  // Removido na Fase 0.5 junto com a deleção do Google Data Studio.
-  lookerStudioUrl: z.url().optional(),
   cost: z.number().int().nonnegative().default(0),
   paidAt: zTimestamp().optional(),
   createdAt: zTimestamp(),

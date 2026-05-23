@@ -154,10 +154,10 @@ export function HomePage() {
             : '¿Los informes son personalizables?',
       answer:
         language === 'pt'
-          ? 'Sim! Oferecemos templates profissionais do Looker Studio que podem ser customizados com sua marca.'
+          ? 'Sim! Oferecemos templates profissionais de relatórios que podem ser customizados com sua marca.'
           : language === 'en'
-            ? 'Yes! We offer professional Looker Studio templates that can be customized with your brand.'
-            : '¡Sí! Ofrecemos plantillas profesionales de Looker Studio que pueden personalizarse con tu marca.',
+            ? 'Yes! We offer professional report templates that can be customized with your brand.'
+            : '¡Sí! Ofrecemos plantillas profesionales de informes que pueden personalizarse con tu marca.',
     },
     {
       question:
@@ -455,10 +455,10 @@ export function HomePage() {
                       : 'Plantillas listas',
                 description:
                   language === 'pt'
-                    ? 'Modelos do Looker Studio otimizados para suas campanhas.'
+                    ? 'Modelos de relatórios otimizados para suas campanhas.'
                     : language === 'en'
-                      ? 'Looker Studio templates optimized for your campaigns.'
-                      : 'Plantillas de Looker Studio optimizadas para tus campañas.',
+                      ? 'Report templates optimized for your campaigns.'
+                      : 'Plantillas de informes optimizadas para tus campañas.',
                 icon: BarChart3,
               },
             ].map((feature, index) => (
@@ -584,10 +584,10 @@ export function HomePage() {
                       : 'Elige una plantilla',
                 desc:
                   language === 'pt'
-                    ? 'Modelos profissionais do Looker Studio'
+                    ? 'Modelos profissionais de relatórios'
                     : language === 'en'
-                      ? 'Professional Looker Studio templates'
-                      : 'Plantillas profesionales de Looker Studio',
+                      ? 'Professional report templates'
+                      : 'Plantillas profesionales de informes',
               },
               {
                 num: '3',

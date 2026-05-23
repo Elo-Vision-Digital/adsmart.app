@@ -79,7 +79,7 @@ Run this checklist before every production deploy. Check each item manually unle
 
 - [ ] Report templates load on `/templates`
 - [ ] Generating a report deducts balance
-- [ ] Report success page shows Looker Studio link
+- [ ] Report success page shows status + placeholder for in-app render (full visualization ships in Fase 3.9 REF-9 per ADR-022)
 
 ## Payments (SuitPay — deprecated but must not break)
 

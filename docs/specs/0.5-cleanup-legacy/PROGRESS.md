@@ -45,7 +45,19 @@ current-step: implement
 - [x] Análise: todas as refs em docs ativas são **factuais históricas** (SuitPay was REMOVED in ADR-021) — não forward-looking. Manter intactas.
 - [x] **Decisão sobre fields legacy** (`payerName`, `payerCpf`, `paymentId`): manter `.optional()` por retro-compatibilidade do parse de transações antigas no Firestore; reavaliar quando Stripe ship (FUTURE §8). Aprovado pelo usuário 2026-05-19.
 - [x] Comment em `packages/shared/src/schemas/transaction.ts` atualizado: removida intenção stale "Será removido na Fase 0.5"; adicionada razão de retro-compatibilidade + plano futuro Stripe.
-- [ ] Próximo: validator + commit + PAUSA para Microsprint 0.5.3
+- [x] Microsprint 0.5.2 commit: `8b02480`
+
+### 2026-05-23 — Session 3: Microsprint 0.5.3 (Looker/Data Studio cleanup)
+
+- [x] DELETE `src/config/lookerStudioTemplates.ts`
+- [x] REFACTOR `src/pages/ReportSuccessPage.tsx` → placeholder UI (ADR-022 reference + Fase 3.9 REF-9 marker)
+- [x] REMOVE `lookerStudioUrl` from `packages/shared/src/schemas/report.ts` + test sync
+- [x] UPDATE `src/AGENTS.md` (directory tree)
+- [x] UPDATE 5 docs ativas (DOMAIN, DATA-MODEL, Integrations, QA-CHECKLIST, .claude skill)
+- [x] REPLACE 9 marketing strings em `src/pages/HomePage.tsx` (FAQ + 2 cards) — "Looker Studio templates" → "professional report templates" nas 3 línguas
+- [x] CONTRACT amendment: Final sensor exemption para Decisions.md/DOMAIN.md/DATA-MODEL.md/Integrations.md/REFACTOR-PLAN.md (refs históricas/explanatórias, mesmo pattern de Decisions.md em 0.5.1) + corrigida scope para excluir build artifacts (`functions/lib/`, `packages/shared/dist/`)
+- [x] Sensores 0.5.3: typecheck exit 0 + 195/195 tests + grep zero hits ativos
+- [x] Validator agent: 1ª pass FAIL (comment Looker em ReportSuccessPage + sensor sem exemption) → fixes aplicados → tudo verde
 
 ## Decisions taken
 

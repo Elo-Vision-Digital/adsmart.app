@@ -1,6 +1,6 @@
 ---
 name: new-report-business-type
-description: Adiciona um novo tipo de negócio ao fluxo FLOW-3 (geração de relatório) da AdSmart. Use quando o usuário pedir "adicionar tipo de negócio X", "novo business type para relatório", "suportar [tipo de loja/serviço] no fluxo de relatório", ou referenciar FLOW-3. Cobre update do schema businessType, configuração no typesBusinessConfig, mapping para template Looker Studio, i18n nas 3 línguas e teste do fluxo.
+description: Adiciona um novo tipo de negócio ao fluxo FLOW-3 (geração de relatório) da AdSmart. Use quando o usuário pedir "adicionar tipo de negócio X", "novo business type para relatório", "suportar [tipo de loja/serviço] no fluxo de relatório", ou referenciar FLOW-3. Cobre update do schema businessType, configuração no typesBusinessConfig, definição das métricas para render in-app (ADR-022), i18n nas 3 línguas e teste do fluxo.
 ---
 
 # New report business type — AdSmart FLOW-3
@@ -14,12 +14,12 @@ Auto-invoke quando o usuário pedir:
 - "Suportar [vertical] em FLOW-3"
 - "Novo business type para [nicho]"
 
-NÃO use para: criar novo template Looker Studio sem tipo de negócio (use `feature-dev:feature-dev`).
+NÃO use para: criar novo componente de visualização in-app sem tipo de negócio (use `feature-dev:feature-dev`).
 
 ## Pré-requisitos
 
 - Schema `businessType.ts` existe em `packages/shared/src/schemas/` (verificar)
-- Template Looker Studio do tipo já foi definido externamente (URL + ID)
+- Configuração das métricas/seções a renderizar in-app (ADR-022) já foi definida (PM/usuário)
 - Decisão sobre quais métricas o relatório vai mostrar (definido com PM/usuário)
 
 ## Workflow
@@ -52,18 +52,18 @@ Adicionar entrada para o novo tipo:
 {
   id: 'new-type',
   i18nKey: 'reportTypes.newType',
-  lookerTemplateId: 'TEMPLATE_ID_FROM_LOOKER',
+  reportSections: ['overview', 'campaigns', 'performance'], // seções in-app (ADR-022)
   recommendedPlatforms: ['google-ads', 'meta-ads'],
   // metadados específicos
 }
 ```
 
-### Passo 3 — Template Looker Studio
+### Passo 3 — Configuração de métricas para render in-app (ADR-022)
 
-Confirmar mapping:
-- Template URL (ex: `https://lookerstudio.google.com/reporting/{templateId}`)
-- Parâmetros que o template aceita (`ds.parameter1`)
-- Métricas que o template renderiza
+Definir como o relatório vai renderizar in-app (substitui a etapa antiga de template Looker Studio, removido em Fase 0.5):
+- Seções a renderizar (overview, campanhas, performance, comparativos)
+- Métricas-chave por seção (CPA, ROAS, CTR, etc.)
+- Componentes de visualização aplicáveis (tabela, gráfico, KPI card)
 
 Documentar em `docs/REPORT-TEMPLATES.md` (criar se não existir).
 
@@ -119,7 +119,8 @@ bun run dev
 
 - ❌ Hardcodar `reportType === 'new-type'` em vários lugares — sempre via config
 - ❌ Pular i18n nas 3 línguas
-- ❌ Não documentar o template Looker (vai virar tribal knowledge)
+- ❌ Não documentar as seções/métricas do tipo (vai virar tribal knowledge)
+- ❌ Referenciar Looker Studio / lookerTemplateId — removido em Fase 0.5; in-app render via ADR-022
 
 ## Referências
 

@@ -247,7 +247,6 @@ Cleanup (rule + DATA-MODEL entry + backup config) is tracked as a follow-up to P
   campaignIds?: string[],
   allCampaigns: boolean,
   dateRange: { startDate: string, endDate: string },  // ISO 8601
-  lookerStudioUrl?: string,           // populated when status === 'completed'
   cost: number,                       // BRL centavos (e.g. 500 = R$ 5,00)
   paidAt?: Timestamp,
   createdAt: Timestamp,
@@ -288,7 +287,7 @@ Known IDs: `google_lancamento`, `google_negocio_local`, `meta_lancamento`, `meta
 
 ## reportTemplates/{id} _(dead code — pending removal)_
 
-A `reportTemplates/{id}` collection is defined in [firestore.rules:88-91](../firestore.rules) (authenticated read, Admin SDK write) and was originally intended to hold Looker Studio template configs. **No application code reads or writes this collection** — templates are served from a hardcoded array (`availableTemplates`) in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts), with a wholly different shape (`TemplateData` — `id, platform, category, type, imageUrl, features`; no `name/description/lookerStudioTemplateId/isActive/createdAt`).
+A `reportTemplates/{id}` collection is defined in [firestore.rules:88-91](../firestore.rules) (authenticated read, Admin SDK write) and was originally intended to hold external dashboard template configs (Looker Studio era, since deprecated — render in-app per ADR-022). **No application code reads or writes this collection** — templates are served from a hardcoded array (`availableTemplates`) in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts), with a wholly different shape (`TemplateData` — `id, platform, category, type, imageUrl, features`; no `name/description/lookerStudioTemplateId/isActive/createdAt`).
 
 The unused `ReportTemplate` TypeScript interface was removed from `src/types/index.ts` in C6.5 (zero consumers). Cleanup of the firestore.rules entry is grouped with the top-level `campaigns/{id}` cleanup as a follow-up to Phase D, pending production-data verification via `gcloud firestore`.
 
