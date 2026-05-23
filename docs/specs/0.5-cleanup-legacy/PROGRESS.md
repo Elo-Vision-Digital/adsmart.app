@@ -58,6 +58,13 @@ current-step: implement
 - [x] CONTRACT amendment: Final sensor exemption para Decisions.md/DOMAIN.md/DATA-MODEL.md/Integrations.md/REFACTOR-PLAN.md (refs históricas/explanatórias, mesmo pattern de Decisions.md em 0.5.1) + corrigida scope para excluir build artifacts (`functions/lib/`, `packages/shared/dist/`)
 - [x] Sensores 0.5.3: typecheck exit 0 + 195/195 tests + grep zero hits ativos
 - [x] Validator agent: 1ª pass FAIL (comment Looker em ReportSuccessPage + sensor sem exemption) → fixes aplicados → tudo verde
+- [x] Microsprint 0.5.3 commit: `1581235`
+
+### 2026-05-23 — Session 4: Microsprint 0.5.4 (MetaReviewDemo dev-only flag)
+
+- [x] `src/App.tsx` Route `/meta-review-demo` envolvido em `{import.meta.env.MODE === 'development' && (...)}`; comment atualizado para "dev-only"
+- [x] Sensores: typecheck exit 0 + 195/195 tests
+- [x] Validator agent: PASS (single-file change, scope-clean)
 
 ## Decisions taken
 

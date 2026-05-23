@@ -121,15 +121,17 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              {/* Temporariamente mantido para demonstração Meta - remover após aprovação */}
-              <Route
-                path="/meta-review-demo"
-                element={
-                  <PrivateRoute>
-                    <MetaReviewDemo />
-                  </PrivateRoute>
-                }
-              />
+              {/* Demo da revisão Meta — dev-only. Em produção a rota não é registrada (ship em Fase 0.5 cleanup). */}
+              {import.meta.env.MODE === 'development' && (
+                <Route
+                  path="/meta-review-demo"
+                  element={
+                    <PrivateRoute>
+                      <MetaReviewDemo />
+                    </PrivateRoute>
+                  }
+                />
+              )}
               <Route
                 path="/admin"
                 element={
