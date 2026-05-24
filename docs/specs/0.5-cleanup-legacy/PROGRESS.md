@@ -2,8 +2,9 @@
 sprint-id: "0.5"
 name: "cleanup-legacy"
 started: "2026-05-19"
-status: in-progress
-current-step: implement
+closed: "2026-05-23"
+status: complete
+current-step: ship
 ---
 
 # Sprint 0.5 — cleanup-legacy — PROGRESS

@@ -2,6 +2,20 @@
 
 Append-only log of significant changes. Most recent at the top. Each entry uses the parseable header `## [YYYY-MM-DD] — Title` for tooling/lint.
 
+## [2026-05-23] — Redesign Fase 0.5 (cleanup-legacy) shipped
+
+Sprint 0.5 completa — quinta dogfood do harness. 4 microsprints com pausa entre cada (workflow novo confirmado com user 2026-05-19), validator agent PASS em todas, 27 items do CONTRACT entregues.
+
+**Microsprint 0.5.1 — Asaas cleanup** (`15160d7`): 21 arquivos. Refs forward-looking de Asaas → Stripe (FUTURE §8). ADR-003 preservado com Update note. Refs históricas em Decisions.md mantidas (ADR-003 Superseded + ADR-021 incident).
+
+**Microsprint 0.5.2 — SuitPay cleanup final** (`8b02480`): comment em `transaction.ts` atualizado. Fields legacy (`payerName`, `payerCpf`, `paymentId`) mantidos `.optional()` por retro-compatibilidade do parse. Reavaliar quando Stripe ship.
+
+**Microsprint 0.5.3 — Looker/Data Studio cleanup** (`1581235`): `src/config/lookerStudioTemplates.ts` deletado. `ReportSuccessPage.tsx` refactored para placeholder UI (ADR-022 reference + Fase 3.9 REF-9 marker). `lookerStudioUrl` removido de `report.ts` + test sync. 9 strings de marketing em `HomePage.tsx` substituídas nas 3 línguas. 5 docs ativos atualizados; refs históricas em DOMAIN/DATA-MODEL/Decisions/Integrations/REFACTOR-PLAN preservadas (mesmo pattern de Decisions.md em 0.5.1).
+
+**Microsprint 0.5.4 — MetaReviewDemo dev-only flag** (`612eb02`): Route `/meta-review-demo` envolvida em `import.meta.env.MODE === 'development'`. Em produção a rota não é registrada (retorna 404).
+
+**Sensores Wave 5**: typecheck exit 0 + 195/195 tests + lint 0 errors. EVALUATION.md `verdict: pass`.
+
 ## [2026-05-19] — Redesign Fase 0d (foundation-adrs) shipped
 
 Sprint 0d completa via dogfood do harness (quarta dogfood, depois de 0a, 0b, 0c). 14 items entregues em 3 waves com validator agent PASS em cada wave. 12 ADRs novos (ADR-022 a ADR-033) publicados em `docs/Decisions.md`.
