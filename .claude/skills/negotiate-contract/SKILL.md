@@ -27,7 +27,31 @@ grep -q "status: draft" "$SPRINT/CONTRACT.md" || echo "CONTRACT not in draft —
 
 ## Workflow
 
-### Passo 1 — Implementer propõe items
+### Passo 1 — Pre-flight repo-wide (OBRIGATÓRIO para sprints de cleanup/refactor textual)
+
+Antes de propor items, rodar grep de escopo COMPLETO no repo para garantir que nenhum hit fica fora do CONTRACT. Lição de Microsprint 0.5.3 (Looker cleanup): o CONTRACT só listava `src/`, `functions/`, `packages/shared/`, `docs/*.md` — `README.md` (linha 3) e `AGENTS.md` (linha 7) escaparam e geraram hotfix PR #10 dias depois.
+
+Para qualquer sprint que envolva "remover refs a X" / "renomear Y" / "limpar legacy Z":
+
+```bash
+# Grep repo-wide, ignorando build artifacts e .git
+grep -rln "TERMO\|VARIANTE" \
+  --exclude-dir={node_modules,.git,dist,build,lib,.next,.turbo,coverage} \
+  . 2>/dev/null | sort
+```
+
+Comparar a lista com os arquivos cobertos pelos items do CONTRACT. Arquivos não cobertos:
+- Ou entram em items novos
+- Ou entram em `Out of scope` com justificativa explícita (ex: "histórico imutável marcado Completed")
+
+Checklist mínimo para não esquecer arquivos root-level:
+- [ ] `README.md`
+- [ ] `AGENTS.md`, `CLAUDE.md`
+- [ ] `package.json` (descriptions, keywords)
+- [ ] `.github/` (templates, workflows com strings)
+- [ ] `.claude/skills/`, `.claude/agents/` (instruções de IA)
+
+### Passo 2 — Implementer propõe items
 
 A partir do SPEC § Task breakdown, decompor em items atômicos (cada um 2-4h de trabalho):
 
@@ -43,7 +67,7 @@ Cada item:
 - Tem **acceptance test computacional** (não inferencial)
 - Tem **dependência explícita** (se aplicável)
 
-### Passo 2 — Validator agent revisa
+### Passo 3 — Validator agent revisa
 
 Invocar o validator agent (multi-process):
 
@@ -60,7 +84,7 @@ Retorne em até 200 palavras. Score binário por item.
 ")
 ```
 
-### Passo 3 — Iterar até PASS
+### Passo 4 — Iterar até PASS
 
 Se Validator apontar problemas:
 - **Item não atômico** → quebrar em 2+ items
@@ -68,13 +92,13 @@ Se Validator apontar problemas:
 - **Dependência errada** → corrigir
 - **Item faltando** → adicionar (se cabe no escopo do SPEC)
 
-Repetir Passo 2 até Validator retornar PASS em todos os items.
+Repetir Passo 3 até Validator retornar PASS em todos os items.
 
-### Passo 4 — Out of scope explícito
+### Passo 5 — Out of scope explícito
 
 CONTRACT precisa de seção `## Out of scope (explicit)` listando o que NÃO vai entrar. Pega items que parecem relacionados mas ficam para outras sprints/fases. Bloqueio de scope creep.
 
-### Passo 5 — Sensors a rodar
+### Passo 6 — Sensors a rodar
 
 CONTRACT lista os sensores que vão ser rodados ao fim:
 
@@ -93,7 +117,7 @@ CONTRACT lista os sensores que vão ser rodados ao fim:
 - [ ] `Agent(validator, "verificar entrega da Wave N")` PASS
 ```
 
-### Passo 6 — Lock
+### Passo 7 — Lock
 
 Trocar frontmatter:
 
@@ -124,6 +148,7 @@ A partir deste ponto:
 - ❌ Items 8+h (não atômicos) — quebrar
 - ❌ "Out of scope" vazio — sempre lista algo (regra anti scope-creep)
 - ❌ Mesmo agente Implementer + Validator (princípio 13 do roadmap)
+- ❌ Pular Passo 1 (pre-flight repo-wide) em sprint de cleanup textual — caso real: Microsprint 0.5.3 deixou `README.md` + `AGENTS.md` escaparem, gerou hotfix PR #10
 
 ## Referências
 
