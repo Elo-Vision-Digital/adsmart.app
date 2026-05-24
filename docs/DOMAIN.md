@@ -24,11 +24,11 @@ A user's wallet lives at `users/{uid}/wallet/current`. It is a single document w
 
 ## Reports
 
-Reports are generated via Looker Studio template links served from a hardcoded `availableTemplates` array in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts). (A `reportTemplates/{id}` Firestore collection was originally planned but never built — see the dead-code note in [DATA-MODEL.md](DATA-MODEL.md).) Generating a report:
+Reports are generated via templates served from a hardcoded `availableTemplates` array in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts). (A `reportTemplates/{id}` Firestore collection was originally planned but never built — see the dead-code note in [DATA-MODEL.md](DATA-MODEL.md).) The legacy embed via Google Data Studio / Looker Studio was removed in Fase 0.5 cleanup (2026-05-19); the redesigned flow renders reports in-app per **ADR-022**, landing in Fase 3.5 (FLOW-3.5). Generating a report:
 
 1. User selects a template and an ad account.
 2. The report function deducts the price (centavos) from `users/{uid}/wallet/current`.
-3. A `reports/{id}` document is created with the Looker Studio URL.
+3. A `reports/{id}` document is created (in-app render replaces the old external link — ADR-022).
 4. The transaction is logged in `users/{uid}/transactions/{id}`.
 
 Reports cannot be deleted (immutable after creation).
@@ -96,4 +96,4 @@ Three languages: `pt` (default, pt-BR), `en`, `es`.
 
 ## SuitPay (deprecated)
 
-SuitPay is being replaced by Asaas. Do not add new features or harden SuitPay. The `suitpayPayment.ts` and `suitpayWebhook.ts` functions are kept alive only to avoid breaking existing flows until the Asaas migration ships. See `docs/PAYMENTS.md`.
+SuitPay was REMOVED end-to-end in ADR-021 (2026-05-18). The `suitpayPayment.ts` and `suitpayWebhook.ts` source files no longer exist; the corresponding Cloud Functions were deleted from `adsmart-web-dev`. Stripe is the planned replacement (FUTURE §8 — see `docs/research/08-stripe-future.md`). See `docs/PAYMENTS.md` for the current status and integration plan.

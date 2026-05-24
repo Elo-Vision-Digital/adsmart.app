@@ -194,10 +194,10 @@ export const getDashboardMetrics = onCall({ memory: '512MiB' }, async (request) 
 
   // Revenue totals.
   // `adminAction` is set ONLY when an admin manually credits a wallet via
-  // adminWalletManager. Default credit flows (PIX, Asaas, etc) omit the field,
-  // so totalCents - grantedCents == realCents (revenue). A Math.max(0, ...) floor
-  // protects against the rare race where the granted aggregate observed a write
-  // the totals aggregate did not (or vice-versa).
+  // adminWalletManager. Default credit flows (future Stripe top-ups, etc) omit
+  // the field, so totalCents - grantedCents == realCents (revenue). A
+  // Math.max(0, ...) floor protects against the rare race where the granted
+  // aggregate observed a write the totals aggregate did not (or vice-versa).
   const totalCents = allCreditsTotal.data().totalCents ?? 0
   const creditsCents = grantedTotal.data().creditsCents ?? 0
   const realCents = Math.max(0, totalCents - creditsCents)

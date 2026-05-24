@@ -62,7 +62,7 @@ Project memories at `.claude/projects/.../memory/`. Key entries:
 
 - `admin_claim_policy.md` — custom claims authoritative, email fallback
 - `firebase_secrets.md` — all secrets via `defineSecret` in `functions/src/config/index.ts`
-- `suitpay_deprecated.md` — SuitPay removed (ADR-021); do not restore; Asaas replaces it
+- ~~`suitpay_deprecated.md`~~ — DELETED in Fase 0c (ADR-021 removed SuitPay; Stripe is the planned replacement via FUTURE §8). History preserved in ADR-021 + `docs/CHANGES.md`.
 - `firebase_deploy_workflow_rules.md` — hard rules from real deploy incidents
 
 `MEMORY.md` indexes the full set; consult it when continuing prior work.

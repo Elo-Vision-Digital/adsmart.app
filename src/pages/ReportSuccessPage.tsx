@@ -1,5 +1,5 @@
 import { doc, getDoc } from 'firebase/firestore'
-import { AlertCircle, CheckCircle, Clock, ExternalLink, FileText, Home } from 'lucide-react'
+import { AlertCircle, CheckCircle, Clock, FileText, Home } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
@@ -7,6 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { db } from '@/firebase/config'
 import type { Report } from '@/types'
+
+// Placeholder UI da página /report-success. Será refatorada/substituída na
+// Fase 3.9 (REF-9 do redesign roadmap) por `/reports/:id`, parte do novo
+// fluxo de relatório (FLOW-3.5). Esta versão remove a dependência do
+// dashboard externo (substituído por render in-app via ADR-022) e mantém o
+// mínimo funcional: ler o doc, mostrar status, oferecer navegação.
 
 type ReportDoc = Partial<Report> & { createdAt?: { seconds: number } | Date }
 
@@ -54,9 +60,8 @@ export function ReportSuccessPage() {
     )
   }
 
-  const lookerStudioUrl = reportData?.lookerStudioUrl
   const status = reportData?.status ?? 'pending'
-  const isCompleted = status === 'completed' && Boolean(lookerStudioUrl)
+  const isCompleted = status === 'completed'
   const isFailed = status === 'failed'
 
   const statusLabel: Record<typeof status, { text: string; color: string; dot: string }> = {
@@ -122,7 +127,7 @@ export function ReportSuccessPage() {
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               {isCompleted
-                ? 'Seu relatório está pronto para visualização'
+                ? 'Seu relatório está pronto. A visualização completa estará disponível em breve.'
                 : isFailed
                   ? 'Algo deu errado durante o processamento'
                   : 'Você receberá uma notificação assim que estiver pronto'}
@@ -162,89 +167,37 @@ export function ReportSuccessPage() {
 
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Acessar Relatório</CardTitle>
+              <CardTitle>Visualização</CardTitle>
               <CardDescription>
-                {isCompleted
-                  ? 'Clique no botão abaixo para visualizar seu relatório no Looker Studio'
-                  : isFailed
-                    ? 'O link ficará disponível depois que o problema for resolvido'
-                    : 'O link aparecerá aqui assim que o processamento for concluído'}
+                A interface completa de visualização está sendo construída — relatório render in-app
+                (ADR-022) chega em breve no fluxo redesenhado.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isCompleted && lookerStudioUrl ? (
-                <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                      📊 Seu dashboard interativo está disponível com todas as métricas e análises
-                      das campanhas selecionadas.
-                    </p>
-                    <Button
-                      className="w-full"
-                      size="lg"
-                      onClick={() => window.open(lookerStudioUrl, '_blank')}
-                    >
-                      <ExternalLink className="mr-2 h-5 w-5" />
-                      Abrir Relatório no Looker Studio
-                    </Button>
-                  </div>
-
-                  <div className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400">
-                    <FileText className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium mb-1">Link permanente:</p>
-                      <code className="block p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs break-all">
-                        {lookerStudioUrl}
-                      </code>
-                    </div>
-                  </div>
-                </div>
-              ) : isFailed ? (
+              {isFailed ? (
                 <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-800 dark:text-red-200">
                   {reportData?.error ||
                     'Não conseguimos gerar este relatório. Tente novamente ou entre em contato com o suporte.'}
                 </div>
               ) : (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-800 dark:text-blue-200">
-                  Estamos coletando os dados das campanhas selecionadas. Esse processo costuma levar
-                  alguns minutos — você pode atualizar a página ou voltar mais tarde.
+                <div className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <FileText className="w-5 h-5 mt-0.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                  <p>
+                    Os dados do relatório (ID <code className="font-mono text-xs">{reportId}</code>)
+                    foram registrados. A página de detalhes completa será disponibilizada em uma
+                    próxima atualização do produto.
+                  </p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Próximos Passos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500">✓</span>
-                  Compartilhe o link do relatório com sua equipe ou clientes
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500">✓</span>
-                  Os dados são atualizados automaticamente no Looker Studio
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500">✓</span>
-                  Você pode editar e personalizar o visual do relatório
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500">✓</span>
-                  Exporte em PDF ou programe envios automáticos
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-4 mt-6">
+          <div className="flex gap-4">
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
               <Home className="mr-2 h-4 w-4" />
               Voltar ao Dashboard
             </Button>
-            <Button onClick={() => navigate('/templates')}>Gerar Novo Relatório</Button>
+            <Button onClick={() => navigate('/reports')}>Ver Meus Relatórios</Button>
           </div>
         </div>
       </div>

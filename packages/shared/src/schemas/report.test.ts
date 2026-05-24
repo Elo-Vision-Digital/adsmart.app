@@ -12,7 +12,6 @@ const validReport = {
   campaignIds: ['camp-1', 'camp-2'],
   allCampaigns: false,
   dateRange: { startDate: '2026-04-01', endDate: '2026-04-30' },
-  lookerStudioUrl: 'https://lookerstudio.google.com/abc',
   cost: 500,
   createdAt: new Date('2026-04-25T10:00:00Z'),
   completedAt: new Date('2026-04-25T10:05:00Z'),
@@ -92,7 +91,7 @@ describe('ReportStatusSchema', () => {
 
 describe('ReportSchema — campos novos do redesign (FOUND-1)', () => {
   it('parses report with new multi-platform fields', () => {
-    const { templateId: _t, lookerStudioUrl: _l, ...rest } = validReport
+    const { templateId: _t, ...rest } = validReport
     const newFlowReport = {
       ...rest,
       platforms: ['google_ads', 'meta_ads'] as const,

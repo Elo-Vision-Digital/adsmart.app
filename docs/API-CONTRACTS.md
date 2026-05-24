@@ -375,7 +375,7 @@ Powers `/admin/dashboard`. Runs 7 reads in parallel via `Promise.allSettled` ove
 
 ## Payment callables — removed
 
-SuitPay was removed end-to-end in [ADR-021](Decisions.md#adr-021-remove-suitpay-end-to-end--harden-prepare-deploy-against-secretenv-overlap) (2026-05-18). The callables `suitpayWebhook`, `createPixPayment`, and `checkPaymentStatus` no longer exist. Asaas replacement is planned but not yet wired — see [PAYMENTS.md](PAYMENTS.md).
+SuitPay was removed end-to-end in [ADR-021](Decisions.md#adr-021-remove-suitpay-end-to-end--harden-prepare-deploy-against-secretenv-overlap) (2026-05-18). The callables `suitpayWebhook`, `createPixPayment`, and `checkPaymentStatus` no longer exist. Stripe replacement is planned (FUTURE §8) but not yet wired — see [PAYMENTS.md](PAYMENTS.md) and [research/08-stripe-future.md](research/08-stripe-future.md).
 
 ---
 

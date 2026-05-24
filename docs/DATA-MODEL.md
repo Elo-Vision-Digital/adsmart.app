@@ -32,7 +32,7 @@ Firestore database for project `adsmart-app`. All monetary values are in **BRL c
 | `processedRequests/{requestId}` | **Planned (FOUND-1)** — idempotency keys (Harness Engineering) | Admin SDK only |
 | `llmCalls/{callId}` | **Planned (FOUND-1)** — observabilidade chamadas LLM (custo/tokens/latência) | Admin SDK only |
 
-SuitPay-era payment collections (`webhook_logs`, `pendingPayments`, `payments`, `orphan_payments`) eram da integração SuitPay removida (ADR-021, 2026-05-18). Documentos residuais são read-only legacy. Decisão atualizada (2026-05-19): Asaas **NÃO** será implementado — Stripe substitui ambos quando FUTURE §8 entrar (ver [docs/redesign/FUTURE-IDEAS.md §8](redesign/FUTURE-IDEAS.md)). Roadmap inicial NÃO tem gateway de pagamento ativo — créditos só via admin (`addUserCredits`).
+SuitPay-era payment collections (`webhook_logs`, `pendingPayments`, `payments`, `orphan_payments`) eram da integração SuitPay removida (ADR-021, 2026-05-18). Documentos residuais são read-only legacy. Decisão atual (2026-05-19): Stripe substitui SuitPay quando FUTURE §8 entrar (ver [docs/redesign/FUTURE-IDEAS.md §8](redesign/FUTURE-IDEAS.md) + [docs/research/08-stripe-future.md](research/08-stripe-future.md)). Roadmap inicial NÃO tem gateway de pagamento ativo — créditos só via admin (`addUserCredits`).
 
 > **Foundation Schemas (Sprint -1 — concluída 2026-05-19)**: schemas Zod source-of-truth criados em [packages/shared/src/schemas/](../packages/shared/src/schemas/) (`businessType.ts`, `processedRequest.ts`, `publicReportShare.ts`, `aiReportInsight.ts`, `llmCall.ts`, `reportPlatformData.ts`). Refactor aditivo de `report.ts`, `transaction.ts`, `userWallet.ts`, `productPrice.ts` adicionou campos opcionais novos sem remover legacy. Collections marcadas como "Planned" acima são populadas a partir da Fase 3.5 (novo fluxo de relatório).
 
@@ -103,7 +103,7 @@ Source of truth: [packages/shared/src/schemas/userWallet.ts](../packages/shared/
 Client rule: `allow write: if false` (enforced by subcollection rule for `wallet`). Writes are server-only:
 
 - **Bootstrap** (`balance: 0`) — seeded together with `users/{uid}` by the [bootstrapUser](../functions/src/bootstrapUser.ts) Auth blocking trigger (`beforeUserCreated`, single batched write). See [ADR-010](Decisions.md#adr-010-per-user-state-bootstrap-moved-to-server-side-auth-blocking-trigger) for rationale.
-- **Credit / debit** — via Admin SDK in [adminWalletManager](../functions/src/adminWalletManager.ts). The SuitPay webhook path was removed in ADR-021; Asaas replacement will plug in here when wired.
+- **Credit / debit** — via Admin SDK in [adminWalletManager](../functions/src/adminWalletManager.ts). The SuitPay webhook path was removed in ADR-021; Stripe replacement (FUTURE §8) will plug in here when wired.
 
 The [useWallet hook](../src/hooks/useWallet.ts) only **reads**. As a defensive fallback, if the snapshot reports the document missing the hook surfaces a virtual `EMPTY_WALLET` (`balance: 0`, `updatedAt: epoch`) without writing — but post-trigger every signup arrives with a real doc.
 
@@ -134,7 +134,7 @@ Append-only ledger. Written only by Cloud Functions (client writes are blocked b
   adminReason?: string,
   adminIP?: string,
 
-  // SuitPay PIX payer metadata — deprecated, removed when Asaas migration lands
+  // SuitPay PIX payer metadata — deprecated (SuitPay removed ADR-021); stays optional in schema; will be re-evaluated when Stripe lands (FUTURE §8)
   payerName?: string,
   payerCpf?: string         // CPF is masked: first 3 digits + "***"
 }
@@ -247,7 +247,6 @@ Cleanup (rule + DATA-MODEL entry + backup config) is tracked as a follow-up to P
   campaignIds?: string[],
   allCampaigns: boolean,
   dateRange: { startDate: string, endDate: string },  // ISO 8601
-  lookerStudioUrl?: string,           // populated when status === 'completed'
   cost: number,                       // BRL centavos (e.g. 500 = R$ 5,00)
   paidAt?: Timestamp,
   createdAt: Timestamp,
@@ -288,7 +287,7 @@ Known IDs: `google_lancamento`, `google_negocio_local`, `meta_lancamento`, `meta
 
 ## reportTemplates/{id} _(dead code — pending removal)_
 
-A `reportTemplates/{id}` collection is defined in [firestore.rules:88-91](../firestore.rules) (authenticated read, Admin SDK write) and was originally intended to hold Looker Studio template configs. **No application code reads or writes this collection** — templates are served from a hardcoded array (`availableTemplates`) in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts), with a wholly different shape (`TemplateData` — `id, platform, category, type, imageUrl, features`; no `name/description/lookerStudioTemplateId/isActive/createdAt`).
+A `reportTemplates/{id}` collection is defined in [firestore.rules:88-91](../firestore.rules) (authenticated read, Admin SDK write) and was originally intended to hold external dashboard template configs (Looker Studio era, since deprecated — render in-app per ADR-022). **No application code reads or writes this collection** — templates are served from a hardcoded array (`availableTemplates`) in [src/components/templates/templateData.ts](../src/components/templates/templateData.ts), with a wholly different shape (`TemplateData` — `id, platform, category, type, imageUrl, features`; no `name/description/lookerStudioTemplateId/isActive/createdAt`).
 
 The unused `ReportTemplate` TypeScript interface was removed from `src/types/index.ts` in C6.5 (zero consumers). Cleanup of the firestore.rules entry is grouped with the top-level `campaigns/{id}` cleanup as a follow-up to Phase D, pending production-data verification via `gcloud firestore`.
 

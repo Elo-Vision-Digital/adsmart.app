@@ -17,9 +17,9 @@ interface AddCreditsModalProps {
 // SuitPay was removed in ADR-021 (2026-05-18). This modal stays in the UI
 // because three callers reference it (Header, MobileHeader, TemplatesPage)
 // and the "add credits" feature itself is permanent — only the payment
-// backend changed. When the Asaas integration ships, restore the amount
-// input + redirect to whatever flow Asaas requires. Until then, surface a
-// clear maintenance notice instead of silently failing on a 404 callable.
+// backend changed. When Stripe integration ships (FUTURE §8), restore the
+// amount input + redirect to Stripe Checkout. Until then, surface a clear
+// maintenance notice instead of silently failing on a 404 callable.
 export function AddCreditsModal({ open, onOpenChange }: AddCreditsModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

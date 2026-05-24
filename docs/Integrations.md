@@ -11,12 +11,12 @@ Index of every third-party service AdSmart talks to, with the dedicated doc, the
 | **Firebase Cloud Functions (v2, Node 22)** | Server-side logic, OAuth, wallet mutations | Active | [API-CONTRACTS.md](API-CONTRACTS.md), [DEPLOYMENT.md](DEPLOYMENT.md) | `functions/src/index.ts` |
 | **Firebase Hosting** | Static SPA delivery, security headers | Active | [DEPLOYMENT.md](DEPLOYMENT.md) | `firebase.json` |
 | **Firebase Secret Manager** | Backend secret storage (`defineSecret` pattern) | Active | [SECURITY.md](SECURITY.md), [ENVIRONMENT.md](ENVIRONMENT.md) | `functions/src/config/index.ts` |
-| **Google Ads API (OAuth + Reporting)** | Connect ad account, generate Looker reports | Active | [OAUTH.md](OAUTH.md) | `functions/src/googleAdsOAuthV2.ts`, `src/services/oauthServices.ts` |
-| **Meta Ads API (OAuth + Reporting)** | Connect ad account, generate Looker reports | Active | [OAUTH.md](OAUTH.md) | `functions/src/metaAdsOAuth.ts` |
-| **Looker Studio** | Embedded report dashboards | Active | [DOMAIN.md](DOMAIN.md) | Template IDs in `.env.production` (`VITE_LOOKER_*`) |
+| **Google Ads API (OAuth + Reporting)** | Connect ad account, fetch campaign/performance data for in-app reports (ADR-022) | Active | [OAUTH.md](OAUTH.md) | `functions/src/googleAdsOAuthV2.ts`, `src/services/oauthServices.ts` |
+| **Meta Ads API (OAuth + Reporting)** | Connect ad account, fetch campaign/performance data for in-app reports (ADR-022) | Active | [OAUTH.md](OAUTH.md) | `functions/src/metaAdsOAuth.ts` |
+| ~~**Looker Studio**~~ | Embedded report dashboards — **Removed** (Fase 0.5 cleanup, 2026-05-19); reports render in-app per **ADR-022** (Fase 3.5) | Removed | [Decisions.md § ADR-022](Decisions.md) | — |
 | **Google Tag Manager** | Analytics + marketing pixels | Active | — | `src/lib/gtm.ts` |
 | **SuitPay** | Payment provider (PIX) | **Removed** (ADR-021, 2026-05-18) — do not restore | [PAYMENTS.md](PAYMENTS.md) | — |
-| **Asaas** | Payment provider (replacement for SuitPay) | Planned | [PAYMENTS.md](PAYMENTS.md) | TBD |
+| **Stripe** | Payment provider (replacement for SuitPay, FUTURE §8) | Planned | [PAYMENTS.md](PAYMENTS.md), [research/08-stripe-future.md](research/08-stripe-future.md) | TBD |
 | **GitHub Actions** | CI + auto-deploy | Active | [DEPLOYMENT.md](DEPLOYMENT.md), [ENVIRONMENT.md](ENVIRONMENT.md) | `.github/workflows/ci.yml`, `.github/workflows/deploy.yml` |
 
 ## Adding a new integration

@@ -48,8 +48,6 @@ src/
   services/
     oauthServices.ts    # httpsCallable wrappers for OAuth functions
     paymentService.ts   # httpsCallable wrappers for payment functions
-  config/
-    lookerStudioTemplates.ts
   main.tsx              # App entry, initGtm call
   App.tsx               # Router + providers
   index.css             # CSS variables + Tailwind base
