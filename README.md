@@ -1,6 +1,6 @@
 # AdSmart
 
-SaaS platform for advertising management dashboards. Connects Google Ads and Meta Ads accounts, generates Looker Studio report links, and manages user wallet balance for pay-per-report billing.
+SaaS platform for advertising management dashboards. Connects Google Ads and Meta Ads accounts, generates in-app report dashboards (ADR-022, full render lands in Fase 3.5), and manages user wallet balance for pay-per-report billing.
 
 ## Stack
 

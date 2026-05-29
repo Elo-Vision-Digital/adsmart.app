@@ -1,15 +1,24 @@
-import { ChevronLeft, ChevronRight, FileText, Filter, Plus, Search } from 'lucide-react'
+import {
+  Calendar,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Filter,
+  Plus,
+  RefreshCw,
+  Search,
+} from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useReports } from '@/hooks/useReports'
 
-// Componente para ícone do Google Ads
-const GoogleAdsIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+// Ícones vetoriais extraídos do protótipo
+const GoogleAdsIcon = ({ s = 24 }: { s?: number }) => (
+  <svg width={s} height={s} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <path
       d="m57.193 15.502c-7.021-4.054-15.985-1.653-20.039 5.37l-25.162 43.583c-6.494 11.247 3.912 24.878 16.501 21.504 3.785-1.014 6.948-3.442 8.907-6.835l25.162-43.583c4.045-7.005 1.636-15.994-5.369-20.039z"
       fill="#fabc04"
@@ -25,9 +34,8 @@ const GoogleAdsIcon = () => (
   </svg>
 )
 
-// Componente para ícone do Meta Ads
-const MetaAdsIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+const MetaAdsIcon = ({ s = 24 }: { s?: number }) => (
+  <svg width={s} height={s} viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient
         id="meta-gradient-reports"
@@ -54,269 +62,301 @@ export function ReportsPage() {
   const navigate = useNavigate()
   const { t } = useLanguage()
   const { reports, loading } = useReports()
-  const [searchReport, setSearchReport] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
   const [filterPlatform, setFilterPlatform] = useState<'all' | 'google_ads' | 'meta_ads'>('all')
-  const [sortBy, setSortBy] = useState<'recent' | 'oldest'>('recent')
-
-  const reportsPerPage = 6
+  const [sortBy, setSortBy] = useState<'recent' | 'old' | 'name'>('recent')
 
   const filteredReports = reports
     .filter((report) => {
-      const matchesSearch = report.name.toLowerCase().includes(searchReport.toLowerCase())
+      const matchesSearch = report.name.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesPlatform = filterPlatform === 'all' || report.type === filterPlatform
       return matchesSearch && matchesPlatform
     })
     .sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name)
+      }
       const aTime = a.createdAt.getTime()
       const bTime = b.createdAt.getTime()
       return sortBy === 'recent' ? bTime - aTime : aTime - bTime
     })
 
-  // Paginação
-  const indexOfLastReport = currentPage * reportsPerPage
-  const indexOfFirstReport = indexOfLastReport - reportsPerPage
-  const currentReports = filteredReports.slice(indexOfFirstReport, indexOfLastReport)
-  const totalPages = Math.ceil(filteredReports.length / reportsPerPage)
+  const thisMonthCount = reports.filter((r) => {
+    const now = new Date()
+    return (
+      r.createdAt.getMonth() === now.getMonth() && r.createdAt.getFullYear() === now.getFullYear()
+    )
+  }).length
 
-  // Reset página quando filtros mudam
-  const handleFilterChange = (platform: 'all' | 'google_ads' | 'meta_ads') => {
-    setFilterPlatform(platform)
-    setCurrentPage(1)
+  const getPlatformIcon = (type: string, size = 16) => {
+    if (type === 'google_ads') return <GoogleAdsIcon s={size} />
+    if (type === 'meta_ads') return <MetaAdsIcon s={size} />
+    return null
   }
 
-  const handleSortChange = (sort: 'recent' | 'oldest') => {
-    setSortBy(sort)
-    setCurrentPage(1)
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return (
+          <Badge tone="success">
+            <Check size={10} strokeWidth={2.8} /> Concluído
+          </Badge>
+        )
+      case 'processing':
+        return (
+          <Badge tone="warning">
+            <RefreshCw size={10} strokeWidth={2.5} className="animate-spin" /> Processando
+          </Badge>
+        )
+      case 'pending':
+        return (
+          <Badge tone="warning">
+            <RefreshCw size={10} strokeWidth={2.5} className="animate-spin" /> Pendente
+          </Badge>
+        )
+      case 'failed':
+        return <Badge tone="danger">Falha</Badge>
+      default:
+        return <Badge tone="neutral">{status}</Badge>
+    }
   }
+
+  const formatDateShort = (dateString?: string | null) => {
+    if (!dateString) return ''
+    const d = new Date(dateString)
+    if (isNaN(d.getTime())) return ''
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`
+  }
+
+  const empty = !loading && filteredReports.length === 0
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-background dark:bg-[#0A0A0A]">
-        <div className="w-full overflow-x-hidden">
-          <div className="px-4 py-4 md:p-6">
-            <div className="max-w-7xl mx-auto">
-              {/* Header */}
-              <div className="mb-6">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  {t('reportsPage.title')}
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">{t('reportsPage.subtitle')}</p>
+      <div className="w-full bg-[var(--bg)] min-h-screen">
+        <div className="px-8 py-9 max-w-[1280px] mx-auto">
+          {/* Header */}
+          <div className="flex justify-between items-end mb-6">
+            <div>
+              <h1 className="text-[36px] font-bold tracking-[-0.025em] leading-[1.05] text-[var(--text)]">
+                Meus relatórios
+              </h1>
+              <p className="mt-2 text-[15px] text-[var(--text-2)]">
+                Gerencie e acesse todos os relatórios gerados.
+              </p>
+            </div>
+            <div className="flex gap-2.5">
+              <button className="inline-flex items-center gap-2 px-4 h-11 bg-[var(--bg-elev)] border border-[var(--border)] rounded-xl text-[15px] font-semibold text-[var(--text)] hover:bg-[var(--bg-elev-2)] transition-colors">
+                <FileText size={15} /> Exportar
+              </button>
+              <button
+                onClick={() => navigate('/templates')}
+                className="inline-flex items-center gap-2 px-4 h-11 bg-[var(--accent)] border border-[var(--accent)] rounded-xl text-[15px] font-semibold text-[var(--accent-fg)] hover:opacity-90 transition-opacity"
+              >
+                <Plus size={16} strokeWidth={2.2} /> Criar relatório
+              </button>
+            </div>
+          </div>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-4 gap-3 mb-6">
+            {[
+              {
+                l: 'Total',
+                v: loading ? '...' : reports.length.toString(),
+                icon: <FileText size={14} />,
+              },
+              {
+                l: 'Google Ads',
+                v: loading
+                  ? '...'
+                  : reports.filter((r) => r.type === 'google_ads').length.toString(),
+                icon: <GoogleAdsIcon s={14} />,
+              },
+              {
+                l: 'Meta Ads',
+                v: loading ? '...' : reports.filter((r) => r.type === 'meta_ads').length.toString(),
+                icon: <MetaAdsIcon s={14} />,
+              },
+              {
+                l: 'Este mês',
+                v: loading ? '...' : thisMonthCount.toString(),
+                icon: <Calendar size={14} />,
+              },
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="p-4 rounded-[14px] bg-[var(--bg-elev)] border border-[var(--border)]"
+              >
+                <div className="flex items-center gap-1.5 text-[var(--text-2)] mb-2">
+                  {s.icon}
+                  <span className="text-[13px]">{s.l}</span>
+                </div>
+                <div className="text-[24px] font-bold tracking-[-0.02em] text-[var(--text)]">
+                  {s.v}
+                </div>
               </div>
+            ))}
+          </div>
 
-              {/* Card principal */}
-              <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700">
-                <CardHeader className="px-4 md:px-6">
-                  <div className="space-y-4">
-                    {/* Título e botão */}
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 flex-shrink-0" />
-                        <CardTitle className="text-lg md:text-xl">
-                          {t('reportsPage.totalReports', { count: filteredReports.length })}
-                        </CardTitle>
-                      </div>
-                      <Button
-                        onClick={() => navigate('/templates')}
-                        className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {t('reportsPage.createNewReport')}
-                      </Button>
-                    </div>
+          {/* Filters bar */}
+          <div className="grid grid-cols-[1.6fr_1fr_1fr_auto] gap-2.5 p-3.5 mb-4 items-center bg-[var(--bg-elev)] border border-[var(--border)] rounded-[14px]">
+            {/* Search */}
+            <div className="relative flex items-center bg-[var(--bg)] border border-[var(--border)] rounded-xl h-11 px-3.5 focus-within:border-[var(--text)] transition-colors">
+              <Search size={15} className="text-[var(--text-3)]" />
+              <input
+                type="text"
+                placeholder="Buscar por nome ou conta..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 ml-3 bg-transparent border-none outline-none text-[15px] text-[var(--text)] placeholder-[var(--text-3)] min-w-0"
+              />
+            </div>
 
-                    {/* Barra de pesquisa e filtros */}
-                    <div className="flex flex-col gap-3">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder={t('reportsPage.searchPlaceholder')}
-                          value={searchReport}
-                          onChange={(e) => {
-                            setSearchReport(e.target.value)
-                            setCurrentPage(1)
-                          }}
-                          className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
-                        />
-                      </div>
-
-                      {/* Filtros */}
-                      <div className="flex flex-wrap gap-2">
-                        <select
-                          value={filterPlatform}
-                          onChange={(e) => handleFilterChange(e.target.value as any)}
-                          className="flex-1 min-w-[140px] px-3 py-1.5 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary text-sm"
-                        >
-                          <option value="all">{t('reportsPage.filters.allPlatforms')}</option>
-                          <option value="google_ads">Google Ads</option>
-                          <option value="meta_ads">Meta Ads</option>
-                        </select>
-
-                        <select
-                          value={sortBy}
-                          onChange={(e) => handleSortChange(e.target.value as any)}
-                          className="flex-1 min-w-[140px] px-3 py-1.5 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary text-sm"
-                        >
-                          <option value="recent">{t('reportsPage.filters.mostRecent')}</option>
-                          <option value="oldest">{t('reportsPage.filters.oldest')}</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="px-4 md:px-6">
-                  {loading ? (
-                    <div className="text-center py-12 text-gray-500">
-                      <FileText className="w-16 h-16 mx-auto mb-4 opacity-50 animate-pulse" />
-                      <p className="text-sm">{t('common.general.loading')}</p>
-                    </div>
-                  ) : currentReports.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                      <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg mb-2">{t('reportsPage.noReportsFound')}</p>
-                      <p className="text-sm">{t('reportsPage.noReportsHint')}</p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Lista de relatórios */}
-                      <div className="space-y-3">
-                        {currentReports.map((report) => (
-                          <div
-                            key={report.id}
-                            className="flex items-center justify-between p-3 md:p-4 bg-white dark:bg-gray-700 rounded-lg border border-[#EDEDED] dark:border-gray-600 hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => navigate(`/report-success?id=${report.id}`)}
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                {report.type === 'google_ads' ? <GoogleAdsIcon /> : <MetaAdsIcon />}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                  {report.name}
-                                </h3>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                  <span className="truncate">
-                                    {report.createdAt.toLocaleDateString(t('common.locale'))}
-                                  </span>
-                                  <span>•</span>
-                                  <span className="truncate">
-                                    {report.type === 'google_ads' ? 'Google Ads' : 'Meta Ads'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Paginação */}
-                      {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-1 mt-6">
-                          <button
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                            className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                          </button>
-
-                          <div className="flex gap-1">
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                              <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`px-2 py-1 md:px-3 md:py-1 text-sm rounded-lg ${
-                                  currentPage === page
-                                    ? 'bg-primary text-white'
-                                    : 'hover:bg-gray-100 dark:hover:bg-gray-600'
-                                }`}
-                              >
-                                {page}
-                              </button>
-                            ))}
-                          </div>
-
-                          <button
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                            className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Card de estatísticas */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700">
-                  <CardContent className="p-3 md:p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                          Google Ads
-                        </p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                          {reports.filter((r) => r.type === 'google_ads').length}
-                        </p>
-                      </div>
-                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
-                        <GoogleAdsIcon />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700">
-                  <CardContent className="p-3 md:p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                          Meta Ads
-                        </p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                          {reports.filter((r) => r.type === 'meta_ads').length}
-                        </p>
-                      </div>
-                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
-                        <MetaAdsIcon />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700">
-                  <CardContent className="p-3 md:p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                          {t('reportsPage.stats.thisMonth')}
-                        </p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                          {
-                            reports.filter((r) => {
-                              const now = new Date()
-                              return (
-                                r.createdAt.getMonth() === now.getMonth() &&
-                                r.createdAt.getFullYear() === now.getFullYear()
-                              )
-                            }).length
-                          }
-                        </p>
-                      </div>
-                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Filter className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            {/* Platform Select */}
+            <div className="relative flex items-center bg-[var(--bg)] border border-[var(--border)] rounded-xl h-11 px-3.5 focus-within:border-[var(--text)] transition-colors">
+              <select
+                value={filterPlatform}
+                onChange={(e) => setFilterPlatform(e.target.value as any)}
+                className="flex-1 bg-transparent border-none outline-none text-[15px] text-[var(--text)] appearance-none pr-7 cursor-pointer z-10"
+              >
+                <option value="all">Todas plataformas</option>
+                <option value="google_ads">Google Ads</option>
+                <option value="meta_ads">Meta Ads</option>
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-3)]">
+                <ChevronDown size={15} strokeWidth={2} />
               </div>
             </div>
+
+            {/* Sort Select */}
+            <div className="relative flex items-center bg-[var(--bg)] border border-[var(--border)] rounded-xl h-11 px-3.5 focus-within:border-[var(--text)] transition-colors">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="flex-1 bg-transparent border-none outline-none text-[15px] text-[var(--text)] appearance-none pr-7 cursor-pointer z-10"
+              >
+                <option value="recent">Mais recentes</option>
+                <option value="old">Mais antigos</option>
+                <option value="name">Por nome</option>
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-3)]">
+                <ChevronDown size={15} strokeWidth={2} />
+              </div>
+            </div>
+
+            {/* More Filters */}
+            <button className="inline-flex items-center gap-2 px-4 h-11 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[15px] font-semibold text-[var(--text)] hover:bg-[var(--bg-elev-2)] transition-colors">
+              <Filter size={14} /> Mais filtros
+            </button>
+          </div>
+
+          {/* Table or Empty */}
+          <div className="bg-[var(--bg-elev)] border border-[var(--border)] rounded-[18px] overflow-hidden">
+            {loading ? (
+              <div className="py-16 text-center flex flex-col items-center">
+                <RefreshCw
+                  size={32}
+                  className="text-[var(--text-3)] animate-spin mb-4"
+                  strokeWidth={2}
+                />
+                <p className="text-[15px] text-[var(--text-2)]">{t('common.general.loading')}</p>
+              </div>
+            ) : empty ? (
+              <div className="py-[80px] px-6 text-center flex flex-col items-center justify-center">
+                <div className="relative mb-6 group">
+                  <div className="absolute inset-0 bg-[var(--text)] opacity-5 blur-xl rounded-full transition-opacity group-hover:opacity-10 duration-300"></div>
+                  <div className="relative w-[72px] h-[72px] rounded-[22px] bg-[var(--bg)] border border-[var(--border)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] inline-flex items-center justify-center text-[var(--text-2)] transition-transform group-hover:scale-105 duration-300">
+                    <FileText size={32} strokeWidth={1.5} />
+                  </div>
+                </div>
+                <h3 className="text-[20px] font-bold tracking-[-0.02em] text-[var(--text)] mb-2">
+                  Nenhum relatório encontrado
+                </h3>
+                <p className="text-[15px] text-[var(--text-2)] max-w-[320px] mx-auto leading-relaxed mb-7">
+                  Não encontramos dados para a sua busca. Tente ajustar os filtros ou inicie a
+                  criação de um novo relatório.
+                </p>
+                <button
+                  onClick={() => navigate('/templates')}
+                  className="inline-flex items-center gap-2 px-5 h-12 bg-[var(--accent)] text-[var(--accent-fg)] rounded-xl text-[15px] font-semibold hover:opacity-90 shadow-[0_4px_14px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.12)] transition-all hover:-translate-y-0.5 duration-200"
+                >
+                  <Plus size={18} strokeWidth={2.5} /> Criar primeiro relatório
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse min-w-[900px]">
+                  <thead>
+                    <tr>
+                      {['Relatório', 'Plataforma', 'Período', 'Custo', 'Status', ''].map((h, i) => (
+                        <th
+                          key={i}
+                          className="p-3.5 text-left text-[11px] font-semibold text-[var(--text-3)] uppercase tracking-[0.04em] border-b border-[var(--separator)]"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredReports.map((report, i) => {
+                      // Fallback for period using dateRange or createdAt
+                      const start = formatDateShort(report.dateRange?.startDate)
+                      const end = formatDateShort(report.dateRange?.endDate)
+                      let period = 'Não definido'
+                      if (start && end) {
+                        period = `${start} — ${end}`
+                      } else {
+                        // Fallback to month of creation
+                        const d = report.createdAt
+                        const month = d.toLocaleString('pt-BR', { month: 'long' })
+                        period = `Ref: ${month}`
+                      }
+
+                      return (
+                        <tr
+                          key={report.id}
+                          className={`hover:bg-[var(--bg-elev-2)] transition-colors cursor-pointer ${i < filteredReports.length - 1 ? 'border-b border-[var(--separator)]' : ''}`}
+                          onClick={() => navigate(`/report-success?id=${report.id}`)}
+                        >
+                          <td className="p-3.5 text-[14px] font-semibold text-[var(--text)]">
+                            {report.name}
+                          </td>
+                          <td className="p-3.5">
+                            <span className="inline-flex items-center gap-2 text-[var(--text-2)]">
+                              {report.platforms && report.platforms.length > 0 ? (
+                                report.platforms.map((pid) => (
+                                  <span
+                                    key={pid}
+                                    className="w-7 h-7 rounded-lg inline-flex items-center justify-center bg-[var(--bg-elev-2)] border border-[var(--border)]"
+                                  >
+                                    {getPlatformIcon(pid)}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="w-7 h-7 rounded-lg inline-flex items-center justify-center bg-[var(--bg-elev-2)] border border-[var(--border)]">
+                                  {getPlatformIcon(report.type)}
+                                </span>
+                              )}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-[13px] text-[var(--text-2)]">{period}</td>
+                          <td className="p-3.5 text-[13px] text-[var(--text-2)]">
+                            {report.cost > 0 ? `${report.cost} créd.` : 'Grátis'}
+                          </td>
+                          <td className="p-3.5">{getStatusBadge(report.status)}</td>
+                          <td className="p-3.5 text-right">
+                            <button className="w-8 h-8 rounded-lg text-[var(--text-2)] inline-flex items-center justify-center hover:bg-[var(--border)] transition-colors">
+                              <ChevronRight size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>

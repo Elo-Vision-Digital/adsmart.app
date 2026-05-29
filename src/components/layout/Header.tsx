@@ -1,119 +1,134 @@
-import { ChevronDown } from 'lucide-react'
+import { Bell, Moon, Search, Sparkles, Sun } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { LanguageSelector } from '@/components/common/LanguageSelector'
 import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
-import { Button } from '@/components/ui/button'
-import { WalletDisplay } from '@/components/WalletDisplay'
-import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 
 export function Header() {
-  const { user, signOut } = useAuth()
-  const { theme } = useTheme()
-  const navigate = useNavigate()
   const [showAddCredits, setShowAddCredits] = useState(false)
-  const [showDropdown, setShowDropdown] = useState(false)
-
-  const handleLogout = async () => {
-    await signOut()
-    navigate('/login')
-  }
+  const { theme, toggleTheme } = useTheme()
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-20 bg-white dark:bg-black border-b border-border z-[60] hidden md:block">
-        <div className="flex items-center justify-between h-full px-6 py-2.5">
-          {/* Logo */}
-          <div className="flex items-center">
-            <img
-              src={
-                theme === 'light'
-                  ? 'https://i.imgur.com/T6AehDg.png'
-                  : 'https://i.imgur.com/CPDcfYm.png'
-              }
-              alt="adsmart"
-              className="h-8"
-            />
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '18px 28px',
+          borderBottom: '1px solid var(--separator)',
+          background: 'color-mix(in srgb, var(--bg) 92%, transparent)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+        }}
+      >
+        <div style={{ flex: 1, maxWidth: 380, position: 'relative' }}>
+          <div
+            style={{
+              position: 'absolute',
+              left: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-3)',
+            }}
+          >
+            <Search size={15} />
           </div>
-
-          {/* Saldo e Ações */}
-          <div className="flex items-center gap-4">
-            <WalletDisplay />
-
-            <Button
-              onClick={() => setShowAddCredits(true)}
-              className={`
-                ${
-                  theme === 'light'
-                    ? 'bg-black hover:bg-gray-800 text-white'
-                    : 'bg-[#FAFAFA] hover:bg-gray-100 text-black'
-                }
-              `}
-            >
-              Depositar
-            </Button>
-
-            {/* Language Selector */}
+          <input
+            type="text"
+            placeholder="Buscar relatórios…"
+            style={{
+              width: '100%',
+              background: 'var(--bg-elev)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-md)',
+              padding: '8px 12px 8px 36px',
+              fontSize: 14,
+              color: 'var(--text)',
+              outline: 'none',
+              transition: 'border-color 0.15s ease',
+            }}
+            onFocus={(e) => (e.target.style.borderColor = 'var(--accent)')}
+            onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <LanguageSelector />
 
-            {/* Avatar com Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
-                  {user?.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName || ''}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src="https://i.imgur.com/xvAMmEv.png"
-                      alt="adsmart"
-                      className="w-6 h-6 object-contain"
-                    />
-                  )}
-                </div>
-                <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
+            <button
+              onClick={toggleTheme}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: 'var(--bg-elev)',
+                border: '1px solid var(--border)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
 
-              {/* Dropdown Menu */}
-              {showDropdown && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
-                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-surface rounded-lg shadow-lg border border-border py-2 min-w-[200px] z-50">
-                    <div className="px-4 py-2 border-b border-border">
-                      <p className="font-medium text-sm">{user?.displayName || 'Usuário'}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        navigate('/settings')
-                        setShowDropdown(false)
-                      }}
-                      className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors w-full text-left"
-                    >
-                      <span className="text-sm">Configurações</span>
-                    </button>
-
-                    <div className="border-t border-border mt-2 pt-2">
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors w-full text-left text-red-600 dark:text-red-400"
-                      >
-                        <span className="text-sm">Sair</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            <button
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: 'var(--bg-elev)',
+                border: '1px solid var(--border)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <Bell size={18} />
+            </button>
           </div>
+
+          <button
+            onClick={() => setShowAddCredits(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '9px 14px',
+              borderRadius: 999,
+              background: 'var(--bg-elev)',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+              color: 'var(--text)',
+            }}
+          >
+            <Sparkles size={14} />
+            <span style={{ fontSize: 13, fontWeight: 600 }}>200 créditos</span>
+            <span
+              style={{ width: 1, height: 14, background: 'var(--border-strong)', margin: '0 2px' }}
+            />
+            <span
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: 'var(--text-2)',
+                lineHeight: 1,
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+            >
+              +
+            </span>
+          </button>
         </div>
       </header>
 

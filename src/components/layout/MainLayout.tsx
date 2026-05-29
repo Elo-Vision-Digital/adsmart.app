@@ -13,34 +13,39 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   return (
     <>
-      <div className="min-h-screen bg-background relative">
-        {/* Desktop Header - Fica acima de tudo */}
-        <div className="hidden md:block">
-          <Header />
-        </div>
-
+      <div
+        className="adsmart-scope"
+        style={{
+          width: '100%',
+          height: '100vh',
+          display: 'flex',
+          background: 'var(--bg)',
+          overflow: 'hidden',
+        }}
+      >
         {/* Desktop Sidebar */}
-        <div className="hidden md:block">
-          <Sidebar />
-        </div>
+        <Sidebar />
 
-        {/* Mobile Header */}
-        <div className="md:hidden">
-          <MobileHeader />
-        </div>
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Desktop TopBar */}
+          <Header />
 
-        {/* Main Content */}
-        <main className="md:ml-20 pt-14 md:pt-20 pb-20 md:pb-0 min-h-[calc(100vh-8rem)] md:min-h-[calc(100vh-5rem)]">
-          <EmailVerificationBanner />
-          {children}
+          {/* Main scrollable area */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <EmailVerificationBanner />
+            {children}
+          </div>
         </main>
       </div>
 
-      {/* Footer fora do container principal para não ter bordas */}
-      <Footer />
-
-      {/* Mobile Bottom Navigation - Fora do container principal */}
-      <BottomNavigation />
+      {/* Mobile only elements - hidden in desktop via CSS */}
+      <div className="md:hidden">
+        <MobileHeader />
+        <BottomNavigation />
+      </div>
+      <div className="hidden">
+        <Footer />
+      </div>
     </>
   )
 }

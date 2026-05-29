@@ -4,7 +4,7 @@ This file is the entry point for AI agents and engineers working on AdSmart. Rea
 
 ## Project overview
 
-AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising campaigns. Users connect their Google Ads and Meta Ads accounts via OAuth, generate Looker Studio report dashboards, and pay per report using a prepaid wallet system. The platform is Portuguese-first (pt-BR) with en/es support.
+AdSmart is a B2B SaaS platform that helps marketing agencies manage advertising campaigns. Users connect their Google Ads and Meta Ads accounts via OAuth, generate in-app report dashboards (ADR-022 — render in-app substituiu o legacy Looker Studio embed em Fase 0.5; novo fluxo completo FLOW-3.5 ship em Fase 3.5), and pay per report using a prepaid wallet system. The platform is Portuguese-first (pt-BR) with en/es support.
 
 ## Sub-AGENTS.md by area
 

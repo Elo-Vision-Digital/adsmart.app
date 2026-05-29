@@ -1,0 +1,8 @@
+{
+  "name": "adsmart-gemini-harness-adapter",
+  "version": "1.0.0",
+  "description": "Adaptation layer for Gemini to operate the AdSmart Harness dynamically.",
+  "author": {
+    "name": "AdSmart"
+  }
+}
