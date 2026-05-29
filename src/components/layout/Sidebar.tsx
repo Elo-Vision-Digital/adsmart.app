@@ -1,239 +1,290 @@
-import { Shield } from 'lucide-react'
-import React, { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  FinanceIcon,
-  HomeIcon,
-  IntegrationsIcon,
-  LogoutIcon,
-  MoonIcon,
-  ReportsIcon,
-  SettingsIcon,
-  SunIcon,
-  TemplatesIcon,
-} from '@/components/icons'
+  ChevronRight,
+  FileText,
+  Folder,
+  HeadphonesIcon,
+  Home,
+  Inbox,
+  Settings,
+  Shield,
+  Sparkles,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { useLanguage } from '@/contexts/LanguageContext'
 import { useTheme } from '@/contexts/ThemeContext'
 
-interface MenuItem {
-  id: string
-  label: string
-  icon: React.ReactNode
-  path: string
-  adminOnly?: boolean
-}
-
 export function Sidebar() {
-  const [isExpanded, setIsExpanded] = useState(false)
   const location = useLocation()
-  const navigate = useNavigate()
   const { user, signOut, isAdmin } = useAuth()
-  const { theme, toggleTheme } = useTheme()
-  const { t } = useLanguage()
+  const { theme } = useTheme()
 
-  const menuItems: MenuItem[] = [
-    { id: 'dashboard', label: t('sidebar.dashboard'), icon: <HomeIcon />, path: '/dashboard' },
-    {
-      id: 'integrations',
-      label: t('sidebar.integrations'),
-      icon: <IntegrationsIcon />,
-      path: '/accounts',
-    },
-    { id: 'reports', label: t('sidebar.reports'), icon: <ReportsIcon />, path: '/reports' },
-    { id: 'templates', label: t('sidebar.templates'), icon: <TemplatesIcon />, path: '/templates' },
-    { id: 'finance', label: t('sidebar.finance'), icon: <FinanceIcon />, path: '/transactions' },
-    { id: 'settings', label: t('sidebar.settings'), icon: <SettingsIcon />, path: '/settings' },
-    {
-      id: 'admin',
-      label: t('sidebar.administration'),
-      icon: <Shield />,
-      path: '/admin',
-      adminOnly: true,
-    },
+  const items = [
+    { id: '/dashboard', icon: Home, label: 'Início' },
+    { id: '/reports', icon: FileText, label: 'Relatórios' },
+    { id: '/accounts', icon: Folder, label: 'Projetos' },
+    { id: '/transactions', icon: Wallet, label: 'Créditos' },
   ]
 
-  const handleLogout = async () => {
-    await signOut()
-    navigate('/login')
+  const ai = [
+    { id: '/ai-hub', icon: Sparkles, label: 'AdSmart AI', badge: 'Em breve' },
+    { id: '/chatsmart', icon: Inbox, label: 'ChatSmart AI', badge: 'Em breve' },
+    { id: '/limits', icon: TrendingUp, label: 'Limites de uso', badge: 'Em breve' },
+    { id: '/subscription', icon: Shield, label: 'Plano Premium', badge: 'Em breve' },
+  ]
+
+  const secondary = [
+    { id: '/settings', icon: Settings, label: 'Configurações' },
+    { id: '/support', icon: HeadphonesIcon, label: 'Suporte' },
+  ]
+
+  if (isAdmin) {
+    secondary.push({ id: '/admin', icon: Shield, label: 'Administração' })
   }
 
   const isActive = (path: string) => location.pathname === path
 
-  // Filtrar itens baseado em permissões de admin
-  const visibleMenuItems = menuItems.filter(
-    (item) => !item.adminOnly || (item.adminOnly && isAdmin)
-  )
-
   return (
     <aside
-      className={`fixed left-0 top-20 h-[calc(100%-5rem)] transition-all duration-300 z-40 ${
-        isExpanded ? 'w-64' : 'w-20'
-      } ${
-        theme === 'dark' ? 'bg-black border-r border-white/10' : 'bg-white border-r border-black/10'
-      }`}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
+      style={{
+        width: 248,
+        flexShrink: 0,
+        borderRight: '1px solid var(--separator)',
+        background: 'var(--bg)',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '20px 12px',
+        height: '100%',
+      }}
+      className="hidden md:flex"
     >
-      <div className="flex flex-col h-full py-6">
-        {/* Logo and User */}
-        <div className="px-6 mb-8">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${
-                theme === 'dark' ? 'bg-white/10' : 'bg-black/5'
-              }`}
+      <div style={{ padding: '6px 10px 22px' }}>
+        <img
+          src={
+            theme === 'dark' ? 'https://i.imgur.com/CPDcfYm.png' : 'https://i.imgur.com/T6AehDg.png'
+          }
+          alt="adsmart"
+          style={{ height: 22, display: 'block' }}
+        />
+      </div>
+
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 14 }}>
+        {items.map((it) => {
+          const Icon = it.icon
+          const active = isActive(it.id)
+          return (
+            <Link
+              key={it.id}
+              to={it.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '9px 12px',
+                borderRadius: 10,
+                textAlign: 'left',
+                background: active ? 'var(--bg-elev)' : 'transparent',
+                color: active ? 'var(--text)' : 'var(--text-2)',
+                fontSize: 14,
+                fontWeight: active ? 600 : 500,
+                border: active ? '1px solid var(--border)' : '1px solid transparent',
+                transition: 'all 0.15s ease',
+              }}
             >
-              {user?.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName || ''}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
+              <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
+              <span style={{ flex: 1 }}>{it.label}</span>
+              {active && (
                 <span
-                  className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: 'var(--text)',
+                  }}
+                />
+              )}
+            </Link>
+          )
+        })}
+      </nav>
+
+      <div
+        style={{
+          padding: '0 12px 6px',
+          fontSize: 10,
+          fontWeight: 700,
+          color: 'var(--text-3)',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+        }}
+      >
+        Premium
+      </div>
+
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 14 }}>
+        {ai.map((it) => {
+          const Icon = it.icon
+          return (
+            <div
+              key={it.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '9px 12px',
+                borderRadius: 10,
+                textAlign: 'left',
+                background: 'transparent',
+                color: 'var(--text-3)',
+                fontSize: 14,
+                fontWeight: 500,
+                border: '1px solid transparent',
+                cursor: 'not-allowed',
+              }}
+            >
+              <Icon size={18} strokeWidth={1.8} />
+              <span
+                style={{
+                  flex: 1,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {it.label}
+              </span>
+              {it.badge && (
+                <span
+                  style={{
+                    fontSize: 8,
+                    fontWeight: 800,
+                    padding: '2px 5px',
+                    borderRadius: 999,
+                    background: 'var(--bg-elev-2)',
+                    color: 'var(--text-2)',
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                  }}
                 >
-                  {user?.displayName?.charAt(0)?.toUpperCase() || 'A'}
+                  {it.badge}
                 </span>
               )}
             </div>
-            {isExpanded && (
-              <div className="overflow-hidden">
-                <h3
-                  className={`font-semibold text-sm truncate ${
-                    theme === 'dark' ? 'text-white' : 'text-black'
-                  }`}
-                >
-                  {user?.displayName || t('common.general.user')}
-                </h3>
-                <p
-                  className={`text-xs truncate ${
-                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}
-                >
-                  {user?.email}
-                </p>
-                {/* Badge de admin */}
-                {isAdmin && (
-                  <span
-                    className={`inline-block text-xs px-2 py-0.5 rounded-full mt-1 ${
-                      theme === 'dark'
-                        ? 'bg-yellow-500/20 text-yellow-400'
-                        : 'bg-yellow-500/10 text-yellow-600'
-                    }`}
-                  >
-                    {t('common.general.admin')}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+          )
+        })}
+      </nav>
 
-        {/* Menu Items */}
-        <nav className="flex-1 px-3">
-          <ul className="space-y-1">
-            {visibleMenuItems.map((item) => (
-              <li key={item.id}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                    isExpanded ? '' : 'justify-center'
-                  } ${
-                    isActive(item.path)
-                      ? theme === 'dark'
-                        ? 'bg-white text-black'
-                        : 'bg-black text-white'
-                      : theme === 'dark'
-                        ? 'text-gray-400 hover:text-white hover:bg-white/5'
-                        : 'text-gray-600 hover:text-black hover:bg-black/5'
-                  }`}
-                >
-                  <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
-                    {React.cloneElement(item.icon as React.ReactElement, {
-                      className: 'w-5 h-5',
-                      strokeWidth: isActive(item.path) ? 2 : 1.5,
-                    })}
-                  </span>
-                  {isExpanded && <span className="text-sm font-medium truncate">{item.label}</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      <div className="hairline" style={{ marginInline: 12, marginBottom: 14 }} />
 
-        {/* Bottom Actions */}
-        <div className="px-3 space-y-1">
-          <button
-            onClick={handleLogout}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 w-full ${
-              isExpanded ? '' : 'justify-center'
-            } ${
-              theme === 'dark'
-                ? 'text-gray-400 hover:text-white hover:bg-white/5'
-                : 'text-gray-600 hover:text-black hover:bg-black/5'
-            }`}
-          >
-            <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
-              <LogoutIcon className="w-5 h-5" />
-            </span>
-            {isExpanded && (
-              <span className="text-sm font-medium">{t('common.general.logout')}</span>
-            )}
-          </button>
-
-          {/* Theme Toggle */}
-          {isExpanded ? (
-            <div
-              className={`relative rounded-lg p-1 ${
-                theme === 'dark' ? 'bg-white/10' : 'bg-black/5'
-              }`}
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {secondary.map((it) => {
+          const Icon = it.icon
+          return (
+            <Link
+              key={it.id}
+              to={it.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '9px 12px',
+                borderRadius: 10,
+                textAlign: 'left',
+                color: 'var(--text-2)',
+                fontSize: 14,
+                fontWeight: 500,
+                background: 'transparent',
+              }}
             >
-              <div
-                className={`absolute inset-y-1 transition-all duration-200 rounded-md ${
-                  theme === 'dark' ? 'bg-white left-1/2 right-1' : 'bg-black left-1 right-1/2'
-                }`}
-              />
-              <div className="relative flex items-center justify-between">
-                <button
-                  onClick={() => theme === 'dark' && toggleTheme()}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors z-10 flex-1 ${
-                    theme === 'light' ? 'text-white' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  <SunIcon className="w-4 h-4" />
-                  <span className="text-xs font-medium">{t('common.theme.light')}</span>
-                </button>
+              <Icon size={18} strokeWidth={1.8} />
+              <span>{it.label}</span>
+            </Link>
+          )
+        })}
+      </nav>
 
-                <button
-                  onClick={() => theme === 'light' && toggleTheme()}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors z-10 flex-1 ${
-                    theme === 'dark' ? 'text-black' : 'text-gray-600 hover:text-black'
-                  }`}
-                >
-                  <MoonIcon className="w-4 h-4" />
-                  <span className="text-xs font-medium">{t('common.theme.dark')}</span>
-                </button>
-              </div>
-            </div>
+      <div style={{ flex: 1 }} />
+
+      {/* User card */}
+      <div
+        style={{
+          padding: 10,
+          borderRadius: 14,
+          background: 'var(--bg-elev)',
+          border: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginTop: 20,
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            background: 'var(--bg-elev-2)',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyItems: 'center',
+          }}
+        >
+          {user?.photoURL ? (
+            <img
+              src={user.photoURL}
+              alt={user.displayName || ''}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           ) : (
-            <button
-              onClick={toggleTheme}
-              className={`flex items-center justify-center px-3 py-2.5 rounded-lg transition-all duration-200 w-full ${
-                theme === 'dark'
-                  ? 'text-gray-400 hover:text-white hover:bg-white/5'
-                  : 'text-gray-600 hover:text-black hover:bg-black/5'
-              }`}
-            >
-              {theme === 'dark' ? (
-                <MoonIcon className="w-5 h-5" />
-              ) : (
-                <SunIcon className="w-5 h-5" />
-              )}
-            </button>
+            <span style={{ margin: 'auto', fontWeight: 'bold' }}>
+              {user?.displayName?.charAt(0)?.toUpperCase() || 'A'}
+            </span>
           )}
         </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--text)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {user?.displayName || 'Usuário'}
+          </div>
+          <div
+            className="t-small text-2"
+            style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {user?.email}
+          </div>
+        </div>
+        <button
+          onClick={() => signOut()}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            color: 'var(--text-2)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            border: 'none',
+            background: 'transparent',
+          }}
+        >
+          <ChevronRight size={14} />
+        </button>
       </div>
     </aside>
   )

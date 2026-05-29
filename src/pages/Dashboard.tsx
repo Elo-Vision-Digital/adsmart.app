@@ -1,31 +1,25 @@
 import { AdAccountSchema } from '@adsmart/shared'
-import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore'
+import { collection, onSnapshot, query, where } from 'firebase/firestore'
 import {
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  Link2,
-  Plus,
-  RefreshCw,
-  Search,
-  Trash2,
+  ChevronRight as IconChevR,
+  FileText as IconDoc,
+  Link2 as IconLink,
+  Plus as IconPlus,
+  Sparkles as IconSparkle,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { TemplateGrid } from '@/components/templates/TemplateGrid'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AddCreditsModal } from '@/components/ui/AddCreditsModal'
 import { useAuth } from '@/contexts/AuthContext'
-import { useLanguage } from '@/contexts/LanguageContext'
 import { db } from '@/firebase/config'
 import { useReports } from '@/hooks/useReports'
+import { useWallet } from '@/hooks/useWallet'
 import { zodConverter } from '@/schemas/firestore-converter'
 import type { AdAccount } from '@/types'
 
-// Componente para ícone do Google Ads
-const GoogleAdsIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+const GoogleAdsIcon = ({ s = 24 }: { s?: number }) => (
+  <svg width={s} height={s} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <path
       d="m57.193 15.502c-7.021-4.054-15.985-1.653-20.039 5.37l-25.162 43.583c-6.494 11.247 3.912 24.878 16.501 21.504 3.785-1.014 6.948-3.442 8.907-6.835l25.162-43.583c4.045-7.005 1.636-15.994-5.369-20.039z"
       fill="#fabc04"
@@ -41,9 +35,8 @@ const GoogleAdsIcon = () => (
   </svg>
 )
 
-// Componente para ícone do Meta Ads
-const MetaAdsIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+const MetaAdsIcon = ({ s = 24 }: { s?: number }) => (
+  <svg width={s} height={s} viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient
         id="meta-gradient"
@@ -69,15 +62,12 @@ const MetaAdsIcon = () => (
 export function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { t } = useLanguage()
   const { reports, loading: reportsLoading } = useReports()
-  const [searchReport, setSearchReport] = useState('')
   const [connections, setConnections] = useState<AdAccount[]>([])
-  const [connectionsLoading, setConnectionsLoading] = useState(true)
-  const [currentPage, setCurrentPage] = useState(1)
-  const connectionsPerPage = 3
+  const { balance } = useWallet()
+  const [showAddCredits, setShowAddCredits] = useState(false)
 
-  // Buscar contas conectadas do Firestore
+  // Fetch contas conectadas
   useEffect(() => {
     if (!user) return
 
@@ -88,273 +78,401 @@ export function Dashboard() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setConnections(snapshot.docs.map((doc) => doc.data()))
-      setConnectionsLoading(false)
     })
 
     return () => unsubscribe()
   }, [user])
 
-  // Filtrar relatórios pela pesquisa
-  const filteredReports = reports.filter((report) =>
-    report.name.toLowerCase().includes(searchReport.toLowerCase())
-  )
+  const recentReports = reports.slice(0, 3)
 
-  // Paginação das conexões
-  const indexOfLastConnection = currentPage * connectionsPerPage
-  const indexOfFirstConnection = indexOfLastConnection - connectionsPerPage
-  const currentConnections = connections.slice(indexOfFirstConnection, indexOfLastConnection)
-  const totalPages = Math.ceil(connections.length / connectionsPerPage)
-
-  const handleRefreshConnection = (_id: string) => {
-    // TODO: Implementar lógica de refresh quando a API estiver pronta
-  }
-
-  const handleDeleteConnection = async (accountId: string) => {
-    if (!user) return
-
-    if (confirm(t('dashboard.deleteConfirm'))) {
-      try {
-        await deleteDoc(doc(db, 'users', user.uid, 'adAccounts', accountId))
-      } catch (error) {
-        console.error(t('common.error.deleteAccount'), error)
-      }
-    }
-  }
-
-  const handleSelectTemplate = (templateId: string) => {
-    navigate(`/generate-report?template=${templateId}`)
-  }
+  // Google vs Meta connections count
+  const googleAccounts = connections.filter((c) => c.platform === 'google_ads').length
+  const metaAccounts = connections.filter((c) => c.platform === 'meta_ads').length
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-background dark:bg-[#0A0A0A]">
-        {/* Container principal com overflow-x-hidden para prevenir scroll horizontal */}
-        <div className="w-full overflow-x-hidden">
-          <div className="px-4 py-4 md:p-6">
-            <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
-              {/* Layout em Grid para Desktop, Stack para Mobile */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                {/* Meus Relatórios */}
-                <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700 w-full">
-                  <CardHeader className="px-4 md:px-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 flex-shrink-0" />
-                        <CardTitle className="text-lg md:text-xl">
-                          {t('dashboard.myReports')}
-                        </CardTitle>
-                      </div>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder={t('dashboard.searchPlaceholder')}
-                          value={searchReport}
-                          onChange={(e) => setSearchReport(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-[#EDEDED] dark:border-gray-600 rounded-lg focus:outline-none focus:border-primary"
-                        />
-                      </div>
-                      <Button
-                        onClick={() => navigate('/templates')}
-                        className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {t('dashboard.createNewReport')}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-4 md:px-6">
-                    {reportsLoading ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <FileText className="w-12 h-12 mx-auto mb-3 opacity-50 animate-pulse" />
-                        <p>{t('common.general.loading')}</p>
-                      </div>
-                    ) : filteredReports.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>{t('dashboard.noReportsFound')}</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {filteredReports.slice(0, 3).map((report) => (
-                          <div
-                            key={report.id}
-                            className="flex items-center justify-between p-3 md:p-4 bg-white dark:bg-gray-700 rounded-lg border border-[#EDEDED] dark:border-gray-600 hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => navigate(`/report-success?id=${report.id}`)}
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                {report.type === 'google_ads' ? <GoogleAdsIcon /> : <MetaAdsIcon />}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                  {report.name}
-                                </h3>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                  <span className="truncate">
-                                    {report.createdAt.toLocaleDateString('pt-BR')}
-                                  </span>
-                                  <span>•</span>
-                                  <span className="truncate">
-                                    {report.type === 'google_ads' ? 'Google Ads' : 'Meta Ads'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+      <div style={{ padding: '32px 32px 40px', maxWidth: 1280, margin: '0 auto', width: '100%' }}>
+        {/* Greeting */}
+        <div style={{ marginBottom: 24 }}>
+          <span className="t-small text-2">
+            Bom dia, {user?.displayName?.split(' ')[0] || 'Usuário'}
+          </span>
+          <h1
+            style={{
+              fontSize: 38,
+              fontWeight: 700,
+              letterSpacing: '-0.028em',
+              marginTop: 6,
+              lineHeight: 1.05,
+            }}
+          >
+            Vamos gerar seu próximo relatório?
+          </h1>
+        </div>
 
-                {/* Integrações */}
-                <Card className="bg-[#FAFAFA] dark:bg-gray-800 border-[#EDEDED] dark:border-gray-700 w-full">
-                  <CardHeader className="px-4 md:px-6">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Link2 className="w-5 h-5 flex-shrink-0" />
-                        <CardTitle className="text-lg md:text-xl truncate">
-                          {t('dashboard.integrations')}
-                        </CardTitle>
-                      </div>
-                      <Button
-                        onClick={() => navigate('/accounts')}
-                        className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 flex-shrink-0"
-                        size="sm"
-                      >
-                        <Plus className="w-4 h-4 md:mr-2" />
-                        <span className="hidden md:inline">{t('dashboard.addAccounts')}</span>
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-4 md:px-6">
-                    {connectionsLoading ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <p>{t('dashboard.loadingConnections')}</p>
-                      </div>
-                    ) : connections.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Link2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>{t('dashboard.noAccountsConnected')}</p>
-                        <p className="text-sm mt-2">{t('dashboard.clickToStart')}</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {currentConnections.map((account) => (
-                          <div
-                            key={account.id}
-                            className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 bg-white dark:bg-gray-700 rounded-lg border border-[#EDEDED] dark:border-gray-600 gap-3"
-                          >
-                            <div className="flex items-start md:items-center gap-3 min-w-0 flex-1">
-                              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                {account.platform === 'google_ads' ? (
-                                  <GoogleAdsIcon />
-                                ) : (
-                                  <MetaAdsIcon />
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="font-medium text-gray-900 dark:text-white text-sm truncate">
-                                  {account.accountName}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                  {account.email || account.accountId}
-                                </p>
-                                {account.lastSyncAt && (
-                                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                                    {t('common.general.synced')}: {(() => {
-                                      try {
-                                        const date = (account.lastSyncAt as any).toDate
-                                          ? (account.lastSyncAt as any).toDate()
-                                          : new Date(account.lastSyncAt as any)
-                                        return date.toLocaleDateString('pt-BR')
-                                      } catch {
-                                        return t('common.general.recently')
-                                      }
-                                    })()}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1 ml-12 md:ml-0 flex-shrink-0">
-                              <button
-                                onClick={() => handleRefreshConnection(account.id)}
-                                className="p-1.5 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                                title={t('common.button.refresh')}
-                                disabled
-                              >
-                                <RefreshCw className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => navigate('/accounts')}
-                                className="p-1.5 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                                title={t('common.button.manage')}
-                              >
-                                <Link2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteConnection(account.id)}
-                                className="p-1.5 md:p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 rounded-lg transition-colors"
-                                title={t('common.button.delete')}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Paginação */}
-                    {totalPages > 1 && (
-                      <div className="flex items-center justify-center gap-1 mt-4">
-                        <button
-                          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                          disabled={currentPage === 1}
-                          className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <div className="flex gap-1">
-                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                            <button
-                              key={page}
-                              onClick={() => setCurrentPage(page)}
-                              className={`px-2 py-1 md:px-3 md:py-1 text-sm rounded-lg ${
-                                currentPage === page
-                                  ? 'bg-primary text-white'
-                                  : 'hover:bg-gray-100 dark:hover:bg-gray-600'
-                              }`}
-                            >
-                              {page}
-                            </button>
-                          ))}
-                        </div>
-                        <button
-                          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                          disabled={currentPage === totalPages}
-                          className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+        {/* Hero balance card */}
+        <div
+          style={{
+            padding: '28px 32px',
+            borderRadius: 22,
+            background: 'var(--bg-elev)',
+            border: '1px solid var(--border)',
+            position: 'relative',
+            overflow: 'hidden',
+            marginBottom: 16,
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              right: -60,
+              top: -60,
+              width: 280,
+              height: 280,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, var(--chart-3) 0%, transparent 65%)',
+              opacity: 0.5,
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 24,
+            }}
+          >
+            <div>
+              <span
+                className="t-micro text-2"
+                style={{ letterSpacing: '0.06em', textTransform: 'uppercase' }}
+              >
+                Créditos disponíveis
+              </span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 10,
+                  marginTop: 6,
+                  fontWeight: 700,
+                  letterSpacing: '-0.03em',
+                  color: 'var(--text)',
+                }}
+              >
+                <span style={{ fontSize: 56, lineHeight: 1 }}>{balance}</span>
+                <span style={{ fontSize: 22, color: 'var(--text-2)' }}>créditos</span>
               </div>
-
-              {/* Templates - Usando o novo componente TemplateGrid */}
-              <div>
-                <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-4">
-                  {t('dashboard.viewTemplates')}
-                </h2>
-                <TemplateGrid onSelectTemplate={handleSelectTemplate} />
-              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                onClick={() => setShowAddCredits(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '9px 16px',
+                  borderRadius: 10,
+                  background: 'var(--text)',
+                  color: 'var(--bg)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <IconPlus size={16} strokeWidth={2.2} /> Comprar créditos
+              </button>
+              <button
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '9px 16px',
+                  borderRadius: 10,
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <IconSparkle size={16} /> Plano premium
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Quick metrics row — Relatórios + Integrações */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 32 }}>
+          {[
+            {
+              label: 'Relatórios',
+              value: reports.length,
+              sub: 'este mês',
+              icon: <IconDoc size={18} />,
+            },
+            {
+              label: 'Integrações',
+              value: connections.length,
+              sub: 'conectadas',
+              icon: <IconLink size={18} />,
+            },
+          ].map((m) => (
+            <div
+              key={m.label}
+              style={{
+                padding: 20,
+                borderRadius: 16,
+                background: 'var(--bg-elev)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-2)' }}
+              >
+                {m.icon}
+                <span className="t-small">{m.label}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
+                <span
+                  style={{
+                    fontSize: 36,
+                    fontWeight: 700,
+                    letterSpacing: '-0.025em',
+                    lineHeight: 1,
+                  }}
+                >
+                  {m.value}
+                </span>
+                <span className="t-small text-3">{m.sub}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Two-col: Meus relatórios + Integrações */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 22 }}>
+          {/* Meus relatórios */}
+          <section>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'space-between',
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ fontSize: 17, fontWeight: 650, letterSpacing: '-0.01em' }}>
+                Meus relatórios
+              </div>
+              <button
+                onClick={() => navigate('/reports')}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: 'var(--text-2)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                Ver tudo <IconChevR size={14} />
+              </button>
+            </div>
+
+            {reportsLoading || recentReports.length === 0 ? (
+              <div
+                style={{
+                  padding: '48px 28px',
+                  borderRadius: 18,
+                  background: 'var(--bg-elev)',
+                  border: '1px dashed var(--border-strong)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 16,
+                    background: 'var(--bg-elev-2)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-2)',
+                    marginBottom: 16,
+                  }}
+                >
+                  <IconDoc size={26} />
+                </div>
+                <p style={{ fontSize: 17, fontWeight: 650, color: 'var(--text)' }}>
+                  Nenhum relatório ainda
+                </p>
+                <p className="t-small text-2" style={{ marginTop: 6, marginBottom: 20 }}>
+                  Conecte uma plataforma e gere seu primeiro relatório
+                </p>
+                <button
+                  onClick={() => navigate('/templates')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '9px 16px',
+                    borderRadius: 10,
+                    background: 'var(--text)',
+                    color: 'var(--bg)',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <IconPlus size={14} strokeWidth={2.2} /> Gerar relatório
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {recentReports.map((report) => (
+                  <div
+                    key={report.id}
+                    onClick={() => navigate(`/report-success?id=${report.id}`)}
+                    style={{
+                      padding: '16px 20px',
+                      borderRadius: 16,
+                      background: 'var(--bg-elev)',
+                      border: '1px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+                        color: 'var(--accent)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconDoc size={20} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 2 }}>
+                        {report.name}
+                      </h3>
+                      <div className="t-small text-2">
+                        {report.createdAt.toLocaleDateString('pt-BR')} •{' '}
+                        {report.type === 'google_ads' ? 'Google Ads' : 'Meta Ads'}
+                      </div>
+                    </div>
+                    <IconChevR size={18} style={{ color: 'var(--text-3)' }} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Integrações */}
+          <section>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'space-between',
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ fontSize: 17, fontWeight: 650, letterSpacing: '-0.01em' }}>
+                Integrações
+              </div>
+              <button
+                onClick={() => navigate('/accounts')}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: 'var(--text-2)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                Gerenciar <IconChevR size={14} />
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gap: 10 }}>
+              {[
+                { name: 'Google Ads', icon: <GoogleAdsIcon s={26} />, count: googleAccounts },
+                { name: 'Meta Ads', icon: <MetaAdsIcon s={26} />, count: metaAccounts },
+              ].map((it) => (
+                <div
+                  key={it.name}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    padding: '16px 18px',
+                    borderRadius: 16,
+                    background: 'var(--bg-elev)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {it.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 650 }}>{it.name}</div>
+                    <div className="t-small text-2">{it.count} contas conectadas</div>
+                  </div>
+                  <button
+                    onClick={() => navigate('/accounts')}
+                    style={{
+                      padding: '9px 16px',
+                      borderRadius: 999,
+                      border: '1px solid var(--border-strong)',
+                      background: 'transparent',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {it.count > 0 ? 'Gerenciar' : 'Conectar'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
+      <AddCreditsModal open={showAddCredits} onOpenChange={setShowAddCredits} />
     </MainLayout>
   )
 }

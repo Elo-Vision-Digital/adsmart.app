@@ -11,13 +11,13 @@ export default {
         'sans': ['Montserrat', 'system-ui', 'sans-serif'],
       },
       colors: {
-        background: 'var(--background)',
-        surface: 'var(--surface)',
+        background: 'var(--bg)',
+        surface: 'var(--bg-elev)',
         foreground: 'var(--text)',
         border: 'var(--border)',
-        muted: 'var(--muted)',
-        'muted-foreground': 'var(--muted-foreground)',
-        primary: 'var(--primary)',
+        muted: 'var(--text-2)',
+        'muted-foreground': 'var(--text-3)',
+        primary: 'var(--accent)',
       },
       animation: {
         'slide-in': 'slideIn 0.2s ease-out',
