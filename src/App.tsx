@@ -5,7 +5,6 @@ import { PrivateRoute } from '@/components/PrivateRoute'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
-import { AccountsPage } from '@/pages/AccountsPage'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { PricesConfigPage } from '@/pages/admin/PricesConfigPage'
 import { WalletAdminPage } from '@/pages/admin/WalletAdminPage'
@@ -14,11 +13,13 @@ import { DeleteDataPage } from '@/pages/DeleteDataPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { GenerateReportPage } from '@/pages/GenerateReportPage'
 import { HomePage } from '@/pages/HomePage'
+import { IntegrationsPage } from '@/pages/IntegrationsPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { MetaReviewDemo } from '@/pages/MetaReviewDemo'
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
 import { PaymentSuccessPage } from '@/pages/PaymentSuccessPage'
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage'
+import { ProjectsPage } from '@/pages/ProjectsPage'
 import { ReportSuccessPage } from '@/pages/ReportSuccessPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
@@ -64,10 +65,18 @@ function App() {
                 }
               />
               <Route
-                path="/accounts"
+                path="/integrations"
                 element={
                   <PrivateRoute>
-                    <AccountsPage />
+                    <IntegrationsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/projects"
+                element={
+                  <PrivateRoute>
+                    <ProjectsPage />
                   </PrivateRoute>
                 }
               />

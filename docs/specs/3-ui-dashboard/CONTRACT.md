@@ -16,6 +16,8 @@ status: locked
 |---|---|---|
 | 1 | Refatorar `Dashboard.tsx` para o design de `DesktopDashboard` | Visual test: Layout em Grid (Two-col), Hero banner e métricas de acordo com os tokens do protótipo. |
 | 2 | Preservar as queries de Firestore para relatórios e integrações | Visual test: Listagem preenchida dinamicamente se houver relatórios ou contas. |
+| 3 | Refatorar `IntegrationsPage.tsx` para o design de `DesktopIntegrationsV2` | Visual test: Layout Projects-first, Modal Novo Projeto. |
+| 4 | Refatorar `TransactionsPage.tsx` para o design de `DesktopTransactions` | Visual test: Balance Hero, Side Stats e Segmented filters. |
 
 ## Out of scope (explicit)
 
