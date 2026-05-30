@@ -6,7 +6,6 @@ const validReport = {
   id: 'report-1',
   userId: 'user-abc',
   type: 'meta_ads',
-  templateId: 'meta_lancamento',
   name: 'Campanha Q2',
   status: 'completed',
   campaignIds: ['camp-1', 'camp-2'],
@@ -91,9 +90,8 @@ describe('ReportStatusSchema', () => {
 
 describe('ReportSchema — campos novos do redesign (FOUND-1)', () => {
   it('parses report with new multi-platform fields', () => {
-    const { templateId: _t, ...rest } = validReport
     const newFlowReport = {
-      ...rest,
+      ...validReport,
       platforms: ['google_ads', 'meta_ads'] as const,
       businessType: 'launch' as const,
       accountIds: { google_ads: 'acc-google-1', meta_ads: 'acc-meta-1' },
@@ -106,11 +104,6 @@ describe('ReportSchema — campos novos do redesign (FOUND-1)', () => {
     expect(result.success).toBe(true)
   })
 
-  it('parses report without templateId (new-flow report)', () => {
-    const { templateId: _t, ...withoutTemplate } = validReport
-    const result = ReportSchema.safeParse(withoutTemplate)
-    expect(result.success).toBe(true)
-  })
 
   it('rejects unknown businessType', () => {
     const invalid = { ...validReport, businessType: 'subscription' }

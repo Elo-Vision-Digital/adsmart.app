@@ -19,10 +19,6 @@ export const ReportSchema = z.object({
   id: z.string(),
   userId: z.string(),
   type: ReportTypeSchema,
-  // templateId é o conceito antigo — será removido na Fase 0.5 do roadmap
-  // quando refatorarmos os callers. Tornado optional para permitir os
-  // primeiros writes de teste do novo fluxo (FLOW-3) sem template.
-  templateId: z.string().optional(),
   name: z.string(),
   status: ReportStatusSchema,
   campaignIds: z.array(z.string()).optional(),

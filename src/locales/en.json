@@ -96,7 +96,6 @@
   "dashboard": {
     "myReports": "My reports",
     "integrations": "Integrations",
-    "viewTemplates": "View Report Templates",
     "searchPlaceholder": "Search...",
     "noReportsFound": "No reports found",
     "noAccountsConnected": "No accounts connected",
@@ -110,7 +109,6 @@
     "dashboard": "Dashboard",
     "integrations": "Integrations",
     "reports": "Reports",
-    "templates": "Templates",
     "finance": "Finance",
     "settings": "Settings",
     "administration": "Administration"
@@ -190,26 +188,12 @@
         "description": "Advanced analytics and AI-based recommendations"
       }
     },
-    "templates": {
-      "title": "Professional Templates Ready to Use",
-      "subtitle": "Choose from our templates optimized for different business types"
-    },
     "pricing": {
       "title": "Simple and Transparent Pricing",
       "subtitle": "Pay only for the reports you generate",
       "simple": {
         "title": "Simple Model",
         "subtitle": "No monthly fees, pay only for what you use"
-      },
-      "templates": {
-        "google": {
-          "launch": "Google Ads - Launch",
-          "localBusiness": "Google Ads - Local Business"
-        },
-        "meta": {
-          "launch": "Meta Ads - Launch",
-          "localBusiness": "Meta Ads - Local Business"
-        }
       }
     },
     "cta": {
@@ -237,70 +221,6 @@
     },
     "stats": {
       "thisMonth": "This month"
-    }
-  },
-  "templatesPage": {
-    "title": "Report Templates",
-    "subtitle": "Choose the ideal template for your marketing analysis",
-    "backToDashboard": "Back to Dashboard",
-    "currentBalance": "Your current balance",
-    "warning": "Warning",
-    "insufficientBalance": {
-      "title": "Insufficient Balance",
-      "message": "You need to add credits to generate reports. Your current balance is {balance}.",
-      "button": "Add Credits"
-    },
-    "howItWorks": {
-      "title": "How it works?",
-      "step1": "Choose the appropriate template for your ads platform",
-      "step2": "Connect your Google Ads or Meta Ads account",
-      "step3": "Select campaigns and analysis period",
-      "step4": "Confirm payment (real-time updated values)",
-      "step5": "Receive your personalized dashboard link in minutes!"
-    }
-  },
-  "templateCard": {
-    "featuresIncluded": "Features included:",
-    "loading": "Loading...",
-    "insufficientBalance": "Insufficient Balance",
-    "useTemplate": "Use this Template",
-    "defaultTitle": "{platform} Dashboard",
-    "defaultDescription": "Professional dashboard for your campaigns",
-    "templateTypes": {
-      "launch": "Launch",
-      "localBusiness": "Local Business"
-    },
-    "templateDescriptions": {
-      "googleLaunch": "Dashboard for launch campaigns on Google Ads",
-      "metaLaunch": "Dashboard for launch campaigns on Meta Ads",
-      "googleLocal": "Dashboard for local businesses on Google Ads",
-      "metaLocal": "Dashboard for local businesses on Meta Ads"
-    }
-  },
-  "templateFeatures": {
-    "googleLaunch": {
-      "feature1": "Conversion and ROI analysis",
-      "feature2": "Detailed engagement metrics",
-      "feature3": "Period comparison",
-      "feature4": "Automatic performance insights"
-    },
-    "metaLaunch": {
-      "feature1": "Target audience analysis",
-      "feature2": "Performance by ad format",
-      "feature3": "Detailed conversion funnel",
-      "feature4": "Suggested optimizations"
-    },
-    "googleLocal": {
-      "feature1": "Geographic conversion analysis",
-      "feature2": "Performance by location",
-      "feature3": "Peak conversion hours",
-      "feature4": "ROI by region"
-    },
-    "metaLocal": {
-      "feature1": "Reach by region",
-      "feature2": "Local engagement",
-      "feature3": "Detailed demographic analysis",
-      "feature4": "Cost per local lead"
     }
   },
   "accountsPage": {
@@ -428,8 +348,14 @@
       "categoryLabel": "Category",
       "typeLabel": "Type",
       "updatedAtLabel": "Updated",
-      "category": { "google": "Google Ads", "meta": "Meta Ads" },
-      "type": { "lancamento": "Launch", "negocioLocal": "Local Business" },
+      "category": {
+        "google": "Google Ads",
+        "meta": "Meta Ads"
+      },
+      "type": {
+        "lancamento": "Launch",
+        "negocioLocal": "Local Business"
+      },
       "currency": "R$"
     },
     "wallet": {

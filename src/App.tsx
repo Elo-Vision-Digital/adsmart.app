@@ -11,7 +11,6 @@ import { WalletAdminPage } from '@/pages/admin/WalletAdminPage'
 import { Dashboard } from '@/pages/Dashboard'
 import { DeleteDataPage } from '@/pages/DeleteDataPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
-import { GenerateReportPage } from '@/pages/GenerateReportPage'
 import { HomePage } from '@/pages/HomePage'
 import { IntegrationsPage } from '@/pages/IntegrationsPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -23,7 +22,6 @@ import { ProjectsPage } from '@/pages/ProjectsPage'
 import { ReportSuccessPage } from '@/pages/ReportSuccessPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
-import { TemplatesPage } from '@/pages/TemplatesPage'
 import { TermsOfServicePage } from '@/pages/TermsOfServicePage'
 import { TransactionsPage } from '@/pages/TransactionsPage'
 
@@ -82,22 +80,6 @@ function App() {
               />
               <Route path="/auth/google-ads/callback" element={<OAuthCallbackPage />} />
               <Route path="/auth/meta-ads/callback" element={<OAuthCallbackPage />} />
-              <Route
-                path="/templates"
-                element={
-                  <PrivateRoute>
-                    <TemplatesPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/generate-report"
-                element={
-                  <PrivateRoute>
-                    <GenerateReportPage />
-                  </PrivateRoute>
-                }
-              />
               <Route
                 path="/report-success"
                 element={

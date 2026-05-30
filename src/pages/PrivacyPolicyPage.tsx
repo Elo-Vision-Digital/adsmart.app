@@ -71,7 +71,7 @@ export function PrivacyPolicyPage() {
                 <h3 className="font-medium text-gray-900 dark:text-white mb-2">Dados de Uso</h3>
                 <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
                   <li>Logs de acesso e atividades no sistema</li>
-                  <li>Preferências de relatórios e templates</li>
+                  <li>Preferências de relatórios</li>
                   <li>Histórico de transações e créditos</li>
                 </ul>
               </div>

@@ -316,26 +316,8 @@ export function Dashboard() {
                   Nenhum relatório ainda
                 </p>
                 <p className="t-small text-2" style={{ marginTop: 6, marginBottom: 20 }}>
-                  Conecte uma plataforma e gere seu primeiro relatório
+                  Conecte uma plataforma e aguarde seus relatórios.
                 </p>
-                <button
-                  onClick={() => navigate('/templates')}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '9px 16px',
-                    borderRadius: 10,
-                    background: 'var(--text)',
-                    color: 'var(--bg)',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <IconPlus size={14} strokeWidth={2.2} /> Gerar relatório
-                </button>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

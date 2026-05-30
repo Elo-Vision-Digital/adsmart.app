@@ -104,12 +104,6 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Templates de relatórios
-    match /reportTemplates/{template} {
-      allow read: if isAuthenticated();
-      allow write: if false; // Apenas admins via Admin SDK
-    }
-    
     // Configurações do sistema
     match /systemConfig/{document} {
       allow read: if isAuthenticated();
