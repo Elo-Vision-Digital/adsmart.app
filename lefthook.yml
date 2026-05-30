@@ -1,6 +1,8 @@
 pre-commit:
   parallel: true
   commands:
+    check-branch:
+      run: ./scripts/hooks/check-branch-not-main.sh
     biome:
       glob: "*.{ts,tsx,js,jsx,json}"
       run: bunx biome check --write --no-errors-on-unmatched {staged_files}

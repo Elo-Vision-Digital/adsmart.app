@@ -1,0 +1,19 @@
+name: Enforce develop to main PRs
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  enforce-develop-to-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check head branch
+        run: |
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "❌ Error: Pull Requests targeting 'main' must originate from 'develop'."
+            echo "Current head branch is '${{ github.head_ref }}'."
+            exit 1
+          fi
+          echo "✅ PR originates from 'develop'. Allowed."
