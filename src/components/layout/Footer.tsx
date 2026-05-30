@@ -23,8 +23,7 @@ export function Footer() {
 
   const quickLinks = [
     { name: t('sidebar.dashboard'), path: '/dashboard' },
-    { name: t('sidebar.templates'), path: '/templates' },
-    { name: t('sidebar.integrations'), path: '/accounts' },
+    { name: t('sidebar.finance'), path: '/transactions' },
     { name: t('sidebar.reports'), path: '/reports' },
   ]
 

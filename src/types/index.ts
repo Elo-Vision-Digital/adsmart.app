@@ -16,7 +16,4 @@ export type {
   UserWallet,
 } from '@adsmart/shared'
 
-// `ReportTemplate` interface removed in C6.5 — the `reportTemplates/{id}`
-// Firestore collection had zero readers/writers in app code; templates are
-// served from a hardcoded array in src/components/templates/templateData.ts.
 // See docs/DATA-MODEL.md for the dead-code note and the post-Phase-D cleanup task.

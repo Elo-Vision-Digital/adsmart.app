@@ -44,7 +44,7 @@ export function TermsOfServicePage() {
               <ul className="list-disc list-inside space-y-1">
                 <li>Integração com contas do Google Ads e Meta Ads</li>
                 <li>Geração automatizada de relatórios de performance</li>
-                <li>Templates personalizáveis de relatórios</li>
+                <li>Geração dinâmica de relatórios</li>
                 <li>Exportação de dados e relatórios</li>
                 <li>Sistema de créditos para geração de relatórios</li>
               </ul>

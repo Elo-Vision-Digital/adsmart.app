@@ -8,7 +8,7 @@ import { httpsCallable } from 'firebase/functions'
 import { useEffect, useState } from 'react'
 import { functions } from '@/firebase/config'
 
-// Re-export so existing consumers (TemplateCard, GenerateReportPage) keep
+// Re-export so existing consumers keep working
 // the same import surface — ADR-016: types flow from @adsmart/shared.
 export type { ProductPrice }
 

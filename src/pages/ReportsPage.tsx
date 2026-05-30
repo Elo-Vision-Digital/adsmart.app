@@ -5,7 +5,6 @@ import {
   ChevronRight,
   FileText,
   Filter,
-  Plus,
   RefreshCw,
   Search,
 } from 'lucide-react'
@@ -148,12 +147,6 @@ export function ReportsPage() {
               <button className="inline-flex items-center gap-2 px-4 h-11 bg-[var(--bg-elev)] border border-[var(--border)] rounded-xl text-[15px] font-semibold text-[var(--text)] hover:bg-[var(--bg-elev-2)] transition-colors">
                 <FileText size={15} /> Exportar
               </button>
-              <button
-                onClick={() => navigate('/templates')}
-                className="inline-flex items-center gap-2 px-4 h-11 bg-[var(--accent)] border border-[var(--accent)] rounded-xl text-[15px] font-semibold text-[var(--accent-fg)] hover:opacity-90 transition-opacity"
-              >
-                <Plus size={16} strokeWidth={2.2} /> Criar relatório
-              </button>
             </div>
           </div>
 
@@ -273,15 +266,8 @@ export function ReportsPage() {
                   Nenhum relatório encontrado
                 </h3>
                 <p className="text-[15px] text-[var(--text-2)] max-w-[320px] mx-auto leading-relaxed mb-7">
-                  Não encontramos dados para a sua busca. Tente ajustar os filtros ou inicie a
-                  criação de um novo relatório.
+                  Não encontramos dados para a sua busca. Tente ajustar os filtros.
                 </p>
-                <button
-                  onClick={() => navigate('/templates')}
-                  className="inline-flex items-center gap-2 px-5 h-12 bg-[var(--accent)] text-[var(--accent-fg)] rounded-xl text-[15px] font-semibold hover:opacity-90 shadow-[0_4px_14px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.12)] transition-all hover:-translate-y-0.5 duration-200"
-                >
-                  <Plus size={18} strokeWidth={2.5} /> Criar primeiro relatório
-                </button>
               </div>
             ) : (
               <div className="overflow-x-auto">

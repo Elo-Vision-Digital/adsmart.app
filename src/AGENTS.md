@@ -18,7 +18,7 @@ src/
     ui/           # shadcn/ui primitives (button, card, dialog, input, …)
     layout/       # Shell components (Header, Sidebar, Footer, MainLayout, …)
     common/       # Shared small components (LanguageSelector, Logo, …)
-    templates/    # Report template grid and card
+
     AdminRoute.tsx
     PrivateRoute.tsx
   contexts/

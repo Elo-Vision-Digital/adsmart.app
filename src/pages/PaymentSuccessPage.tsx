@@ -68,10 +68,6 @@ export function PaymentSuccessPage() {
 
             {/* Ações */}
             <div className="space-y-3">
-              <Button onClick={() => navigate('/templates')} className="w-full" size="lg">
-                Gerar Relatório
-              </Button>
-
               <Button
                 onClick={() => navigate('/dashboard')}
                 variant="outline"
