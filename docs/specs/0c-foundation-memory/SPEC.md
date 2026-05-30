@@ -5,7 +5,7 @@ status: contract
 depends-on: ["-1", "0a", "0b"]
 est-days: 1
 references:
-  - docs/redesign/EXECUTION-CHECKLIST.md
+  - docs//
   - docs/research/01-firebase-stack.md
   - docs/research/02-llm-strategy.md
   - docs/research/04-share-link-patterns.md
@@ -16,19 +16,19 @@ references:
 
 # Sprint 0c — foundation-memory — SPEC
 
-> Memória cleanup + criação. Sprint pequena (1 dia) que limpa memórias obsoletas e documenta decisões do redesign roadmap como state persistente para sessões futuras.
+> Memória cleanup + criação. Sprint pequena (1 dia) que limpa memórias obsoletas e documenta decisões   como state persistente para sessões futuras.
 
 ## Outcomes
 
 - [ ] **1 memória deletada**: `suitpay_deprecated.md` (SuitPay foi removido em ADR-021; memória vira ruído; histórico fica em `docs/Decisions.md`)
 - [ ] **3 memórias atualizadas**:
   - `firebase_secrets.md` — adicionar `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY` como secrets planejados (não criar secrets reais ainda — só documentar a convenção)
-  - `admin_overhaul_roadmap.md` — cross-link com este redesign roadmap (`docs/redesign/EXECUTION-CHECKLIST.md`)
+  - `admin_overhaul_roadmap.md` — cross-link com este   (`docs//`)
   - `MEMORY.md` (index) — remover linha SuitPay + adicionar linhas das 10 novas memórias
 - [ ] **10 memórias novas criadas** (com `status: planned` quando a feature ainda não foi implementada):
   - `llm_combo_strategy.md` — Anthropic Claude (primary) + DeepSeek (fallback custo) — research/02 (planned, lands Fase 3.5)
-  - `report_flow_v2.md` — novo fluxo 6 passos — FEATURES-INVENTORY § FLOW-3 (planned, Fase 3.5)
-  - `credits_system.md` — 1 crédito = R$5, 1 plataforma = 1 crédito (Google + Meta = 2 créditos) — FEATURES-INVENTORY § MN-1 (planned, Fase 3.5)
+  - `report_flow_v2.md` — novo fluxo 6 passos —  § FLOW-3 (planned, Fase 3.5)
+  - `credits_system.md` — 1 crédito = R$5, 1 plataforma = 1 crédito (Google + Meta = 2 créditos) —  § MN-1 (planned, Fase 3.5)
   - `share_link_pattern.md` — UUID v4 + Firestore public collection + snapshot — research/04 (planned, Fase 3.5)
   - `playwright_pdf.md` — Playwright headless em Cloud Function para Export PDF — research/05 (planned, Fase 3.5)
   - `oauth_mfa_google.md` — Google Ads MFA mudança 21/abr/2026 — research/06 (active, já no código)
@@ -74,7 +74,7 @@ references:
 ## Prior decisions
 
 - **Decisão sobre `suitpay_deprecated.md`**: deletar (confirmado pelo usuário em 2026-05-19). Razão: SuitPay foi removido em ADR-021 (2026-05-18); memória só serve para confundir; histórico permanece em `docs/Decisions.md` + `docs/CHANGES.md`.
-- **Decisão sobre memórias de features planejadas**: criar agora com `status: planned` + link para sprint (confirmado pelo usuário 2026-05-19). Razão: documenta a DECISÃO do roadmap mesmo antes da implementação; reduz risco de drift entre roadmap e memória; quando a feature merge, atualizar para `active`.
+- **Decisão sobre memórias de features planejadas**: criar agora com `status: planned` + link para sprint (confirmado pelo usuário 2026-05-19). Razão: documenta a DECISÃO  mesmo antes da implementação; reduz risco de drift entre  e memória; quando a feature merge, atualizar para `active`.
 - **Decisão sobre estrutura**: 1 sprint, 2 waves (W1: delete+updates+MEMORY index; W2: 10 creates). Razão: granularidade adequada ao escopo (~14 items); validator ao fim de cada wave; 1 PR final.
 - **Memória vs ADR vs skill vs hook** (research/09 + MEMORY.md já tem nota sobre isso): convenção do projeto pós-2026-05-18 é:
   - **Memória**: state pessoal de sessão; decisão não-óbvia que afeta como o assistant deve trabalhar
@@ -93,7 +93,7 @@ references:
 |---|---|---|---|
 | 1 | Deletar `suitpay_deprecated.md` | — | arquivo não existe mais |
 | 2 | Atualizar `firebase_secrets.md` adicionando ANTHROPIC_API_KEY + DEEPSEEK_API_KEY (planned) | — | grep encontra ambas chaves no arquivo |
-| 3 | Atualizar `admin_overhaul_roadmap.md` com cross-link para `docs/redesign/EXECUTION-CHECKLIST.md` | — | grep encontra link |
+| 3 | Atualizar `admin_overhaul_roadmap.md` com cross-link para `docs//` | — | grep encontra link |
 | 4 | Atualizar `MEMORY.md` index: remover linha SuitPay + adicionar 10 linhas novas | 1, 2, 3 | sem ref a suitpay; ≥ 19 bullets de memória |
 
 ### Wave 2 — Novas memórias (10 items, ~2h)
@@ -131,7 +131,7 @@ references:
 
 ## References
 
-- `docs/redesign/EXECUTION-CHECKLIST.md` § FASE 0c (linha 284-322)
+- `docs//` § FASE 0c (linha 284-322)
 - `docs/research/09-harness-engineering.md` § 6 (Persistent state)
 - `.claude/projects/.../memory/MEMORY.md` (index atual)
 - `docs/specs/0a-foundation-harness/`, `docs/specs/0b-foundation-tooling/` (sprints anteriores como dogfood)

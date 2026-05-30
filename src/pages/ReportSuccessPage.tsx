@@ -9,7 +9,7 @@ import { db } from '@/firebase/config'
 import type { Report } from '@/types'
 
 // Placeholder UI da página /report-success. Será refatorada/substituída na
-// Fase 3.9 (REF-9 do redesign roadmap) por `/reports/:id`, parte do novo
+// Fase 3.9 (REF-9  ) por `/reports/:id`, parte do novo
 // fluxo de relatório (FLOW-3.5). Esta versão remove a dependência do
 // dashboard externo (substituído por render in-app via ADR-022) e mantém o
 // mínimo funcional: ler o doc, mostrar status, oferecer navegação.

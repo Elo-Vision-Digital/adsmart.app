@@ -5,7 +5,7 @@ status: contract
 depends-on: ["-1", "0a", "0b", "0c", "0d"]
 est-days: 2
 references:
-  - docs/redesign/EXECUTION-CHECKLIST.md
+  - docs//
   - docs/research/08-stripe-future.md
 ---
 
@@ -15,12 +15,12 @@ references:
 
 ## Outcomes
 
-- [ ] **Zero referência a "asaas/Asaas"** em código TS/TSX (src/, functions/, packages/) e docs ativas (excluindo registros históricos como specs, research, archive, CHANGES, changelog, redesign/).
+- [ ] **Zero referência a "asaas/Asaas"** em código TS/TSX (src/, functions/, packages/) e docs ativas (excluindo registros históricos como specs, research, archive, CHANGES, changelog, /).
 - [ ] **Zero referência a "suitpay/SuitPay"** no código TS/TSX. Em docs: zero exceto em ADR-021 (decisão histórica preservada) + docs/CHANGES.md (entries históricos).
 - [ ] **Zero referência a "looker/datastudio/data.studio/lookerStudio"** em código TS/TSX e docs ativas; `src/config/lookerStudioTemplates.ts` deletado.
 - [ ] **MetaReviewDemo dev-only**: rota envolvida em `import.meta.env.MODE === 'development'` em `src/App.tsx`.
 - [ ] **Stripe (FUTURE §8)** substitui referências a Asaas onde aplicável (research/08-stripe-future.md é a fonte).
-- [ ] **Registros históricos intocados**: sprint artifacts (`docs/specs/`), research (`docs/research/`), archive (`docs/superpowers/archive/`), changelog histórico (`docs/changelog/`), redesign roadmap (`docs/redesign/EXECUTION-CHECKLIST.md`, FUTURE-IDEAS, FEATURES-INVENTORY, CURRENT-STATE-AUDIT), CHANGES.md (entries antigos preservados).
+- [ ] **Registros históricos intocados**: sprint artifacts (`docs/specs/`), research (`docs/research/`), archive (`docs/superpowers/archive/`), changelog histórico (`docs/changelog/`),   (`docs//`, FUTURE-IDEAS, , CURRENT-STATE-AUDIT), CHANGES.md (entries antigos preservados).
 - [ ] **Zero regressão**: `cd packages/shared && bun run test` → 195/195, `bun run typecheck` exit 0, `bun run lint` 0 errors.
 - [ ] **Dogfood**: sprint executada via harness (sprint folder + 4 waves/microsprints com pausa, validator agent em cada).
 
@@ -46,7 +46,7 @@ references:
 
 | Tipo | Restrição |
 |---|---|
-| Histórico | Sprint artifacts (`docs/specs/`), research, archive, changelog, redesign roadmap → INTOCÁVEIS. Substituições só em código ativo + docs ativas. |
+| Histórico | Sprint artifacts (`docs/specs/`), research, archive, changelog,   → INTOCÁVEIS. Substituições só em código ativo + docs ativas. |
 | ADRs Accepted/Deferred | Não reescrever decisão original. Permitido: update cirúrgico de referência cruzada (ex: "Asaas is the replacement" → "Stripe is the planned replacement, FUTURE §8") |
 | Estratégia | Asaas → Stripe (FUTURE §8) quando substituível; remoção total quando contextualmente redundante |
 | MetaReviewDemo | Dev-only flag via `import.meta.env.MODE === 'development'` no `src/App.tsx`; build prod retorna 404 na rota |
@@ -76,7 +76,7 @@ Código TS/TSX (4 arquivos — só comentários):
 Docs ativas (12 arquivos):
 5-16. `AGENTS.md`, `CLAUDE.md`, `docs/PAYMENTS.md` (10 hits), `docs/Decisions.md` (refs cruzadas, não reescrever ADRs), `docs/DOMAIN.md`, `docs/Integrations.md`, `docs/REFACTOR-PLAN.md`, `docs/SECURITY.md`, `docs/DATA-MODEL.md`, `docs/API-CONTRACTS.md`, `docs/index.md`, `docs/FIREBASE-CONVENTIONS.md`
 
-Acceptance test: `grep -rln "asaas\|Asaas" src/ functions/ packages/ AGENTS.md CLAUDE.md docs/*.md` (excluindo specs/, research/, superpowers/, changelog/, redesign/, CHANGES.md) → zero.
+Acceptance test: `grep -rln "asaas\|Asaas" src/ functions/ packages/ AGENTS.md CLAUDE.md docs/*.md` (excluindo specs/, research/, superpowers/, changelog/, /, CHANGES.md) → zero.
 
 ### Microsprint 0.5.2 — SuitPay cleanup final (~2 arquivos, ~15min)
 
@@ -92,7 +92,7 @@ Acceptance test: `grep -rln "suitpay\|SuitPay" src/ functions/ packages/` → ze
 - Atualizar: `packages/shared/src/schemas/report.ts` (remover `lookerStudioUrl` se ainda presente), `*.test.ts` co-located
 - Docs ativas: src/AGENTS.md, Integrations, QA-CHECKLIST, REFACTOR-PLAN, DOMAIN, DATA-MODEL, Decisions, CHANGES (entry), changelog (NÃO — histórico)
 
-Acceptance test: `grep -rln "looker\|datastudio\|data\.studio\|lookerStudio" src/ functions/ packages/ docs/*.md AGENTS.md CLAUDE.md` (excluindo specs/, research/, superpowers/, changelog/, redesign/) → zero.
+Acceptance test: `grep -rln "looker\|datastudio\|data\.studio\|lookerStudio" src/ functions/ packages/ docs/*.md AGENTS.md CLAUDE.md` (excluindo specs/, research/, superpowers/, changelog/, /) → zero.
 
 ### Microsprint 0.5.4 — MetaReviewDemo dev-only flag (~2 arquivos, ~15min)
 
@@ -121,7 +121,7 @@ Acceptance test: `grep -A2 "MetaReviewDemo" src/App.tsx | grep -q "import.meta.e
 
 ## References
 
-- `docs/redesign/EXECUTION-CHECKLIST.md` § FASE 0.5 (linha 364-426)
+- `docs//` § FASE 0.5 (linha 364-426)
 - `docs/research/08-stripe-future.md` (Stripe é o substituto declarado)
 - `docs/Decisions.md` § ADR-021 (Accepted, SuitPay removal)
 - `docs/Decisions.md` § ADR-022 (Planned, render in-app substitui Data Studio)

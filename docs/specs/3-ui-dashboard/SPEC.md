@@ -5,7 +5,7 @@ status: contract
 depends-on: ["2"]
 est-days: 0
 references:
-  - docs/redesign/EXECUTION-CHECKLIST.md
+  - docs//
 ---
 
 # Sprint 3 — ui-dashboard — SPEC

@@ -68,12 +68,12 @@ status: locked
 Sem ambiguidade — isto NÃO faz parte desta sprint:
 
 - [ ] Atualizar `.claude/settings.json` com hook configurations novos — **Fase 0b**
-- [ ] Criar `.claude/skills/redesign-screen/`, `new-zod-schema/`, etc. — **Fase 0b**
+- [ ] Criar `.claude/skills/-screen/`, `new-zod-schema/`, etc. — **Fase 0b**
 - [ ] Criar `.claude/commands/new-sprint.md`, `/research-sprint`, etc. — **Fase 0b**
 - [ ] Atualizar `AGENTS.md` root ou criar sub-AGENTS.md por área — **Fase 0b**
 - [ ] Criar ou atualizar arquivos de memory em `.claude/projects/.../memory/` — **Fase 0c**
 - [ ] Publicar ADRs (Harness, Multi-process agents, etc.) — **Fase 0d**
-- [ ] Refatorar agents existentes (`firestore-*-reviewer`, `functions-security-reviewer`) — **fora do redesign roadmap** (esses agents são specializados em revisão, não em workflow de sprint; coexistem)
+- [ ] Refatorar agents existentes (`firestore-*-reviewer`, `functions-security-reviewer`) — **fora  ** (esses agents são specializados em revisão, não em workflow de sprint; coexistem)
 - [ ] Implementar slash commands automatizados — **Fase 0b**
 - [ ] Conexão real com MCP servers novos — **fora do escopo** (já configurados via `.claude/settings.json` enabledPlugins)
 - [ ] Mudanças em `firestore.rules` ou `firestore.indexes.json` — fora do escopo

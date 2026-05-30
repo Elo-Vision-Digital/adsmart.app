@@ -76,7 +76,7 @@ describe('DEFAULT_PRODUCT_PRICES', () => {
   })
 })
 
-describe('ProductPriceSchema — campos novos do redesign (FOUND-1)', () => {
+describe('ProductPriceSchema — campos novos  (FOUND-1)', () => {
   it('parses doc with new creditsPerReport field', () => {
     const withCredits = { ...validStored, creditsPerReport: 1 }
     expect(ProductPriceSchema.safeParse(withCredits).success).toBe(true)

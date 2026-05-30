@@ -48,7 +48,7 @@ Retroactive ADRs documenting key decisions made during the AdSmart modernization
 **Date:** 2026-04-24
 **Status:** Superseded by ADR-021 (SuitPay removed) + FUTURE §8 (Stripe is the planned replacement, not Asaas)
 
-**Update 2026-05-19:** Asaas was never implemented. SuitPay was removed end-to-end in [ADR-021](#adr-021-remove-suitpay-end-to-end--harden-prepare-deploy-against-secretenv-overlap) (2026-05-18). The future payment direction is Stripe (see [FUTURE §8](redesign/FUTURE-IDEAS.md) and [docs/research/08-stripe-future.md](research/08-stripe-future.md)). The original ADR text below is preserved as historical record of the decision-making at that point in time.
+**Update 2026-05-19:** Asaas was never implemented. SuitPay was removed end-to-end in [ADR-021](#adr-021-remove-suitpay-end-to-end--harden-prepare-deploy-against-secretenv-overlap) (2026-05-18). The future payment direction is Stripe (see [FUTURE §8](/) and [docs/research/08-stripe-future.md](research/08-stripe-future.md)). The original ADR text below is preserved as historical record of the decision-making at that point in time.
 
 **Decision (original, 2026-04-24):** Do not invest in hardening the SuitPay integration. Replace it with Asaas in a separate project phase.
 
@@ -981,7 +981,7 @@ Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `
 
 **References:**
 
-- See `docs/redesign/FEATURES-INVENTORY.md` § FLOW-3
+- See `docs//` § FLOW-3
 - See memory `report_flow_v2` (planned)
 - Replaces the legacy "redirect to Looker" flow currently in `src/pages/TemplatesPage.tsx` + `src/pages/GenerateReportPage.tsx`
 
@@ -1009,7 +1009,7 @@ Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `
 
 **References:**
 
-- See `docs/redesign/FEATURES-INVENTORY.md` § MN-1
+- See `docs//` § MN-1
 - See memory `credits_system` (planned)
 - Schemas já existem: `packages/shared/src/schemas/userWallet.ts`, `transaction.ts`
 - Reference pattern: `functions/src/adminWalletManager.ts` (transação atômica wallet + transactions)
@@ -1132,8 +1132,8 @@ Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `
 
 - See `docs/research/03-frontend-stack.md` (Tailwind v4 + React 19 migration plan)
 - See `docs/UI-DESIGN.md` (sistema visual da AdSmart)
-- See `docs/redesign/FEATURES-INVENTORY.md` § DS-1
-- Skill `redesign-screen` (Fase 0b) automatiza refactor de tela a tela
+- See `docs//` § DS-1
+- Skill `-screen` (Fase 0b) automatiza refactor de tela a tela
 - Princípio: não preempt Tailwind v4 syntax antes de Fase 1 mergear — `src/AGENTS.md` § Current vs target stack documenta
 
 ---
@@ -1281,7 +1281,7 @@ Additionally, `functions/scripts/prepare-deploy.mjs` is **hardened** to filter `
 - See `docs/research/09-harness-engineering.md` § 8.4 (Hooks PreToolUse)
 - See `.claude/settings.json` (12 PreToolUse hooks — 4 legados em `scripts/firebase/` + 8 novos em `scripts/hooks/`)
 - Hooks documentados em memory `multi_process_agents` (lista completa)
-- Princípio 15 do roadmap (FEATURES-INVENTORY § Princípios)
+- Princípio 15 ( § Princípios)
 
 ---
 

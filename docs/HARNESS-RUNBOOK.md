@@ -92,7 +92,7 @@ If validator disagrees, send dissent to implementer for one more pass. Then lock
 Orchestrator groups CONTRACT items into **waves** by dependency. Independent items go in the same wave. For each wave, spawn one Implementer per item, all in parallel:
 
 ```
-Agent({ subagent_type: "implementer", prompt: "Execute CONTRACT items #1 and #2 in docs/specs/1-design-system/CONTRACT.md. SPEC is at .../SPEC.md. Branch is feat/redesign-design-system. Commit per item." })
+Agent({ subagent_type: "implementer", prompt: "Execute CONTRACT items #1 and #2 in docs/specs/1-design-system/CONTRACT.md. SPEC is at .../SPEC.md. Branch is feat/-design-system. Commit per item." })
 Agent({ subagent_type: "implementer", prompt: "Execute CONTRACT item #3 — independent of #1, #2." })
 ```
 
@@ -178,4 +178,4 @@ When agent prompts need updating, edit `.claude/agents/{name}.md`. The next `Age
 - [docs/research/09-harness-engineering.md](research/09-harness-engineering.md) — full taxonomy + sources
 - [Martin Fowler — Harness engineering](https://martinfowler.com/articles/harness-engineering.html)
 - [Claude Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview)
-- [docs/redesign/EXECUTION-CHECKLIST.md](redesign/EXECUTION-CHECKLIST.md) — phase-by-phase plan that uses this harness
+- [docs//](/) — phase-by-phase plan that uses this harness

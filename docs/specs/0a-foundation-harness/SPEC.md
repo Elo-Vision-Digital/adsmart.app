@@ -6,12 +6,12 @@ depends-on: ["-1"]
 est-days: 1
 references:
   - docs/research/09-harness-engineering.md
-  - docs/redesign/EXECUTION-CHECKLIST.md
+  - docs//
 ---
 
 # Sprint 0a — Foundation Harness — SPEC
 
-> Instala a infraestrutura de Harness Engineering em AdSmart: 6 agents multi-process + 4 templates de sprint + 3 scripts de coordenação + runbook. Base para todas as fases seguintes do redesign.
+> Instala a infraestrutura de Harness Engineering em AdSmart: 6 agents multi-process + 4 templates de sprint + 3 scripts de coordenação + runbook. Base para todas as fases seguintes .
 
 ## Outcomes
 
@@ -43,7 +43,7 @@ references:
 
 Deixado para fases posteriores (não confundir com esta sprint):
 
-- **Skills novas em `.claude/skills/`** → Fase 0b (`redesign-screen`, `new-zod-schema`, etc.)
+- **Skills novas em `.claude/skills/`** → Fase 0b (`-screen`, `new-zod-schema`, etc.)
 - **Slash commands em `.claude/commands/`** → Fase 0b (`/new-sprint`, `/research-sprint`, etc.)
 - **Hooks PreToolUse novos em `scripts/firebase/` ou similares** → Fase 0b (`check-no-hardcoded-literal.sh`, `check-contract-exists.sh`, etc.)
 - **Atualização de sub-AGENTS.md por área** → Fase 0b
@@ -65,7 +65,7 @@ Deixado para fases posteriores (não confundir com esta sprint):
 
 ## Prior decisions
 
-Vindas da pesquisa Fase -2 e do roadmap:
+Vindas da pesquisa Fase -2 e :
 
 - **Multi-process agents** (Researcher 09 §4): Implementer ≠ Validator, contextos isolados. Cada Agent call inicia com fresh 200k. Razão: agentes julgando o próprio output têm viés inevitável; processos separados eliminam.
 - **Contracts negotiated before execution** (Researcher 09 §5): SPEC define escopo, CONTRACT é a lista item-a-item que Implementer compromete a entregar. Locked antes da execução. Validator bate item-a-item. Razão: previne scope creep e loops infinitos.
@@ -131,6 +131,6 @@ Wave 4 (validação final):
 ## References
 
 - [docs/research/09-harness-engineering.md](../../research/09-harness-engineering.md)
-- [docs/redesign/EXECUTION-CHECKLIST.md § Fase 0a](../../redesign/EXECUTION-CHECKLIST.md)
+- [docs// § Fase 0a](../..//)
 - [Martin Fowler — Harness engineering](https://martinfowler.com/articles/harness-engineering.html)
 - [Claude Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview)

@@ -22,13 +22,13 @@ status: locked
 | 2 | Atualizar `functions/AGENTS.md` adicionando seções "Idempotência" e "Structured logging" | `grep -qE "^## Idempot" functions/AGENTS.md && grep -qE "^## Structured logging\|^### Structured logging" functions/AGENTS.md` |
 | 3 | Criar `packages/shared/AGENTS.md` (schemas Zod source of truth, padrão `z.infer`, test co-located obrigatório) | `test -f packages/shared/AGENTS.md && grep -q "z.infer" packages/shared/AGENTS.md && grep -q "co-located\|colocated\|next to" packages/shared/AGENTS.md` |
 | 4 | Atualizar `AGENTS.md` root com stack table (Tailwind v4 + SF Pro + Anthropic + DeepSeek + Playwright PDF) + princípios | `grep -q "Tailwind v4" AGENTS.md && grep -qE "## Stack\|## Princ" AGENTS.md` |
-| 5 | Atualizar `CLAUDE.md` root com quick references para `redesign/`, `research/`, `specs/`, `HARNESS-RUNBOOK.md` | `grep -q "HARNESS-RUNBOOK\|docs/specs/" CLAUDE.md` |
+| 5 | Atualizar `CLAUDE.md` root com quick references para `/`, `research/`, `specs/`, `HARNESS-RUNBOOK.md` | `grep -q "HARNESS-RUNBOOK\|docs/specs/" CLAUDE.md` |
 
 ### Wave 2 — Skills novas (7 itens)
 
 | # | Item | Acceptance test |
 |---|---|---|
-| 6 | `.claude/skills/redesign-screen/SKILL.md` com frontmatter `name` + `description` + corpo de instruções | `test -f .claude/skills/redesign-screen/SKILL.md && grep -qE "^name:" .claude/skills/redesign-screen/SKILL.md && grep -qE "^description:" .claude/skills/redesign-screen/SKILL.md` |
+| 6 | `.claude/skills/-screen/SKILL.md` com frontmatter `name` + `description` + corpo de instruções | `test -f .claude/skills/-screen/SKILL.md && grep -qE "^name:" .claude/skills/-screen/SKILL.md && grep -qE "^description:" .claude/skills/-screen/SKILL.md` |
 | 7 | `.claude/skills/new-zod-schema/SKILL.md` idem | idem para new-zod-schema |
 | 8 | `.claude/skills/new-report-business-type/SKILL.md` idem | idem |
 | 9 | `.claude/skills/verify-i18n/SKILL.md` idem | idem |
@@ -48,7 +48,7 @@ status: locked
 | 18 | `.claude/commands/validate-sprint.md` idem | idem |
 | 19 | `.claude/commands/ship-sprint.md` idem | idem |
 | 20 | `.claude/commands/update-progress.md` idem | idem |
-| 21 | `.claude/commands/new-screen-redesign.md` idem | idem |
+| 21 | `.claude/commands/new-screen-.md` idem | idem |
 | 22 | `.claude/commands/check-i18n.md` idem | idem |
 | 23 | `.claude/commands/check-no-hardcoded.md` idem | idem |
 | 24 | `.claude/commands/new-ai-prompt-version.md` idem | idem |
@@ -80,7 +80,7 @@ status: locked
 
 - [ ] Deletar/criar/atualizar memórias em `.claude/projects/.../memory/` — **Fase 0c**
 - [ ] Publicar ADRs (Harness, Multi-process, Stack 2026) — **Fase 0d**
-- [ ] Refactor de agents legados (`firestore-*`, `functions-security-reviewer`) — fora do roadmap
+- [ ] Refactor de agents legados (`firestore-*`, `functions-security-reviewer`) — fora 
 - [ ] Refactor de hooks legados em `scripts/firebase/` — manter por compatibilidade
 - [ ] Mudanças em código TS/TSX da app — esta sprint é tooling/infra
 - [ ] Conteúdo "rico" das skills/commands que invoca LLM em produção real — escopo é criar os arquivos com instruções/prompts; execução real só após uso de campo

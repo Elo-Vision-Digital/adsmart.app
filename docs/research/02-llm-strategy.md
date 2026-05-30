@@ -2,7 +2,7 @@
 
 **Validado em**: 2026-05-19
 **Fontes**: WebSearch — Anthropic pricing 2026, DeepSeek pricing 2026, Vercel AI SDK + OpenRouter routing
-**Aplicação**: INF-1 do roadmap inicial (geração de relatório por tipo de negócio)
+**Aplicação**: INF-1  (geração de relatório por tipo de negócio)
 
 ---
 
@@ -38,7 +38,7 @@
 
 ### Padrão recomendado: roteador caseiro inicial → AI Gateway/OpenRouter depois
 
-**Fase 1 (roadmap inicial)**: roteador caseiro simples em `functions/src/ai/router.ts`
+**Fase 1 **: roteador caseiro simples em `functions/src/ai/router.ts`
 ```ts
 const router = {
   async generate(task: 'insight' | 'classify' | 'parse' | 'summarize', input: ...) {
@@ -63,7 +63,7 @@ const router = {
 ## 3. Structured output — crítico para relatório
 
 ### Padrão obrigatório
-Toda chamada LLM no roadmap usa **structured output** (não free-text):
+Toda chamada LLM  usa **structured output** (não free-text):
 - **Anthropic**: `tool_use` com schema Zod via `@anthropic-ai/sdk`
 - **DeepSeek**: `response_format: { type: 'json_object' }` + validação Zod no return
 - **Validação**: Zod schema do `packages/shared/src/schemas/` valida o output antes de salvar no Firestore
@@ -102,13 +102,13 @@ export const AIReportInsightSchema = z.object({
 - Custo cached: $0.0028 / 1M (vs $0.14 cache-miss) — **redução de 98%**
 - Aplicação: idem Anthropic — system prompt fixo + dados variáveis
 
-### Implicação no roadmap
+### Implicação 
 - Em [functions/src/ai/prompts/](functions/src/ai/prompts/) (a criar), system prompts ficam **versionados e cacheados**
 - Mudar system prompt = nova versão de cache → primeiros usuários pagam o overhead
 
 ---
 
-## 5. Observabilidade obrigatória (princípio do roadmap)
+## 5. Observabilidade obrigatória (princípio )
 
 ### Por que
 - LLM tem custo variável real
@@ -138,7 +138,7 @@ logger.info('LLM call', {
 
 ---
 
-## 6. Decisões pendentes (GATE-LLM-COMBO no roadmap)
+## 6. Decisões pendentes (GATE-LLM-COMBO )
 
 | Decisão | Status | Quando fechar |
 |---|---|---|

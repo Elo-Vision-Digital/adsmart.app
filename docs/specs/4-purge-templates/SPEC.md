@@ -5,7 +5,7 @@ status: planning
 depends-on: ["3"]
 est-days: 1
 references:
-  - docs/redesign/EXECUTION-CHECKLIST.md
+  - docs//
 ---
 
 # Sprint 4 — purge-templates — SPEC

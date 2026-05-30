@@ -27,7 +27,7 @@ What was preserved (intentional):
 
 ## Stripe (planned — FUTURE §8)
 
-When Stripe integration lands ([FUTURE §8](redesign/FUTURE-IDEAS.md), backed by [research/08-stripe-future.md](research/08-stripe-future.md)):
+When Stripe integration lands ([FUTURE §8](/), backed by [research/08-stripe-future.md](research/08-stripe-future.md)):
 
 1. **Do not bring back `SUITPAY_*` secrets** — Stripe uses its own credentials (declare via `defineSecret('STRIPE_SECRET_KEY')` and `defineSecret('STRIPE_WEBHOOK_SECRET')` in `functions/src/config/index.ts`).
 2. **Stripe handles tokenization** server-side via PaymentIntents + Customer — no raw card data crosses the boundary. The AES-256-GCM module at `functions/src/lib/oauthCrypto.ts` (ADR-019) stays scoped to OAuth tokens at rest, not payment data.

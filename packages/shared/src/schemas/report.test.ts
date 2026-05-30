@@ -88,7 +88,7 @@ describe('ReportStatusSchema', () => {
   })
 })
 
-describe('ReportSchema — campos novos do redesign (FOUND-1)', () => {
+describe('ReportSchema — campos novos  (FOUND-1)', () => {
   it('parses report with new multi-platform fields', () => {
     const newFlowReport = {
       ...validReport,

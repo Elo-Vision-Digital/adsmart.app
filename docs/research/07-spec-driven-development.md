@@ -2,7 +2,7 @@
 
 **Validado em**: 2026-05-19
 **Fontes**: WebSearch — SDD com AI agents 2026, GitHub Spec Kit, AWS Kiro, CLAUDE.md patterns
-**Aplicação**: Fase 0 do roadmap (harness/docs/skills/agents/hooks)
+**Aplicação**: Fase 0  (harness/docs/skills/agents/hooks)
 
 ---
 
@@ -35,8 +35,8 @@ Toda spec moderna define:
 5. **Task breakdown** — decomposição em sub-tarefas executáveis
 6. **Verification criteria** — como saber que tá pronto (testes, smoke checks, métricas)
 
-### Aplicação no roadmap AdSmart
-- Cada **fase** do roadmap = uma spec
+### Aplicação  AdSmart
+- Cada **fase**  = uma spec
 - Cada **feature** dentro de uma fase = sub-spec (em `docs/specs/{fase}/{feature}.md`)
 - Cada **callable novo** = mini-spec antes de implementar
 - Verification = `docs/QA-CHECKLIST.md` + testes Vitest + smoke manual
@@ -61,7 +61,7 @@ GitHub Spec Kit + AWS Kiro + Claude Code convergem para este padrão:
 **Recomendação**: manter estrutura atual + adicionar sub-agents específicos para domínios novos:
 - `ai-feature-implementer` — futuro AI Hub (FUTURE §2)
 - `payment-stripe-implementer` — futuro Stripe (FUTURE §8)
-- `share-link-implementer` — share-link público (SHARE-* do roadmap inicial)
+- `share-link-implementer` — share-link público (SHARE-* )
 
 ---
 
@@ -69,11 +69,11 @@ GitHub Spec Kit + AWS Kiro + Claude Code convergem para este padrão:
 
 > "GitHub reports that teams using Spec Kit on internal projects ship features with **roughly an order-of-magnitude fewer 'regenerate from scratch' cycles** than ad-hoc prompting."
 
-**Tradução prática**: investir em specs detalhadas **antes** do código compensa 10× em retrabalho evitado. Isso justifica a Fase 0 do roadmap (atualizar harness/docs antes de qualquer código de produto).
+**Tradução prática**: investir em specs detalhadas **antes** do código compensa 10× em retrabalho evitado. Isso justifica a Fase 0  (atualizar harness/docs antes de qualquer código de produto).
 
 ---
 
-## 5. Recomendações concretas para Fase 0 do roadmap
+## 5. Recomendações concretas para Fase 0 
 
 ### 5.1 Estrutura de docs a criar/atualizar
 
@@ -85,7 +85,7 @@ docs/
 ├── DATA-MODEL.md                 — refactor completo (Firestore tree atualizada)
 ├── DOMAIN.md                     — refactor completo (créditos, relatórios, share-link)
 ├── ARCHITECTURE.md (criar)       — visão high-level + diagramas
-├── Decisions.md                  — atualizar com ADRs novos do roadmap
+├── Decisions.md                  — atualizar com ADRs novos 
 ├── SECURITY.md                   — atualizar com padrões share-link público
 ├── TESTING.md (refresh)          — patterns Vitest + Firestore rules tests
 ├── DEPLOYMENT.md (refresh)       — patterns Cloud Functions v2 deploy
@@ -101,10 +101,10 @@ docs/
 │   ├── 3.5-new-report-flow.md    — Fase 3.5 spec (a maior)
 │   └── 4-validation.md           — Fase 4 spec
 ├── research/                     — saída desta sessão (8 docs)
-└── redesign/
-    ├── FEATURES-INVENTORY.md
-    ├── CURRENT-STATE-AUDIT.md
-    └── FUTURE-IDEAS.md
+└── /
+    ├── 
+    ├── 
+    └── 
 ```
 
 ### 5.2 Sub-AGENTS.md por área
@@ -122,7 +122,7 @@ Cada sub-AGENTS.md herda do root + adiciona regras locais (paths, padrões, tool
 Existentes: `firebase-deploy-recovery`, `dev-environment-diagnose`, `firebase-deploy`, `firestore-rules-test`, `firestore-new-query`, `functions-new-callable`.
 
 Adicionar:
-- `redesign-screen` — workflow para refatorar uma tela (DS-1 tokens + visual Apple)
+- `-screen` — workflow para refatorar uma tela (DS-1 tokens + visual Apple)
 - `new-zod-schema` — criar schema novo em `packages/shared/src/schemas/` com test
 - `new-report-business-type` — adicionar novo tipo de negócio em FLOW-3 (quando precisar)
 - `verify-i18n` — checar que strings novas estão nos 3 idiomas
@@ -133,7 +133,7 @@ Adicionar:
 Existentes: `/functions-new-callable`, `/firestore-new-query`, `/firestore-rules-test`, `/firebase-deploy`.
 
 Adicionar:
-- `/new-screen-redesign <name>` — refactor de uma tela existente seguindo DS-1
+- `/new-screen- <name>` — refactor de uma tela existente seguindo DS-1
 - `/check-i18n` — validar i18n completo (3 idiomas) em diff
 - `/check-no-hardcoded` — detectar literals hardcoded
 - `/new-ai-prompt-version <name>` — versionar novo prompt do INF-1
@@ -160,7 +160,7 @@ Adicionar:
 
 **Atualizar**:
 - `firebase_secrets.md` — adicionar `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`
-- `admin_overhaul_roadmap.md` — referenciar este roadmap (cross-link)
+- `admin_overhaul_roadmap.md` — referenciar este  (cross-link)
 
 **Criar**:
 - `llm_combo_strategy.md` — Anthropic + DeepSeek, roteamento por tarefa (resumo do 02-llm-strategy.md)
@@ -183,7 +183,7 @@ Adicionar:
 5. **Hooks deterministas** bloqueando padrões ruins (não dependem do agente)
 6. **Memória com 'why' explícito** — agente entende motivo da regra, não só a regra
 
-### Aplicação no roadmap
+### Aplicação 
 - TODA Fase tem spec própria seguindo 6 elementos
 - TODO PR passa por verifier (subagente `pr-review-toolkit:code-reviewer`)
 - Schemas Zod source of truth obrigatórios (já é regra — ADR-009)
@@ -196,7 +196,7 @@ Adicionar:
 
 ### Sub-fases ordenadas
 
-**0a — Snapshot atual** ✓ (já feito em [CURRENT-STATE-AUDIT.md](../redesign/CURRENT-STATE-AUDIT.md))
+**0a — Snapshot atual** ✓ (já feito em [](..//))
 
 **0b — Pesquisa** ✓ (esta sessão — 8 docs em `docs/research/`)
 
@@ -214,7 +214,7 @@ Adicionar:
 - AGENTS.md, CLAUDE.md, DOMAIN.md, DATA-MODEL.md, INTEGRATIONS.md, PAYMENTS.md, SECURITY.md
 
 **0f — Specs por fase** (`docs/specs/{N}-{name}.md`)
-- 1 spec por fase do roadmap
+- 1 spec por fase 
 
 **0g — Skills + slash commands + hooks** novos
 - Implementar lista da seção 5.3, 5.4, 5.5
@@ -229,7 +229,7 @@ Adicionar:
 - ADR-NNN Share-link público via UUID v4 + snapshot
 
 ### Critério de aceite da Fase 0
-- Toda documentação refletindo decisões deste roadmap
+- Toda documentação refletindo decisões deste 
 - Todo schema novo criado e testado
 - API contract com 100% callables documentadas
 - Skills/slash/hooks instalados e testados

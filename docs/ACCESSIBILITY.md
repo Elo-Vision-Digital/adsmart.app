@@ -72,7 +72,7 @@ Run through this when shipping a feature with UI changes:
 - [QA-CHECKLIST.md](QA-CHECKLIST.md) — pre-release manual QA includes a11y spot-checks.
 - `CLAUDE.md` — design system tokens and component inventory.
 
-## Roadmap
+## 
 
 - Promote `lint/a11y` rules from `warn` to `error` once existing warnings are cleaned (likely Phase 2 or later).
 - Consider adding `axe-core` automated checks to Vitest for component-level a11y testing.

@@ -2,11 +2,11 @@ import * as z from 'zod'
 import { zTimestamp } from '../firestore'
 
 // Output estruturado da LLM (Anthropic Claude / DeepSeek combo — INF-1 do
-// roadmap, detalhes em docs/research/02-llm-strategy.md) usado pela
+// , detalhes em docs/research/02-llm-strategy.md) usado pela
 // callable `analyzeReportData(reportId, businessType)`. A LLM gera este
 // payload por plataforma do relatório; FLOW-6 renderiza in-app.
 //
-// Structured output é OBRIGATÓRIO (princípio do roadmap) — toda chamada
+// Structured output é OBRIGATÓRIO (princípio ) — toda chamada
 // LLM valida response contra este schema antes de salvar no Firestore.
 // Se parse falhar, a chamada falha e dispara retry com prompt corrigido.
 //

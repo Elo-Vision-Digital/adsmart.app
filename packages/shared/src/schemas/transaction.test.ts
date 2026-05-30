@@ -122,7 +122,7 @@ describe('TransactionProviderSchema', () => {
   })
 })
 
-describe('TransactionSchema — campos novos do redesign (FOUND-1)', () => {
+describe('TransactionSchema — campos novos  (FOUND-1)', () => {
   it('parses transaction with provider and clientRequestId', () => {
     const tx = {
       ...validTransaction,

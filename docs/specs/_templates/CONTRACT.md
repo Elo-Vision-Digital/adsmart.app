@@ -26,7 +26,7 @@ Cada item é binário: entregue ou não entregue. Sem "parcial".
 Items que NÃO fazem parte desta sprint mesmo que pareçam relacionados. Bloqueio de scope creep:
 
 - [ ] Refactor X — sprint Y
-- [ ] Otimização Z — fora do roadmap atual
+- [ ] Otimização Z — fora  atual
 
 ## Sensors a rodar
 

@@ -2,7 +2,7 @@
 
 **Validado em**: 2026-05-19
 **Fontes**: Firebase developerknowledge MCP (oficial Google), WebSearch sobre patterns 2026
-**Aplicação**: roadmap inicial (FEATURES-INVENTORY.md)
+**Aplicação**:  ()
 
 ---
 
@@ -12,7 +12,7 @@
 - **Padrão Google**: usar `event.id` (webhook) ou parâmetro de cliente como **idempotency key**
 - **Implementação**: transação Firestore lendo `processedEvents/{eventId}` antes de mutar; se já processado → return success sem repetir efeito
 - **Combinar com retries**: at-least-once delivery + idempotent handler = safe
-- **Aplicação no roadmap**:
+- **Aplicação **:
   - `createReport` callable: cliente envia `clientRequestId` UUID; backend cria `processedRequests/{clientRequestId}` em transação
   - `refreshReport`: idempotente via timestamp do último refresh + cooldown
   - Future Stripe webhooks: usar `event.id` do Stripe como key
@@ -25,7 +25,7 @@
   import * as logger from 'firebase-functions/logger'
   logger.info('Report created', { reportId, userId, platforms, businessType, cost })
   ```
-- **Princípio do roadmap**: TODA callable nova usa `logger` + tags `feature`, `userId`, `requestId`
+- **Princípio **: TODA callable nova usa `logger` + tags `feature`, `userId`, `requestId`
 
 ### Rate limits gen2 (importantes para dimensionar refresh)
 | Operação | Limite gen2 | Pode aumentar? |
@@ -84,7 +84,7 @@ export const refreshActiveReports = onSchedule({
 - **Document IDs aleatórios** (evitar IDs monotônicos para evitar hotspot)
 - **Listas/queries não-filtradas em coleções grandes**: usar paginação + cursor
 
-### Modelagem proposta para o roadmap
+### Modelagem proposta para o 
 
 ```
 users/{uid}
@@ -166,7 +166,7 @@ function isValidShareCreate() {
 - `rateLimits / securityLogs / backupMetadata`: write-only Admin SDK
 - `userDocuments`: write-only via `reserveUserDocument`
 
-### Aplicação no roadmap
+### Aplicação 
 - Toda nova coleção entra com rule restritiva por default (allow read/write: if false)
 - Cliente nunca escreve em `reports/*` direto — sempre via `createReport` callable
 - Share-link público segue pattern acima
@@ -180,7 +180,7 @@ function isValidShareCreate() {
 - Acesso: `secret.value()` dentro da function
 - **NUNCA** `process.env.X_SECRET` direto — bloqueado por hook `check-no-process-env-secret.sh`
 
-### Novos secrets para o roadmap inicial
+### Novos secrets para o 
 | Secret | Uso |
 |---|---|
 | `ANTHROPIC_API_KEY` | LLM combo (INF-1) |
@@ -194,9 +194,9 @@ function isValidShareCreate() {
 
 ---
 
-## 6. Aplicação concreta no roadmap
+## 6. Aplicação concreta 
 
-### Princípios novos para os princípios do FEATURES-INVENTORY.md
+### Princípios novos para os princípios do 
 - **Todo callable usa `firebase-functions/logger`** (não `console.log`)
 - **Todo callable mutativo é idempotente** (transação + `processedRequests/{id}`)
 - **Todo callable usa `checkRateLimit`** ([functions/src/rateLimiter.ts](functions/src/rateLimiter.ts) já existe)

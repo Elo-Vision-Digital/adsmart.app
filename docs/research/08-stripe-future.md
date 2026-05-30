@@ -2,7 +2,7 @@
 
 **Validado em**: 2026-05-19
 **Fontes**: WebSearch — Stripe Pix Brazil 2026, webhook signature verification
-**Aplicação**: NÃO entra no roadmap inicial — registrado para quando FUTURE §8 entrar (junto com primeiras features novas / IA)
+**Aplicação**: NÃO entra  — registrado para quando FUTURE §8 entrar (junto com primeiras features novas / IA)
 
 **Razão deste research existir**: usuário pediu validação Context7/internet de **todas** as decisões. Stripe está em FUTURE mas a abordagem deve estar validada agora para não retrabalhar depois.
 
@@ -31,7 +31,7 @@
 
 ## 2. Decisão arquitetural: Embedded (créditos avulsos) vs Hosted (subscription)
 
-Confirmação do que já estava no roadmap inicial (FUTURE §8):
+Confirmação do que já estava  (FUTURE §8):
 
 ### Compra avulsa de créditos → **Payment Element EMBEDDED**
 - UX: "Pagamento dentro do site · sem redirecionamento"
@@ -44,7 +44,7 @@ Confirmação do que já estava no roadmap inicial (FUTURE §8):
 - Razão: Subscription tem complexidade extra (trial, proration, billing portal, manage payment methods) — Stripe Hosted handle tudo
 - Customer Portal: redirect para `billing.stripe.com/p/login/...` quando user quer cancelar/atualizar
 
-**Confirmado pelo research**: ambas opções suportam Pix. Decisão original do roadmap está correta.
+**Confirmado pelo research**: ambas opções suportam Pix. Decisão original  está correta.
 
 ---
 

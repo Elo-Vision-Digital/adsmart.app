@@ -2,7 +2,7 @@
 
 **Validado em**: 2026-05-19
 **Fontes**: WebSearch benchmarks 2026, Cloud Functions memory/CPU configs
-**Aplicação**: INF-3 do roadmap inicial (botão "Export PDF" no Report Detail FLOW-6)
+**Aplicação**: INF-3  (botão "Export PDF" no Report Detail FLOW-6)
 
 ---
 
@@ -18,7 +18,7 @@
 
 ---
 
-## 2. Decisão recomendada para o roadmap
+## 2. Decisão recomendada para o 
 
 ### **Playwright em Cloud Functions** ⭐
 
@@ -162,7 +162,7 @@ Se em fase de implementação a Cloud Function com Playwright provar custosa dem
 - Aceitável apenas para PDFs **simples** (lista de KPIs + 1 chart)
 - Para relatório completo com múltiplas plataformas + charts customizados: **não escala**
 
-**Marcar como opção em CURRENT-STATE-AUDIT.md** mas escolher Playwright como default.
+**Marcar como opção em ** mas escolher Playwright como default.
 
 ---
 

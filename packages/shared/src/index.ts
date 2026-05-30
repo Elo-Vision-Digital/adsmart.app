@@ -80,8 +80,8 @@ export {
 
 export { RateLimitSchema, type RateLimit } from './schemas/rateLimit'
 
-// Foundation schemas adicionados para o redesign (Fase -1 do roadmap).
-// Detalhes em docs/redesign/FEATURES-INVENTORY.md FOUND-1.
+// Foundation schemas adicionados para o  (Fase -1 ).
+// Detalhes em docs// FOUND-1.
 
 export { BusinessTypeSchema, type BusinessType } from './schemas/businessType'
 

@@ -4,7 +4,7 @@ import { zTimestamp } from '../firestore'
 // users/{uid}/wallet/current — saldo do usuário.
 //
 // Estado atual (legacy): `balance` em centavos BRL + `currency: 'BRL'`.
-// Estado alvo do redesign (MN-1): saldo em créditos (1 crédito = R$ 5,00
+// Estado alvo  (MN-1): saldo em créditos (1 crédito = R$ 5,00
 // fixo, 1 plataforma por relatório = 1 crédito). A transição é faseada
 // para não quebrar o app existente:
 //
@@ -28,7 +28,7 @@ export const UserWalletSchema = z.object({
   currency: z.literal('BRL'),
   updatedAt: zTimestamp(),
 
-  // === Campos novos do redesign (FOUND-1) ===
+  // === Campos novos  (FOUND-1) ===
   // Saldo em créditos — fonte da verdade no novo fluxo (MN-1).
   // Opcional aqui para suportar wallets pré-migração; após Fase 3.5
   // todo callable de wallet deve preencher.

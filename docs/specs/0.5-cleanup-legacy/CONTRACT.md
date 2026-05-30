@@ -27,7 +27,7 @@ status: locked
 | 7 | `docs/PAYMENTS.md` — 10 hits refactored (Asaas→Stripe FUTURE §8) | `! grep -q "Asaas" docs/PAYMENTS.md` |
 | 8 | `docs/Decisions.md` — refs cruzadas em ADRs atualizadas (ADR-021 status Accepted preservado) | `! grep -q "Asaas is the replacement" docs/Decisions.md` (mas grep "Asaas" pode aparecer em contexto histórico tipo "Asaas que nunca chegou" — OK se ≤ 1-2 hits documentando "Stripe replaces Asaas") |
 | 9-16 | `docs/DOMAIN.md`, `docs/Integrations.md`, `docs/REFACTOR-PLAN.md`, `docs/SECURITY.md`, `docs/DATA-MODEL.md`, `docs/API-CONTRACTS.md`, `docs/index.md`, `docs/FIREBASE-CONVENTIONS.md` | `for f in $LIST; do ! grep -q "Asaas" $f; done` |
-| Final | Acceptance computacional Microsprint 0.5.1 | `grep -rln "asaas\|Asaas" src/ functions/ packages/ AGENTS.md CLAUDE.md docs/*.md 2>/dev/null \| grep -v "/specs/\|/research/\|/superpowers/\|/changelog/\|/redesign/\|CHANGES.md\|Decisions.md"` → zero |
+| Final | Acceptance computacional Microsprint 0.5.1 | `grep -rln "asaas\|Asaas" src/ functions/ packages/ AGENTS.md CLAUDE.md docs/*.md 2>/dev/null \| grep -v "/specs/\|/research/\|/superpowers/\|/changelog/\|//\|CHANGES.md\|Decisions.md"` → zero |
 
 ### Microsprint 0.5.2 — SuitPay cleanup final (pausa antes)
 
@@ -47,7 +47,7 @@ status: locked
 | 22 | `packages/shared/src/schemas/report.ts` — remover `lookerStudioUrl` se ainda presente | `! grep -q "lookerStudioUrl" packages/shared/src/schemas/report.ts` |
 | 23 | `packages/shared/src/schemas/report.test.ts` — atualizar tests | tests passam |
 | 24 | `src/AGENTS.md`, `docs/Integrations.md`, `docs/QA-CHECKLIST.md`, `docs/REFACTOR-PLAN.md`, `docs/DOMAIN.md`, `docs/DATA-MODEL.md`, `docs/Decisions.md` (refs cruzadas) | grep zero hits ativos |
-| Final | Acceptance computacional 0.5.3 | `grep -rln "looker\|datastudio\|data\.studio\|lookerStudio" src/ functions/src/ packages/shared/src/ docs/*.md 2>/dev/null \| grep -v "/specs/\|/research/\|/superpowers/\|/changelog/\|/redesign/\|CHANGES.md\|Decisions.md\|DOMAIN.md\|DATA-MODEL.md\|Integrations.md\|REFACTOR-PLAN.md"` → zero. Refs preservadas como histórico/explanatório nesses 5 docs ativos seguem o mesmo padrão exempt aplicado a Decisions.md em 0.5.1 (refs em contexto de remoção + ADR-022 governing reference). Build artifacts (`functions/lib/`, `packages/shared/dist/`) excluídos por escopo do grep. |
+| Final | Acceptance computacional 0.5.3 | `grep -rln "looker\|datastudio\|data\.studio\|lookerStudio" src/ functions/src/ packages/shared/src/ docs/*.md 2>/dev/null \| grep -v "/specs/\|/research/\|/superpowers/\|/changelog/\|//\|CHANGES.md\|Decisions.md\|DOMAIN.md\|DATA-MODEL.md\|Integrations.md\|REFACTOR-PLAN.md"` → zero. Refs preservadas como histórico/explanatório nesses 5 docs ativos seguem o mesmo padrão exempt aplicado a Decisions.md em 0.5.1 (refs em contexto de remoção + ADR-022 governing reference). Build artifacts (`functions/lib/`, `packages/shared/dist/`) excluídos por escopo do grep. |
 
 ### Microsprint 0.5.4 — MetaReviewDemo dev-only flag (pausa antes)
 
@@ -69,7 +69,7 @@ status: locked
 - Mudanças em comportamento de código (lógica)
 - Mudanças em `firestore.rules`/indexes
 - Reescrever ADRs históricos (apenas refs cruzadas)
-- Mexer em registros históricos: `docs/specs/`, `docs/research/`, `docs/superpowers/archive/`, `docs/changelog/`, `docs/redesign/EXECUTION-CHECKLIST.md`, `FUTURE-IDEAS`, `FEATURES-INVENTORY`, `CURRENT-STATE-AUDIT`, `docs/CHANGES.md` (entries antigos)
+- Mexer em registros históricos: `docs/specs/`, `docs/research/`, `docs/superpowers/archive/`, `docs/changelog/`, `docs//`, `FUTURE-IDEAS`, ``, `CURRENT-STATE-AUDIT`, `docs/CHANGES.md` (entries antigos)
 
 ## Sensors a rodar
 

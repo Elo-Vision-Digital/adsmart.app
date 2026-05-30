@@ -5,8 +5,8 @@ status: planning  # planning | research | contract | implementing | validating |
 depends-on: []    # [{sprint-id}, ...]
 est-days: 0
 references:
-  - docs/redesign/EXECUTION-CHECKLIST.md
-  - docs/redesign/FEATURES-INVENTORY.md
+  - docs//
+  - docs//
 ---
 
 # Sprint {ID} — {NAME} — SPEC
@@ -68,6 +68,6 @@ Como o Validator confirma cada outcome. Cada critério é uma verificação **co
 
 ## References
 
-- `docs/redesign/EXECUTION-CHECKLIST.md` § Fase …
+- `docs//` § Fase …
 - `docs/research/NN-name.md`
 - ADR-NNN

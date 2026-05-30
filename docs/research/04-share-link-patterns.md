@@ -2,7 +2,7 @@
 
 **Validado em**: 2026-05-19
 **Fontes**: Firebase developerknowledge MCP, WebSearch — public share patterns
-**Aplicação**: SHARE-1, SHARE-2, SHARE-3 do roadmap inicial
+**Aplicação**: SHARE-1, SHARE-2, SHARE-3 
 
 ---
 

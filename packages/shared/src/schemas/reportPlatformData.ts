@@ -3,7 +3,7 @@ import { zTimestamp } from '../firestore'
 import { AdPlatformSchema } from './adAccount'
 
 // Dados específicos por plataforma dentro de um relatório (FLOW-6 do
-// roadmap). Armazenado em subcoleção
+// ). Armazenado em subcoleção
 // `users/{uid}/reports/{reportId}/platforms/{platform}` para manter o
 // doc principal de `report` pequeno (< 100KB) e queries de lista rápidas.
 //

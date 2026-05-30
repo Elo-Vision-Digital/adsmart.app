@@ -34,7 +34,7 @@ if [ ! -f "$contract_path" ]; then
 Sprint folder: $sprint_dir
 Arquivo: $file_path
 
-Princípio 14 do roadmap: nenhum Edit/Write em arquivos de sprint antes
+Princípio 14: nenhum Edit/Write em arquivos de sprint antes
 do CONTRACT.md estar criado e com status: locked.
 
 Próximos passos:

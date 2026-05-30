@@ -1,15 +1,15 @@
-# Research Index — Fase -2 do Roadmap
+# Research Index — Fase -2 
 
 **Concluída em**: 2026-05-19
-**Propósito**: validar com docs atuais (Context7 + WebSearch) toda tecnologia/padrão que entra no [FEATURES-INVENTORY.md](../redesign/FEATURES-INVENTORY.md).
+**Propósito**: validar com docs atuais (Context7 + WebSearch) toda tecnologia/padrão que entra no [](..//).
 
-> Regra do projeto: nenhuma proposta entra no roadmap sem pesquisa de boas práticas atuais. Esses documentos são a base.
+> Regra do projeto: nenhuma proposta entra  sem pesquisa de boas práticas atuais. Esses documentos são a base.
 
 ---
 
 ## Documentos
 
-| # | Documento | Aplicação no roadmap |
+| # | Documento | Aplicação  |
 |---|---|---|
 | 01 | [Firebase Stack](./01-firebase-stack.md) | Cloud Functions v2 (idempotência, structured logging, rate limits), scheduled tasks, Firestore data modeling, security rules |
 | 02 | [LLM Strategy](./02-llm-strategy.md) | Anthropic Claude 4.6/4.5 + DeepSeek V4 — pricing, roteamento, caching, structured output |
@@ -42,7 +42,7 @@
 
 ---
 
-## Decisões ainda abertas (em GATEs do roadmap)
+## Decisões ainda abertas (em GATEs )
 
 | GATE | Status | Quando fechar |
 |---|---|---|
@@ -54,10 +54,10 @@
 
 ## Próximos passos
 
-1. **Você revisa esta pasta + os 3 docs principais** (FEATURES-INVENTORY, CURRENT-STATE-AUDIT, FUTURE-IDEAS)
+1. **Você revisa esta pasta + os 3 docs principais** (, CURRENT-STATE-AUDIT, FUTURE-IDEAS)
 2. **Aprovação** dispara **Fase -1** (schemas + API contracts)
 3. **Fase 0** (harness/docs/skills) imediatamente após
-4. **Fase 0.5+** (cleanup + redesign + refactor) em sequência
+4. **Fase 0.5+** (cleanup +  + refactor) em sequência
 
 ---
 
@@ -65,4 +65,4 @@
 
 - Adicionar entrada quando novo research for criado
 - Atualizar "Decisões fechadas" quando GATE for resolvido
-- Não confundir com `docs/redesign/` — aqui é **research/validation**, lá é **decision/plan**
+- Não confundir com `docs//` — aqui é **research/validation**, lá é **decision/plan**

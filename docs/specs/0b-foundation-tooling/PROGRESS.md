@@ -14,7 +14,7 @@ current-step: ship
 
 | Field | Value |
 |---|---|
-| Branch | `feat/redesign-foundation-tooling` |
+| Branch | `feat/-foundation-tooling` |
 | Base | `develop` (Fases -1 e 0a já mergeadas) |
 | Last commit | _pending — Wave 1 a commitar_ |
 | Tests | `cd packages/shared && bun run test` → 195/195 verde ✅ |
@@ -26,21 +26,21 @@ current-step: ship
 ### 2026-05-19 — Session 1: setup + planejamento
 
 - [x] PRs #3 e #4 mergeados em develop (Fase -1 + Fase 0a closed)
-- [x] Branches `feat/redesign-foundation-schemas` e `feat/redesign-foundation-harness` deletadas (local + remoto) com autorização do usuário
-- [x] Branch nova criada: `feat/redesign-foundation-tooling`
+- [x] Branches `feat/-foundation-schemas` e `feat/-foundation-harness` deletadas (local + remoto) com autorização do usuário
+- [x] Branch nova criada: `feat/-foundation-tooling`
 - [x] Baseline check: confirmado `AGENTS.md`, `CLAUDE.md`, `src/AGENTS.md`, `functions/AGENTS.md` existem (atualizar); `packages/shared/AGENTS.md` e `scripts/hooks/` inexistem (criar)
-- [x] Scope confirmado contra `EXECUTION-CHECKLIST.md:204-281` — 33 artefatos + 1 update settings.json + 1 smoke = 35 items
+- [x] Scope confirmado contra `:204-281` — 33 artefatos + 1 update settings.json + 1 smoke = 35 items
 - [x] Estratégia confirmada com usuário: 1 sprint + 4 waves internas + validator+sensores em cada wave
 - [x] `bash scripts/harness/new-sprint.sh 0b foundation-tooling` rodado — scaffold criado
 - [x] SPEC.md preenchido (outcomes, scope in/out, constraints, prior decisions, task breakdown 4 waves, verification criteria)
 - [x] CONTRACT.md preenchido com 37 items distribuídos em 5 waves; `status: locked`
-- [x] **Wave 1 entregue** (5 itens): src/AGENTS.md (current vs target + i18n), functions/AGENTS.md (Idempotência + Structured logging com code samples), packages/shared/AGENTS.md (criado, 4-step flow + Zod 4 idioms + strict subsets), AGENTS.md root (sub-AGENTS links + Current/Target stack + 16 princípios + Sprint workflow), CLAUDE.md root (refs para redesign/, research/, specs/, HARNESS-RUNBOOK)
+- [x] **Wave 1 entregue** (5 itens): src/AGENTS.md (current vs target + i18n), functions/AGENTS.md (Idempotência + Structured logging com code samples), packages/shared/AGENTS.md (criado, 4-step flow + Zod 4 idioms + strict subsets), AGENTS.md root (sub-AGENTS links + Current/Target stack + 16 princípios + Sprint workflow), CLAUDE.md root (refs para /, research/, specs/, HARNESS-RUNBOOK)
 - [x] **Wave 1 sensores**: 5/5 grep acceptance tests PASS, typecheck exit 0, test packages/shared 195/195 ✅
 - [x] **Wave 1 validator**: agent PASS com evidências linha-por-linha (sem issues)
-- [x] **Wave 2 entregue** (7 skills): redesign-screen, new-zod-schema, new-report-business-type, verify-i18n, validate-llm-call, negotiate-contract, bootstrap-fresh-session. Skills carregaram dinamicamente sem precisar Reload Window (diferente dos agents).
+- [x] **Wave 2 entregue** (7 skills): -screen, new-zod-schema, new-report-business-type, verify-i18n, validate-llm-call, negotiate-contract, bootstrap-fresh-session. Skills carregaram dinamicamente sem precisar Reload Window (diferente dos agents).
 - [x] **Wave 2 sensores**: 9/9 SKILL.md com `name:` + `description:` (7 novas + 2 legadas) ✅
 - [x] **Wave 2 validator**: agent PASS 7/7 com observações granulares (description com gatilhos PT-BR+EN, corpo com passos numerados + bash, anti-patterns, refs cruzadas, terminologia coerente)
-- [x] **Wave 3 entregue** (13 slash commands): 8 workflow harness (`/new-sprint`, `/research-sprint`, `/plan-sprint`, `/negotiate-contract`, `/execute-sprint`, `/validate-sprint`, `/ship-sprint`, `/update-progress`) + 5 workflow domínio (`/new-screen-redesign`, `/check-i18n`, `/check-no-hardcoded`, `/new-ai-prompt-version`, `/run-research`). Commands carregam dinamicamente (como skills).
+- [x] **Wave 3 entregue** (13 slash commands): 8 workflow harness (`/new-sprint`, `/research-sprint`, `/plan-sprint`, `/negotiate-contract`, `/execute-sprint`, `/validate-sprint`, `/ship-sprint`, `/update-progress`) + 5 workflow domínio (`/new-screen-`, `/check-i18n`, `/check-no-hardcoded`, `/new-ai-prompt-version`, `/run-research`). Commands carregam dinamicamente (como skills).
 - [x] **Wave 3 sensores**: 17/17 commands com `description:` (4 legados + 13 novos) ✅
 - [x] **Wave 3 validator**: agent PASS 13/13. Validação inferencial cobriu: lifecycle harness completo (new → research → plan → negotiate → execute → validate → ship + update-progress), coerência de vocabulário (sprint-id, wave, validator/implementer separation, princípio N), cross-refs integridade (todas as skills/agents/scripts referenciados existem), anti-patterns presentes em 10/13 + guards inline nos 3 restantes
 - [x] **Wave 4 entregue** (8 hooks + settings.json + smoke):
@@ -68,10 +68,10 @@ Sequência manual exercitada para confirmar coerência do fluxo `/new-sprint →
 
 ## Decisions taken
 
-- **Hooks NOVOS vão em `scripts/hooks/`** (pasta nova, não em `scripts/firebase/`) — convenção do checklist linha 255. Razão: separa hooks de "harness/redesign" dos hooks Firebase legados, sem refactor.
+- **Hooks NOVOS vão em `scripts/hooks/`** (pasta nova, não em `scripts/firebase/`) — convenção do checklist linha 255. Razão: separa hooks de "harness/" dos hooks Firebase legados, sem refactor.
 - **`functions/AGENTS.md` já existia** (checklist dizia "criar"): tratar como update enriquecendo seções "Idempotência" e "Structured logging". Razão: arquivo robusto (154 linhas), não vale reescrever; apenas complementar.
 - **Validator agent ao fim de cada wave**: confirmação inferencial via Agent(validator, ...) antes de commit. Razão: usuário pediu explicitamente; e dogfood do harness.
-- **CONTRACT lock direto** (sem ciclo Implementer↔Validator de negociação): o escopo veio da EXECUTION-CHECKLIST (já validado no plano mestre) + confirmação explícita do usuário. Razão: o ciclo de negociação é para escopo ambíguo; aqui o escopo é explícito.
+- **CONTRACT lock direto** (sem ciclo Implementer↔Validator de negociação): o escopo veio da  (já validado no plano mestre) + confirmação explícita do usuário. Razão: o ciclo de negociação é para escopo ambíguo; aqui o escopo é explícito.
 - **Estimativa 3 dias** (mais ajustado que os 3-5 do checklist): 35 items, mas a maioria é `.md` curto + bash script pequeno. Razão: experiência da Fase 0a (19 itens em 1 sessão).
 
 ## Blockers / risks

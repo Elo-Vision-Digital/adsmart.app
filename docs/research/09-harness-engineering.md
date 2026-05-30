@@ -103,7 +103,7 @@ Architect / Orchestrator (root)
 4. **State files persistentes** sobrevivem sessions:
    - `PROJECT.md` — visão
    - `REQUIREMENTS.md` — escopo
-   - `ROADMAP.md` — onde vai
+   - `.md` — onde vai
    - `STATE.md` — onde está agora
    - `CONTEXT.md` — decisões da fase atual
 
@@ -282,7 +282,7 @@ scripts/
    → /ship-sprint <id> (PR + docs update + memory update)
 ```
 
-### 8.3 Princípios a adicionar no FEATURES-INVENTORY.md
+### 8.3 Princípios a adicionar no 
 
 - **Princípio 13 — Multi-process agents**: Implementer e Validator em sessões/subagents separados com missões isoladas. Nenhum agente julga seu próprio output.
 - **Princípio 14 — Contracts before execution**: toda task tem `CONTRACT.md` negociado Implementer↔Validator ANTES de qualquer linha de código.
@@ -306,9 +306,9 @@ scripts/
 
 ---
 
-## 9. Roadmap de adoção (faseado)
+## 9.  de adoção (faseado)
 
-**Fase 0a — Foundation harness** (junto com Fase 0 do roadmap geral)
+**Fase 0a — Foundation harness** (junto com Fase 0  geral)
 - Estrutura `.claude/agents/` (Implementer, Validator, Orchestrator, Researcher, Planner, Debugger)
 - Templates `docs/specs/{sprint}/SPEC.md`, `CONTRACT.md`, `PROGRESS.md`, `EVALUATION.md`
 - Bootstrap script `scripts/bootstrap-session.sh`

@@ -22,7 +22,7 @@ status: locked
 |---|---|---|
 | 1 | Deletar `MEMDIR/suitpay_deprecated.md` | `test ! -f MEMDIR/suitpay_deprecated.md` |
 | 2 | Atualizar `MEMDIR/firebase_secrets.md` adicionando referência a `ANTHROPIC_API_KEY` e `DEEPSEEK_API_KEY` como secrets planejados (não criar secret real ainda) | `grep -q "ANTHROPIC_API_KEY" MEMDIR/firebase_secrets.md && grep -q "DEEPSEEK_API_KEY" MEMDIR/firebase_secrets.md` |
-| 3 | Atualizar `MEMDIR/admin_overhaul_roadmap.md` com cross-link para `docs/redesign/EXECUTION-CHECKLIST.md` | `grep -q "redesign/EXECUTION-CHECKLIST" MEMDIR/admin_overhaul_roadmap.md` |
+| 3 | Atualizar `MEMDIR/admin_overhaul_roadmap.md` com cross-link para `docs//` | `grep -q "/" MEMDIR/admin_overhaul_roadmap.md` |
 | 4 | Atualizar `MEMDIR/MEMORY.md` index: remover linha SuitPay + adicionar 10 entradas das memórias novas | `! grep -q "suitpay_deprecated" MEMDIR/MEMORY.md && [ "$(grep -c '^- \[' MEMDIR/MEMORY.md)" -ge 19 ]` |
 
 ### Wave 2 — Novas memórias (10 items)

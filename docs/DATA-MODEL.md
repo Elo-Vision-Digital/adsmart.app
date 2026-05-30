@@ -32,7 +32,7 @@ Firestore database for project `adsmart-app`. All monetary values are in **BRL c
 | `processedRequests/{requestId}` | **Planned (FOUND-1)** — idempotency keys (Harness Engineering) | Admin SDK only |
 | `llmCalls/{callId}` | **Planned (FOUND-1)** — observabilidade chamadas LLM (custo/tokens/latência) | Admin SDK only |
 
-SuitPay-era payment collections (`webhook_logs`, `pendingPayments`, `payments`, `orphan_payments`) eram da integração SuitPay removida (ADR-021, 2026-05-18). Documentos residuais são read-only legacy. Decisão atual (2026-05-19): Stripe substitui SuitPay quando FUTURE §8 entrar (ver [docs/redesign/FUTURE-IDEAS.md §8](redesign/FUTURE-IDEAS.md) + [docs/research/08-stripe-future.md](research/08-stripe-future.md)). Roadmap inicial NÃO tem gateway de pagamento ativo — créditos só via admin (`addUserCredits`).
+SuitPay-era payment collections (`webhook_logs`, `pendingPayments`, `payments`, `orphan_payments`) eram da integração SuitPay removida (ADR-021, 2026-05-18). Documentos residuais são read-only legacy. Decisão atual (2026-05-19): Stripe substitui SuitPay quando FUTURE §8 entrar (ver [docs// §8](/) + [docs/research/08-stripe-future.md](research/08-stripe-future.md)).  NÃO tem gateway de pagamento ativo — créditos só via admin (`addUserCredits`).
 
 > **Foundation Schemas (Sprint -1 — concluída 2026-05-19)**: schemas Zod source-of-truth criados em [packages/shared/src/schemas/](../packages/shared/src/schemas/) (`businessType.ts`, `processedRequest.ts`, `publicReportShare.ts`, `aiReportInsight.ts`, `llmCall.ts`, `reportPlatformData.ts`). Refactor aditivo de `report.ts`, `transaction.ts`, `userWallet.ts`, `productPrice.ts` adicionou campos opcionais novos sem remover legacy. Collections marcadas como "Planned" acima são populadas a partir da Fase 3.5 (novo fluxo de relatório).
 
@@ -373,11 +373,11 @@ Limits enforced: max R$ 5.000 / day, max 50 transactions / day per admin.
 
 # Foundation Collections — Planned (FOUND-1)
 
-> Definidas em Sprint -1 do roadmap (2026-05-19). Schemas Zod source-of-truth criados; collections serão populadas a partir da Fase 3.5 (novo fluxo de relatório). Detalhes em [docs/redesign/FEATURES-INVENTORY.md FOUND-1](redesign/FEATURES-INVENTORY.md).
+> Definidas em Sprint -1  (2026-05-19). Schemas Zod source-of-truth criados; collections serão populadas a partir da Fase 3.5 (novo fluxo de relatório). Detalhes em [docs// FOUND-1](/).
 
 ## users/{uid}/reports/{reportId}/platforms/{platform}
 
-Dados específicos por plataforma do relatório (FLOW-6 do roadmap — Report Detail com tabs). Subcoleção mantém o doc principal de `report` leve (< 100KB) para list queries rápidas; UI faz fetch on-demand quando usuário troca de tab.
+Dados específicos por plataforma do relatório (FLOW-6  — Report Detail com tabs). Subcoleção mantém o doc principal de `report` leve (< 100KB) para list queries rápidas; UI faz fetch on-demand quando usuário troca de tab.
 
 Source of truth: [packages/shared/src/schemas/reportPlatformData.ts](../packages/shared/src/schemas/reportPlatformData.ts) (`ReportPlatformDataSchema`).
 
@@ -445,7 +445,7 @@ Source of truth: [packages/shared/src/schemas/aiReportInsight.ts](../packages/sh
 
 ## publicReportShares/{shareId}
 
-Share-link público de relatório (SHARE-1/2/3 do roadmap). Top-level collection — sem `users/{uid}/...` na hierarquia porque rules em hierarquia exigiriam auth.
+Share-link público de relatório (SHARE-1/2/3 ). Top-level collection — sem `users/{uid}/...` na hierarquia porque rules em hierarquia exigiriam auth.
 
 **Segurança via `shareId` imprevisível** (UUID v4 = 122 bits entropia). `firestore.rules` permite `allow get: if !exists() || resource.data.revokedAt == null` e `allow list: if false` (anti-enumeração). Cliente nunca escreve — só callables via Admin SDK.
 

@@ -2,7 +2,7 @@
 
 **Validado em**: 2026-05-19
 **Fontes**: WebSearch — React 19 patterns, Tailwind v4 migration, Apple SF Pro, Zod v4
-**Aplicação**: DS-1, REF-*, NEW-* do roadmap inicial
+**Aplicação**: DS-1, REF-*, NEW-* 
 
 ---
 
@@ -23,7 +23,7 @@
 | `ref` como prop (sem `forwardRef`) | **Sim** | Simplifica primitives novos (Field, Badge, etc.) |
 | Resource preloading (`preinit`, `preload`) | **Sim** | Otimizar load de fontes Apple |
 
-### Implicação no roadmap
+### Implicação 
 - Continuamos com client-side fetching (Firestore SDK + custom hooks como `useReports`, `useWallet`)
 - **Não** introduzir React Query/SWR ainda — over-engineering para escala atual
 - Usar Suspense + `use(promise)` para streaming de dados que demoram (relatório gerando)
@@ -167,7 +167,7 @@ export type Report = z.infer<typeof ReportSchema>
 - Usa Zod schema para parse no boundary Firestore → app
 - **Manter este pattern** — está perfeito como source of truth
 
-### Aplicação no roadmap
+### Aplicação 
 - TODO novo schema vai em `packages/shared/src/schemas/`
 - Types via `z.infer<typeof Schema>`
 - Nunca declarar `interface Foo` separado do schema — sempre `type Foo = z.infer<typeof FooSchema>`
@@ -219,7 +219,7 @@ if (Date.now() - state.initiatedAt > 30 * 60 * 1000) {
 - [src/locales/types.ts](src/locales/types.ts) — tipo central
 - [LanguageContext](src/contexts/LanguageContext.tsx) com `t(key)` API
 
-### Aplicação no roadmap
+### Aplicação 
 - TODA string nova vai nos 3 arquivos
 - Princípio: nenhum literal hardcoded no JSX/TSX
 - Adicionar **lint check** para PR review: detectar strings literais em JSX (já tem Biome rule ou plugin custom)

@@ -5,7 +5,7 @@ status: contract
 depends-on: ["-1", "0a", "0b", "0c"]
 est-days: 1
 references:
-  - docs/redesign/EXECUTION-CHECKLIST.md
+  - docs//
   - docs/research/01-firebase-stack.md
   - docs/research/02-llm-strategy.md
   - docs/research/03-frontend-stack.md
@@ -16,7 +16,7 @@ references:
 
 # Sprint 0d — foundation-adrs — SPEC
 
-> Publicação de 12 ADRs registrando decisões arquiteturais críticas do redesign roadmap em `docs/Decisions.md`. Quarta dogfood do harness (após 0a, 0b, 0c).
+> Publicação de 12 ADRs registrando decisões arquiteturais críticas   em `docs/Decisions.md`. Quarta dogfood do harness (após 0a, 0b, 0c).
 
 ## Outcomes
 
@@ -72,7 +72,7 @@ references:
 
 - **Append-only** em `docs/Decisions.md`: nunca editar ADRs passados (linha 8 do arquivo "Append-only log of significant changes"). Se uma decisão antiga estiver obsoleta, marcar como "Superseded by ADR-NNN" + criar ADR novo.
 - **Numeração sequencial**: último ADR no repo é ADR-021. Novos vão de ADR-022 a ADR-033.
-- **Source of truth** para cada decisão já existe em outros artifacts (research/, memórias, FEATURES-INVENTORY). ADR é o "registro permanente público" da decisão.
+- **Source of truth** para cada decisão já existe em outros artifacts (research/, memórias, ). ADR é o "registro permanente público" da decisão.
 - **Cross-link com memórias**: ADRs sobre features `status: planned` (LLM, credits, share link, PDF) DEVEM cross-link com a memória correspondente (referência textual, ex: "See memory `llm_combo_strategy`").
 - **2 waves**: Wave 1 = ADRs de domínio (022-027); Wave 2 = ADRs de Harness Engineering (028-033). Validator ao fim de cada.
 - **Tom**: cada ADR é tão curto quanto possível (15-30 linhas). Decisão clara, razão concisa, trade-offs honestos. Sem prosa decorativa.
@@ -121,7 +121,7 @@ references:
 
 ## References
 
-- `docs/redesign/EXECUTION-CHECKLIST.md` § FASE 0d (linha 327-358)
+- `docs//` § FASE 0d (linha 327-358)
 - `docs/Decisions.md` (ADR-001 a ADR-021 como referência de padrão)
 - `docs/research/01-firebase-stack.md` (fundamenta ADR-022)
 - `docs/research/02-llm-strategy.md` (fundamenta ADR-024)

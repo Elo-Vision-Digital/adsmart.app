@@ -30,7 +30,7 @@ export const ReportSchema = z.object({
   completedAt: zTimestamp().optional(),
   error: z.string().optional(),
 
-  // === Campos novos do redesign (FOUND-1 do roadmap) ===
+  // === Campos novos  (FOUND-1 ) ===
   // FLOW-1: múltiplas plataformas em um único relatório.
   platforms: z.array(AdPlatformSchema).optional(),
   // FLOW-3: tipo de negócio direciona a análise da LLM.

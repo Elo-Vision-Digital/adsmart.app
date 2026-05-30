@@ -15,7 +15,7 @@
 - Account storage em `users/{uid}/adAccounts/{accountId}`
 - Page MetaReviewDemo para aprovação Meta (temporário — ver decisão sobre dev-only)
 
-### O que precisa validar (VAL-1 do roadmap)
+### O que precisa validar (VAL-1 )
 - Refresh token rotation funcionando (Google Ads MFA mudou — ver seção 2)
 - Token expirado → reauth fluido (sem perda de UX)
 - Disconnect / revogar funcionando
@@ -71,7 +71,7 @@
 
 ---
 
-## 4. Recomendações concretas para o roadmap
+## 4. Recomendações concretas para o 
 
 ### VAL-1 (validação funcional OAuth) — checklist obrigatório
 
@@ -133,7 +133,7 @@
 ```
 
 ### Aplicar mesmo pattern para qualquer rota/funcionalidade de teste futura
-- Adicionar como **princípio do roadmap**: "Toda rota/funcionalidade de teste é guarded por `import.meta.env.MODE === 'development'`"
+- Adicionar como **princípio **: "Toda rota/funcionalidade de teste é guarded por `import.meta.env.MODE === 'development'`"
 
 ---
 

@@ -1,7 +1,7 @@
 import * as z from 'zod'
 import { zTimestamp } from '../firestore'
 
-// Observabilidade de chamadas LLM (INF-1 do roadmap, detalhes em
+// Observabilidade de chamadas LLM (INF-1 , detalhes em
 // docs/research/02-llm-strategy.md §5). Toda chamada para Anthropic ou
 // DeepSeek registra um documento em `llmCalls/{callId}` (top-level
 // collection, write-only via Admin SDK).

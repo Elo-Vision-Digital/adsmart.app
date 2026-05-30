@@ -4,7 +4,7 @@ Read [../AGENTS.md](../AGENTS.md) for the project-wide overview. This file cover
 
 ## Current vs target stack
 
-Current code targets **React 18.3 + Tailwind 3.x**. The redesign roadmap upgrades to **React 19 + Tailwind v4 + SF Pro** in Fase 1 (`docs/redesign/EXECUTION-CHECKLIST.md` § FASE 1). When editing, follow the conventions that exist NOW; do not preemptively use Tailwind v4 syntax (`@theme`, `@utility`) until Fase 1 lands. Same for React 19 features (Actions, `use`, ref as prop) — wait for Fase 1.
+Current code targets **React 18.3 + Tailwind 3.x**. The   upgrades to **React 19 + Tailwind v4 + SF Pro** in Fase 1 (`docs//` § FASE 1). When editing, follow the conventions that exist NOW; do not preemptively use Tailwind v4 syntax (`@theme`, `@utility`) until Fase 1 lands. Same for React 19 features (Actions, `use`, ref as prop) — wait for Fase 1.
 
 ## i18n is mandatory (princípio 7)
 

@@ -14,7 +14,7 @@ current-step: ship
 
 | Field | Value |
 |---|---|
-| Branch | `feat/redesign-foundation-memory` |
+| Branch | `feat/-foundation-memory` |
 | Base | `develop` (Fases -1, 0a, 0b mergeadas) |
 | Last commit | _pending — Wave 1 a commitar_ |
 | Tests | `cd packages/shared && bun run test` → 195/195 verde ✅ (pós-merge develop) |
@@ -28,11 +28,11 @@ current-step: ship
 - [x] PR #5 (Fase 0b) mergeado em develop em `5f00ddf`
 - [x] Reload Window — hooks novos da Fase 0b agora ativos (8 PreToolUse extras)
 - [x] develop local sync via fast-forward (5 commits)
-- [x] Branch `feat/redesign-foundation-tooling` deletada (local + remoto)
-- [x] Branch nova: `feat/redesign-foundation-memory`
+- [x] Branch `feat/-foundation-tooling` deletada (local + remoto)
+- [x] Branch nova: `feat/-foundation-memory`
 - [x] Sprint folder scaffolded via `bash scripts/harness/new-sprint.sh 0c foundation-memory`
 - [x] Leitura das memórias existentes (10 `.md` + MEMORY.md index)
-- [x] Escopo confirmado contra `EXECUTION-CHECKLIST.md:284-322`: 1 delete + 3 updates + 10 creates + MEMORY index = 14 + Wave 3 (validação 2) = 16 items
+- [x] Escopo confirmado contra `:284-322`: 1 delete + 3 updates + 10 creates + MEMORY index = 14 + Wave 3 (validação 2) = 16 items
 - [x] Decisões confirmadas (2026-05-19): (a) deletar `suitpay_deprecated.md`; (b) memórias planejadas com `status: planned`; (c) 1 sprint + 2 waves
 - [x] SPEC.md preenchido + CONTRACT.md `status: locked`
 - [ ] Próximo: Wave 1 (4 items) → validator → commit → Wave 2 (10 items)
@@ -63,5 +63,5 @@ bun run lint                           →  0 errors ✅
 2. Validator Wave 1 + commit
 3. Wave 2: criar 10 memórias novas
 4. Validator Wave 2 + commit
-5. EVALUATION verdict pass + EXECUTION-CHECKLIST + CHANGES.md
+5. EVALUATION verdict pass +  + CHANGES.md
 6. Push + PR para develop

@@ -79,7 +79,7 @@ Vazio (verdict: pass).
 - [x] Zero regressão confirmada (commit metadata + git state)
 - [x] Scope discipline mantida
 - [ ] Implementer commitou todas as waves + commit de fechamento
-- [ ] Push + PR aberto para `develop` (ou stacked sobre `feat/redesign-foundation-memory` aguardando PR #6 mergear)
+- [ ] Push + PR aberto para `develop` (ou stacked sobre `feat/-foundation-memory` aguardando PR #6 mergear)
 - [ ] Human revisou (PR mergeado)
 
 ## Notas para próximas sprints (lessons learned do dogfood 4)
@@ -91,9 +91,9 @@ Vazio (verdict: pass).
 
 ## Para fechar (próximas ações imediatas)
 
-1. Commit final (sprint folder updates + EXECUTION-CHECKLIST + CHANGES.md + PROGRESS done)
+1. Commit final (sprint folder updates +  + CHANGES.md + PROGRESS done)
 2. Update PROGRESS.md: `status: in-progress` → `status: done`
-3. Update `docs/redesign/EXECUTION-CHECKLIST.md`: Fase 0d → ✅ COMPLETA + apontar próximo passo (Fase 0.5 cleanup textual)
+3. Update `docs//`: Fase 0d → ✅ COMPLETA + apontar próximo passo (Fase 0.5 cleanup textual)
 4. Update `docs/CHANGES.md` com entry datada
-5. Push branch `feat/redesign-foundation-adrs`
-6. Open PR para `develop` (ou base feat/redesign-foundation-memory se PR #6 ainda aberto)
+5. Push branch `feat/-foundation-adrs`
+6. Open PR para `develop` (ou base feat/-foundation-memory se PR #6 ainda aberto)

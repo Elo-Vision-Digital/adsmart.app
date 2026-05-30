@@ -12,7 +12,7 @@ export type ProductPriceType = z.infer<typeof ProductPriceTypeSchema>
 // admin UI; the wallet/transactions side already uses centavos (int).
 // See ADR-016 for the centralization rationale.
 //
-// Redesign (MN-1): decisão do usuário 2026-05-19 — 1 crédito = R$ 5,00 fixo;
+//  (MN-1): decisão do usuário 2026-05-19 — 1 crédito = R$ 5,00 fixo;
 // 1 plataforma selecionada = 1 crédito (independente de category/type).
 // `creditsPerReport` é o campo novo que vai substituir `price` na lógica
 // de cobrança. Por ora mantemos `price` para o admin UI atual e adicionamos
@@ -31,9 +31,9 @@ export const ProductPriceSchema = z.object({
   updatedAt: zTimestamp(),
   updatedBy: z.string().min(1),
 
-  // === Campos novos do redesign (FOUND-1 / MN-1) ===
+  // === Campos novos  (FOUND-1 / MN-1) ===
   // Custo do relatório por plataforma em créditos. Default 1 quando vier
-  // (decisão fixa do usuário no roadmap inicial). Mantido configurável
+  // (decisão fixa do usuário ). Mantido configurável
   // para permitir variação futura (ex: tipos premium custarem mais).
   creditsPerReport: z.number().int().positive().optional(),
 })

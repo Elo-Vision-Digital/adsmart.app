@@ -5,8 +5,8 @@ status: contract  # planning | research | contract | implementing | validating |
 depends-on: []    # [{sprint-id}, ...]
 est-days: 0
 references:
-  - docs/redesign/EXECUTION-CHECKLIST.md
-  - docs/redesign/FEATURES-INVENTORY.md
+  - docs//
+  - docs//
 ---
 
 # Sprint 1 — ui-tokens — SPEC

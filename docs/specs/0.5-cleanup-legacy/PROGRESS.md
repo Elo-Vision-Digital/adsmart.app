@@ -15,7 +15,7 @@ current-step: ship
 
 | Field | Value |
 |---|---|
-| Branch | `feat/redesign-0.5-cleanup-legacy` |
+| Branch | `feat/-0.5-cleanup-legacy` |
 | Base | `develop` (Fases -1, 0a, 0b, 0c, 0d mergeadas) |
 | Last commit | _pending — Microsprint 0.5.1 a commitar_ |
 | Tests | `cd packages/shared && bun run test` → 195/195 ✅ |
@@ -27,7 +27,7 @@ current-step: ship
 ### 2026-05-19 — Session 1: setup + Microsprint 0.5.1 (Asaas cleanup)
 
 - [x] PRs Fase 0c (#6) + 0d (#7 + #8 restore) mergeados em develop
-- [x] Branch nova: `feat/redesign-0.5-cleanup-legacy` a partir de develop atualizado
+- [x] Branch nova: `feat/-0.5-cleanup-legacy` a partir de develop atualizado
 - [x] Sprint folder scaffolded via `bash scripts/harness/new-sprint.sh 0.5 cleanup-legacy`
 - [x] SPEC.md preenchido (4 microsprints + Wave 5 validação)
 - [x] CONTRACT.md preenchido `status: locked` (27 items)

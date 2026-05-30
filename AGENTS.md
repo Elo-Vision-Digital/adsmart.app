@@ -40,7 +40,7 @@ Each folder declares its own conventions. Read the relevant sub-guide alongside 
 | Test framework | Vitest | 4.x |
 | CI | GitHub Actions | — |
 
-**Target** (after the redesign roadmap — see `docs/redesign/EXECUTION-CHECKLIST.md`):
+**Target** (after the   — see `docs//`):
 
 | Layer | Target | Lands in |
 |---|---|---|
@@ -56,7 +56,7 @@ Do not preemptively use target-stack syntax until the relevant phase lands — i
 
 ## Princípios do projeto (invioláveis)
 
-16 princípios definidos em [docs/redesign/FEATURES-INVENTORY.md § Princípios](docs/redesign/FEATURES-INVENTORY.md#princípios-do-projeto-regras-invioláveis). Resumo dos mais frequentes em revisão:
+16 princípios definidos em [docs// § Princípios](docs//#princípios-do-projeto-regras-invioláveis). Resumo dos mais frequentes em revisão:
 
 1. **Context7 antes de propor** — toda lib/padrão/refactor consulta documentação atual antes de virar proposta (regra do usuário).
 2. **Schemas + API Contracts são source of truth** — `packages/shared/src/schemas/` + `docs/API-CONTRACTS.md` antes de qualquer código de produto.

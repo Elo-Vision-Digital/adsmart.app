@@ -9,7 +9,7 @@ export type TransactionStatus = z.infer<typeof TransactionStatusSchema>
 
 // Provider que originou a transação. `admin` é o atual (addUserCredits).
 // `stripe` será adicionado quando FUTURE §8 entrar. `legacy` cobre
-// transações pré-redesign (SuitPay removido em ADR-021).
+// transações  (SuitPay removido em ADR-021).
 export const TransactionProviderSchema = z.enum(['admin', 'stripe', 'legacy'])
 export type TransactionProvider = z.infer<typeof TransactionProviderSchema>
 
@@ -38,7 +38,7 @@ export const TransactionSchema = z.object({
   payerName: z.string().optional(),
   payerCpf: z.string().optional(),
 
-  // === Campos novos do redesign (FOUND-1) ===
+  // === Campos novos  (FOUND-1) ===
   // Provider — `admin` para entradas via addUserCredits (atual); `stripe`
   // quando FUTURE §8 entrar; `legacy` para histórico anterior.
   provider: TransactionProviderSchema.optional(),
@@ -46,7 +46,7 @@ export const TransactionSchema = z.object({
   // Permite o cliente retentar com segurança.
   clientRequestId: z.string().min(1).max(64).optional(),
   // Stripe IDs (FUTURE §8) — preparados desde já no schema mas sem código
-  // de pagamento ativo neste roadmap.
+  // de pagamento ativo neste .
   stripePaymentIntentId: z.string().optional(),
   stripeCustomerId: z.string().optional(),
   stripeChargeId: z.string().optional(),

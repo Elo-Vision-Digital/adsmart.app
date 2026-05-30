@@ -400,9 +400,9 @@ SuitPay was removed end-to-end in [ADR-021](Decisions.md#adr-021-remove-suitpay-
 
 # Foundation Callables — Planned (FOUND-1)
 
-> Callables planejados para o redesign (referência [docs/redesign/FEATURES-INVENTORY.md FOUND-2](redesign/FEATURES-INVENTORY.md)). Schemas Zod source-of-truth já criados em [packages/shared/src/schemas/](../packages/shared/src/schemas/) na Sprint -1. Implementação concreta vem nas Fases 0a (harness) e 3.5 (novo fluxo de relatório).
+> Callables planejados para o  (referência [docs// FOUND-2](/)). Schemas Zod source-of-truth já criados em [packages/shared/src/schemas/](../packages/shared/src/schemas/) na Sprint -1. Implementação concreta vem nas Fases 0a (harness) e 3.5 (novo fluxo de relatório).
 
-Padrões obrigatórios para TODA callable nova (princípios 9-12 + 13-16 do roadmap):
+Padrões obrigatórios para TODA callable nova (princípios 9-12 + 13-16 ):
 
 - `firebase-functions/logger` estruturado em todas as branches (não `console.log`)
 - Idempotência via `processedRequests/{clientRequestId}` em transação Firestore
@@ -420,7 +420,7 @@ Padrões obrigatórios para TODA callable nova (princípios 9-12 + 13-16 do road
 **Rate limit:** 5 reports / 5 minutes per uid
 **Idempotency:** via `clientRequestId` UUID v4 do cliente
 
-Substitui o `addDoc(collection(db, 'reports'), ...)` atualmente feito direto no [src/pages/GenerateReportPage.tsx](../src/pages/GenerateReportPage.tsx) (FLOW-4 do roadmap). Server-side fica responsável por validar, debitar créditos, criar o `report` e subcoleções de `platforms`, e disparar a callable interna `analyzeReportData` para gerar insights via LLM.
+Substitui o `addDoc(collection(db, 'reports'), ...)` atualmente feito direto no [src/pages/GenerateReportPage.tsx](../src/pages/GenerateReportPage.tsx) (FLOW-4 ). Server-side fica responsável por validar, debitar créditos, criar o `report` e subcoleções de `platforms`, e disparar a callable interna `analyzeReportData` para gerar insights via LLM.
 
 **Input** (Zod `CreateReportInputSchema` a ser criado):
 ```typescript
@@ -576,6 +576,6 @@ Consulta APIs Google Ads / Meta Marketing para descobrir quais períodos têm da
 
 ---
 
-## Stripe webhook (FUTURE §8 — NÃO entra no roadmap inicial)
+## Stripe webhook (FUTURE §8 — NÃO entra )
 
 Documentado em [docs/research/08-stripe-future.md](research/08-stripe-future.md) para referência futura. Quando FUTURE §8 entrar, callable `stripeWebhook` (onRequest com signature verify) + idempotência via `processedRequests/{event.id}`.

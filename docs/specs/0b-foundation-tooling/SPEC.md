@@ -5,7 +5,7 @@ status: contract
 depends-on: ["-1", "0a"]
 est-days: 3
 references:
-  - docs/redesign/EXECUTION-CHECKLIST.md
+  - docs//
   - docs/research/09-harness-engineering.md
   - docs/specs/0a-foundation-harness/EVALUATION.md
 ---
@@ -18,7 +18,7 @@ references:
 
 - [ ] **3 sub-AGENTS.md** atualizados/criados (`src/AGENTS.md` update, `functions/AGENTS.md` update — já existia, `packages/shared/AGENTS.md` criar) cobrindo padrões da pasta com convenções concretas
 - [ ] **2 root docs** atualizados (`AGENTS.md` com stack table + princípios; `CLAUDE.md` com quick references atualizadas)
-- [ ] **7 skills novas** em `.claude/skills/` (redesign-screen, new-zod-schema, new-report-business-type, verify-i18n, validate-llm-call, negotiate-contract, bootstrap-fresh-session) — cada uma com `SKILL.md` próprio e `description` que dispara via auto-invoke
+- [ ] **7 skills novas** em `.claude/skills/` (-screen, new-zod-schema, new-report-business-type, verify-i18n, validate-llm-call, negotiate-contract, bootstrap-fresh-session) — cada uma com `SKILL.md` próprio e `description` que dispara via auto-invoke
 - [ ] **13 slash commands novos** em `.claude/commands/` (8 workflow harness + 5 workflow domínio) — cada um com frontmatter `description` + corpo de instruções concretas
 - [ ] **8 hooks PreToolUse** em `scripts/hooks/` (pasta nova) — sensores bloqueantes para hardcoded literals, schemas sem test, LLM sem logger estruturado, rules sem default deny, contract ausente, progress não atualizado, sensores não passados, implementer vs validator
 - [ ] **`.claude/settings.json`** atualizado referenciando os 8 hooks novos via `matcher` + `if` apropriados
@@ -43,7 +43,7 @@ Tudo que parece relacionado mas NÃO faz parte:
 
 - **Memória cleanup + criação** (deletar/atualizar/criar memórias em `.claude/projects/.../memory/`) → **Fase 0c**
 - **ADRs publicados** (Harness, Multi-process, Stack 2026, etc.) → **Fase 0d**
-- **Refactor de agents legados** (`firestore-*`, `functions-security-reviewer`) — fora do roadmap (coexistem)
+- **Refactor de agents legados** (`firestore-*`, `functions-security-reviewer`) — fora  (coexistem)
 - **Refactor de hooks legados** (`check-no-process-env-secret.sh` etc.) — mantém em `scripts/firebase/` por compatibilidade, novos vão em `scripts/hooks/`
 - **Substituir lefthook pre-commit/pre-push** — fora; lefthook continua para typecheck/biome
 - **Mudanças em código TS/TSX da app** — esta sprint é tooling/infra (`.md` + `.sh` + `.json`)
@@ -90,13 +90,13 @@ Decisões já tomadas em fases anteriores que esta sprint herda:
 | 2 | Atualizar `functions/AGENTS.md` adicionando seções "Idempotência" e "Structured logging via logger.info" | — | `grep -q "## Idempotência\|## Structured logging" functions/AGENTS.md` |
 | 3 | Criar `packages/shared/AGENTS.md` (schemas Zod source of truth, padrão `z.infer<typeof X>`, sem `interface` separado, test co-located obrigatório) | — | `test -f packages/shared/AGENTS.md && grep -q "z.infer" packages/shared/AGENTS.md` |
 | 4 | Atualizar `AGENTS.md` root (stack table Tailwind v4 + SF Pro + Anthropic + DeepSeek + Playwright PDF + princípios 1-16) | — | `grep -q "## Stack table\|### Princípios" AGENTS.md` |
-| 5 | Atualizar `CLAUDE.md` root (quick references com links para `redesign/`, `research/`, `specs/`, `HARNESS-RUNBOOK.md`) | 4 | `grep -q "HARNESS-RUNBOOK\|docs/specs/" CLAUDE.md` |
+| 5 | Atualizar `CLAUDE.md` root (quick references com links para `/`, `research/`, `specs/`, `HARNESS-RUNBOOK.md`) | 4 | `grep -q "HARNESS-RUNBOOK\|docs/specs/" CLAUDE.md` |
 
 ### Wave 2 — Skills novas (7 itens, ~5h)
 
 | # | Task | Depende de | Verifiable as |
 |---|---|---|---|
-| 6 | `.claude/skills/redesign-screen/SKILL.md` — workflow refactor tela DS-1 | — | `test -f .claude/skills/redesign-screen/SKILL.md && grep -qE "^name:|^description:" .claude/skills/redesign-screen/SKILL.md` |
+| 6 | `.claude/skills/-screen/SKILL.md` — workflow refactor tela DS-1 | — | `test -f .claude/skills/-screen/SKILL.md && grep -qE "^name:|^description:" .claude/skills/-screen/SKILL.md` |
 | 7 | `.claude/skills/new-zod-schema/SKILL.md` — schema novo com test (template + comando) | — | idem para new-zod-schema |
 | 8 | `.claude/skills/new-report-business-type/SKILL.md` — adicionar tipo em FLOW-3 | — | idem |
 | 9 | `.claude/skills/verify-i18n/SKILL.md` — validar 3 idiomas em diff | — | idem |
@@ -116,7 +116,7 @@ Decisões já tomadas em fases anteriores que esta sprint herda:
 | 18 | `.claude/commands/validate-sprint.md` | — | idem |
 | 19 | `.claude/commands/ship-sprint.md` | — | idem |
 | 20 | `.claude/commands/update-progress.md` | — | idem |
-| 21 | `.claude/commands/new-screen-redesign.md` | — | idem |
+| 21 | `.claude/commands/new-screen-.md` | — | idem |
 | 22 | `.claude/commands/check-i18n.md` | — | idem |
 | 23 | `.claude/commands/check-no-hardcoded.md` | — | idem |
 | 24 | `.claude/commands/new-ai-prompt-version.md` | — | idem |
@@ -153,7 +153,7 @@ Decisões já tomadas em fases anteriores que esta sprint herda:
 
 ## References
 
-- `docs/redesign/EXECUTION-CHECKLIST.md` § FASE 0b (linha 204-281)
+- `docs//` § FASE 0b (linha 204-281)
 - `docs/research/09-harness-engineering.md` § 5 (sub-AGENTS) e § 6 (hooks)
 - `docs/HARNESS-RUNBOOK.md` (workflow canônico das sprints)
 - `docs/specs/0a-foundation-harness/EVALUATION.md` (lessons learned do dogfood)

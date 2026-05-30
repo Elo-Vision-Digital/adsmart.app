@@ -41,7 +41,7 @@ if [ -f "$session_marker" ]; then
 ⚠ Warning: tentativa de gravar verdict: pass em $file_path após múltiplas
 operações de Edit/Write na mesma sessão (${edit_count} edits registrados).
 
-Princípio 13 do roadmap: Implementer ≠ Validator. O mesmo agente que
+Princípio 13: Implementer ≠ Validator. O mesmo agente que
 editou os arquivos não deve julgar o próprio output (bias inevitável).
 
 Padrão correto:

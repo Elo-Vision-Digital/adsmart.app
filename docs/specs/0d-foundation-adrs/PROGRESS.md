@@ -14,8 +14,8 @@ current-step: ship
 
 | Field | Value |
 |---|---|
-| Branch | `feat/redesign-foundation-adrs` (stacked on `feat/redesign-foundation-memory` aguardando merge PR #6) |
-| Base | `feat/redesign-foundation-memory` (será retargetado para `develop` após merge do PR #6) |
+| Branch | `feat/-foundation-adrs` (stacked on `feat/-foundation-memory` aguardando merge PR #6) |
+| Base | `feat/-foundation-memory` (será retargetado para `develop` após merge do PR #6) |
 | Last commit | _pending — Wave 1 a commitar_ |
 | Tests | `cd packages/shared && bun run test` → 195/195 ✅ (baseline pós-merges anteriores) |
 | Build | `bun run typecheck` → verde ✅ |
@@ -26,10 +26,10 @@ current-step: ship
 ### 2026-05-19 — Session 1: setup + planejamento
 
 - [x] PR #6 (Fase 0c foundation-memory) aberto (mergeado posteriormente)
-- [x] Branch nova `feat/redesign-foundation-adrs` stacked sobre `feat/redesign-foundation-memory`
+- [x] Branch nova `feat/-foundation-adrs` stacked sobre `feat/-foundation-memory`
 - [x] Sprint folder scaffolded via `bash scripts/harness/new-sprint.sh 0d foundation-adrs`
 - [x] Inspeção do padrão de ADRs existentes (ADR-001 a ADR-021): `## ADR-NNN: Title` + `**Date**` + `**Status**` + Decision + Rationale + Trade-offs
-- [x] Escopo confirmado contra `EXECUTION-CHECKLIST.md:327-358`: 12 ADRs novos (ADR-022 a ADR-033) em 2 grupos (domínio + harness)
+- [x] Escopo confirmado contra `:327-358`: 12 ADRs novos (ADR-022 a ADR-033) em 2 grupos (domínio + harness)
 - [x] SPEC.md preenchido + CONTRACT.md `status: locked`
 - [ ] Próximo: Wave 1 (ADR-022 a ADR-027 — domínio) → validator → commit → Wave 2 (ADR-028 a ADR-033 — harness)
 
@@ -39,12 +39,12 @@ current-step: ship
 - **Status alvo**: ADRs de domínio = `Planned` (feature ainda não implementada, Fase 3.5 ou Fase 1); ADRs de harness = `Accepted` (já implementado nas Fases 0a/0b/0c).
 - **Tom**: cada ADR 15-30 linhas — decisão clara, razão concisa, trade-offs honestos. Sem prosa decorativa.
 - **Cross-links**: cada ADR de domínio (LLM, share link, PDF, etc.) referência `docs/research/NN-*.md` correspondente. ADRs de harness referenciam research/09.
-- **Stacked branch**: sobre `feat/redesign-foundation-memory` para não bloquear; retargeta para `develop` após merge do PR #6.
+- **Stacked branch**: sobre `feat/-foundation-memory` para não bloquear; retargeta para `develop` após merge do PR #6.
 
 ## Blockers / risks
 
 - Nenhum blocker.
-- **Risk**: conflito de merge em `EXECUTION-CHECKLIST.md` ao retargetar. Mitigação: trivial — ambos editam a tabela Status Geral, resolução manual rápida.
+- **Risk**: conflito de merge em `` ao retargetar. Mitigação: trivial — ambos editam a tabela Status Geral, resolução manual rápida.
 
 ## Tests/build status
 
@@ -60,5 +60,5 @@ bun run lint                           →  0 errors ✅
 2. Validator Wave 1 + commit
 3. Wave 2: 6 ADRs de harness (ADR-028 a ADR-033)
 4. Validator Wave 2 + commit
-5. EVALUATION verdict pass + EXECUTION-CHECKLIST + CHANGES.md
-6. Push + PR para develop (ou para feat/redesign-foundation-memory inicialmente)
+5. EVALUATION verdict pass +  + CHANGES.md
+6. Push + PR para develop (ou para feat/-foundation-memory inicialmente)

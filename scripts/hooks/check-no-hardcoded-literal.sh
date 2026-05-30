@@ -3,7 +3,7 @@
 # Blocks Edit/Write to src/**/*.tsx that introduces user-visible literal strings
 # in JSX/attributes without going through t('key') (i18n).
 #
-# Princípio 7 do roadmap: 3 idiomas obrigatórios — pt-BR, en, es.
+# Princípio 7: 3 idiomas obrigatórios — pt-BR, en, es.
 # Toda string nova vai em src/locales/*.json + via t('key') no JSX.
 #
 # Exit 0 = ok; exit 2 = block (stderr = razão).
@@ -42,7 +42,7 @@ cat >&2 <<EOF
 Detected in $file_path:
 $(echo "$offenders" | head -5)
 
-Princípio 7 do roadmap: zero literal hardcoded em JSX/TSX. Use t('key') e
+Princípio 7: zero literal hardcoded em JSX/TSX. Use t('key') e
 adicione a chave em pt-BR + en + es (src/locales/*.json).
 
 Exemplos de fix:
@@ -58,7 +58,7 @@ Exemplos de fix:
 Use /check-i18n após adicionar a chave para verificar as 3 línguas.
 
 Refs:
-  - docs/redesign/FEATURES-INVENTORY.md (princípio 7)
+  - docs// (princípio 7)
   - src/AGENTS.md § i18n
   - .claude/skills/verify-i18n/SKILL.md
 EOF

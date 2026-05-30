@@ -25,14 +25,14 @@ Todos os 36 items entregáveis do CONTRACT atendidos com evidência computaciona
 | 1 | `src/AGENTS.md` cobre React 19 + Tailwind v4 + i18n 3 idiomas | ✅ PASS | bloco "Current vs target stack" linha 7 + seção "i18n is mandatory" linha 11 com aviso explícito sobre não preempt Fase 1 |
 | 2 | `functions/AGENTS.md` adiciona seções Idempotência + Structured logging | ✅ PASS | `## Idempotência` linha 145 + `## Structured logging` linha 173, ambas com code samples concretos |
 | 3 | `packages/shared/AGENTS.md` criado (z.infer + co-located test) | ✅ PASS | arquivo novo, 154 linhas; z.infer linhas 59/156; co-located linhas 88/95/153; 4-step flow linha 88; What NOT to do |
-| 4 | `AGENTS.md` root com stack table (Tailwind v4) + princípios | ✅ PASS | Tailwind v4 linha 49 (tabela Target); `## Princípios do projeto` linha 57 linkando FEATURES-INVENTORY; sub-AGENTS links linhas 10-15 |
+| 4 | `AGENTS.md` root com stack table (Tailwind v4) + princípios | ✅ PASS | Tailwind v4 linha 49 (tabela Target); `## Princípios do projeto` linha 57 linkando ; sub-AGENTS links linhas 10-15 |
 | 5 | `CLAUDE.md` root com refs para HARNESS-RUNBOOK + docs/specs/ | ✅ PASS | HARNESS-RUNBOOK linha 14; `docs/specs/` linha 13; refs antigos preservados |
 
 ### Wave 2 — Skills novas (7 itens)
 
 | # | Item | Score | Evidência |
 |---|---|---|---|
-| 6 | `.claude/skills/redesign-screen/SKILL.md` | ✅ PASS | frontmatter name+description; corpo 6 passos com bash; anti-patterns; refs |
+| 6 | `.claude/skills/-screen/SKILL.md` | ✅ PASS | frontmatter name+description; corpo 6 passos com bash; anti-patterns; refs |
 | 7 | `.claude/skills/new-zod-schema/SKILL.md` | ✅ PASS | code TS template + Zod 4 idioms + test template; refs `packages/shared/AGENTS.md` |
 | 8 | `.claude/skills/new-report-business-type/SKILL.md` | ✅ PASS | 8 passos cobrindo schema + config + Looker + i18n + E2E + docs |
 | 9 | `.claude/skills/verify-i18n/SKILL.md` | ✅ PASS | 6 passos com `jq -r 'paths(scalars)'` + diff + órfãs + report table |
@@ -50,9 +50,9 @@ Todos os 36 items entregáveis do CONTRACT atendidos com evidência computaciona
 | 16 | `/negotiate-contract <id>` | ✅ PASS | usa skill negotiate-contract + atalho direto via validator |
 | 17 | `/execute-sprint <id>` | ✅ PASS | sequential vs parallel strategy + orchestrator/implementer dispatch |
 | 18 | `/validate-sprint <id> [wave-N]` | ✅ PASS | validator multi-process + EVALUATION update + debugger fallback |
-| 19 | `/ship-sprint <id>` | ✅ PASS | push + `gh pr create` template + CHANGES.md + EXECUTION-CHECKLIST |
+| 19 | `/ship-sprint <id>` | ✅ PASS | push + `gh pr create` template + CHANGES.md +  |
 | 20 | `/update-progress "<nota>"` | ✅ PASS | minimal (single script call) + when/when-not guidance |
-| 21 | `/new-screen-redesign <PageName>` | ✅ PASS | defer para skill redesign-screen + DS-1 gate |
+| 21 | `/new-screen- <PageName>` | ✅ PASS | defer para skill -screen + DS-1 gate |
 | 22 | `/check-i18n` | ✅ PASS | 5 comandos bash concretos (jq + diff + grep) |
 | 23 | `/check-no-hardcoded [path]` | ✅ PASS | 4 grep patterns + falsos-positivos documentados |
 | 24 | `/new-ai-prompt-version <name>` | ✅ PASS | convenção versionada imutável + caller migration + logger tracing |
@@ -96,7 +96,7 @@ jq map(scripts/hooks/) settings.json   →  8 entries com paths corretos   ✅
 ## Inferencial sensors
 
 - **Validator agent (4 passes intermediários por wave + 1 final)**: PASS unânime. Wave 1: 5/5. Wave 2: 7/7 (description PT-BR+EN, anti-patterns, coerência). Wave 3: 13/13 (lifecycle harness completo, cross-refs íntegras, vocabulário coerente). Wave 4: 10/10 (lógica casa com propósito, mensagens stderr úteis, scope discipline mantida).
-- **Scope check**: zero `.ts`/`.tsx` da app modificado; tudo em `.claude/`, `docs/specs/0b-foundation-tooling/`, `docs/redesign/` (PROGRESS), `packages/shared/AGENTS.md`, `src/AGENTS.md`, `functions/AGENTS.md`, root `AGENTS.md` + `CLAUDE.md`, `scripts/hooks/`. ✅
+- **Scope check**: zero `.ts`/`.tsx` da app modificado; tudo em `.claude/`, `docs/specs/0b-foundation-tooling/`, `docs//` (PROGRESS), `packages/shared/AGENTS.md`, `src/AGENTS.md`, `functions/AGENTS.md`, root `AGENTS.md` + `CLAUDE.md`, `scripts/hooks/`. ✅
 - **Cross-refs integridade**: validator confirmou que todos as skills, agents, scripts referenciados nos artifacts existem no disco. Zero arquivo fantasma. ✅
 
 ## Fix list
@@ -127,7 +127,7 @@ Vazio (verdict: pass).
 
 1. Commit final da Wave 4 (hooks + settings.json + smoke + PROGRESS update)
 2. Update PROGRESS.md frontmatter: `status: in-progress` → `status: done`
-3. Update EXECUTION-CHECKLIST.md: Fase 0b → ✅ COMPLETA
+3. Update : Fase 0b → ✅ COMPLETA
 4. Update CHANGES.md com entry datada
-5. Push branch `feat/redesign-foundation-tooling`
+5. Push branch `feat/-foundation-tooling`
 6. Open PR para `develop`

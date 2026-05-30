@@ -12,7 +12,7 @@ current-step: closed
 
 ## ✅ Verification fechada (2026-05-19, pós-Reload Window)
 
-Critério #1 do EXECUTION-CHECKLIST § Fase 0a ("6 agents criados e testados — cada um responde a invocação") **cumprido**.
+Critério #1 do  § Fase 0a ("6 agents criados e testados — cada um responde a invocação") **cumprido**.
 
 **Caminho até fechar**:
 1. Mid-session (antes de `/compact`): invocação retornou `Agent type 'X' not found`.
@@ -38,8 +38,8 @@ Critério #1 do EXECUTION-CHECKLIST § Fase 0a ("6 agents criados e testados —
 
 | Field | Value |
 |---|---|
-| Branch | `feat/redesign-foundation-harness` |
-| Base | `feat/redesign-foundation-schemas` (PR #3 para `develop` aberto) |
+| Branch | `feat/-foundation-harness` |
+| Base | `feat/-foundation-schemas` (PR #3 para `develop` aberto) |
 | Last commit | _pending — waves 1-4 a commitar nesta sessão_ |
 | Tests | `bun run test` (packages/shared) → 195/195 verde ✅ |
 | Build | `bun run typecheck` → verde ✅; lint → 0 errors (112 warnings pre-existing) ✅ |
@@ -51,9 +51,9 @@ Critério #1 do EXECUTION-CHECKLIST § Fase 0a ("6 agents criados e testados —
 ### 2026-05-19 — Session 1: setup + scaffolding
 
 - [x] Continuação após compactação do chat (Sprint -1 já fechado)
-- [x] Verificação do estado: branch `feat/redesign-foundation-schemas` pushed, working tree limpo, 4 commits visíveis
-- [x] PR #3 aberto: `feat/redesign-foundation-schemas` → `develop` (https://github.com/Elo-Vision-Digital/adsmart.app/pull/3)
-- [x] Branch nova criada: `feat/redesign-foundation-harness`
+- [x] Verificação do estado: branch `feat/-foundation-schemas` pushed, working tree limpo, 4 commits visíveis
+- [x] PR #3 aberto: `feat/-foundation-schemas` → `develop` (https://github.com/Elo-Vision-Digital/adsmart.app/pull/3)
+- [x] Branch nova criada: `feat/-foundation-harness`
 - [x] Folders criados: `docs/specs/0a-foundation-harness/`, `docs/specs/_templates/`, `scripts/harness/`
 - [x] **4 templates** em `docs/specs/_templates/`: SPEC.md, CONTRACT.md, PROGRESS.md, EVALUATION.md
 - [x] **6 agents** em `.claude/agents/`: orchestrator.md, researcher.md, planner.md, implementer.md, validator.md, debugger.md (frontmatter `name/description/tools/model`, tools restritas por papel)
@@ -65,7 +65,7 @@ Critério #1 do EXECUTION-CHECKLIST § Fase 0a ("6 agents criados e testados —
 - [x] Sensors: `bun run test` (packages/shared) 195/195 verde; `bun run typecheck` verde; `bun run lint` 0 errors (112 warnings pre-existing, pré-fase)
 - [x] CONTRACT acceptance tests rodados item-a-item (19/19 PASS)
 - [x] EVALUATION.md escrito (`verdict: pass`)
-- [x] EXECUTION-CHECKLIST.md atualizado (Fase -1 + Fase 0a → ✅ COMPLETA na tabela Status Geral)
+- [x]  atualizado (Fase -1 + Fase 0a → ✅ COMPLETA na tabela Status Geral)
 - [ ] Próximo: commit em 4 waves + push + PR para `develop`
 
 **Saída para próxima session (se necessário)**: pode commitar tudo de uma vez ou em 4 waves (templates, agents, scripts+runbook, sprint dogfood + checklist update + CHANGES.md). Branch pushed, PR contra `develop`.
@@ -103,5 +103,5 @@ bash -n scripts/harness/*.sh              →  pendente verificação (sintaxe s
 3. Smoke test bootstrap: `bash scripts/harness/bootstrap-session.sh` produz output sensível
 4. Rodar `bun run test --filter=@adsmart/shared` — confirmar 195/195 (zero regressão)
 5. Commit em waves: (a) templates, (b) agents, (c) scripts + runbook, (d) sprint dogfood
-6. Push + abrir PR `feat/redesign-foundation-harness` → `develop`
+6. Push + abrir PR `feat/-foundation-harness` → `develop`
 7. Preencher EVALUATION.md (vai virar a primeira dogfood real de Validator no projeto)

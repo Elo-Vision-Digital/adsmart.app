@@ -26,7 +26,7 @@ Todos os 16 items do CONTRACT atendidos. Wave 1 (4 items) PASS 4/4. Wave 2 (10 i
 |---|---|---|---|
 | 1 | Deletar `suitpay_deprecated.md` | ✅ PASS | `test ! -f` retorna exit 0; arquivo ausente |
 | 2 | Atualizar `firebase_secrets.md` com ANTHROPIC_API_KEY + DEEPSEEK_API_KEY (planned) | ✅ PASS | bloco "Planned secrets" adicionado; cross-link `[[llm_combo_strategy]]`; gate language "Do NOT provision until callable implemented" claro |
-| 3 | Atualizar `admin_overhaul_roadmap.md` com cross-link redesign | ✅ PASS | parágrafo "Cross-link to broader redesign roadmap" adicionado; menciona coordenação Subprojeto 3+ antes da Fase 1; path corrigido após observação do validator |
+| 3 | Atualizar `admin_overhaul_roadmap.md` com cross-link  | ✅ PASS | parágrafo "Cross-link to broader  " adicionado; menciona coordenação Subprojeto 3+ antes da Fase 1; path corrigido após observação do validator |
 | 4 | Atualizar `MEMORY.md` index (sem suitpay + 10 entries novas) | ✅ PASS | `grep -c '^- \['` = 19 (≥ 19); sem `suitpay_deprecated`; 10 entries novas com padrão `- [Name](file.md) — description` consistente |
 
 ### Wave 2 — Novas memórias (10 items)
@@ -97,9 +97,9 @@ Vazio (verdict: pass).
 
 ## Para fechar (próximas ações imediatas)
 
-1. Commit final (sprint folder updates + EXECUTION-CHECKLIST + CHANGES.md + PROGRESS update)
+1. Commit final (sprint folder updates +  + CHANGES.md + PROGRESS update)
 2. Update PROGRESS.md: `status: in-progress` → `status: done`
-3. Update `docs/redesign/EXECUTION-CHECKLIST.md`: Fase 0c → ✅ COMPLETA + apontar próximo passo (Fase 0d ADRs)
+3. Update `docs//`: Fase 0c → ✅ COMPLETA + apontar próximo passo (Fase 0d ADRs)
 4. Update `docs/CHANGES.md` com entry datada
-5. Push branch `feat/redesign-foundation-memory`
+5. Push branch `feat/-foundation-memory`
 6. Open PR para `develop`

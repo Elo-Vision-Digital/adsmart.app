@@ -2,7 +2,7 @@
 
 Append-only log of significant changes. Most recent at the top. Each entry uses the parseable header `## [YYYY-MM-DD] — Title` for tooling/lint.
 
-## [2026-05-23] — Redesign Fase 0.5 (cleanup-legacy) shipped
+## [2026-05-23] —  Fase 0.5 (cleanup-legacy) shipped
 
 Sprint 0.5 completa — quinta dogfood do harness. 4 microsprints com pausa entre cada (workflow novo confirmado com user 2026-05-19), validator agent PASS em todas, 27 items do CONTRACT entregues.
 
@@ -16,7 +16,7 @@ Sprint 0.5 completa — quinta dogfood do harness. 4 microsprints com pausa entr
 
 **Sensores Wave 5**: typecheck exit 0 + 195/195 tests + lint 0 errors. EVALUATION.md `verdict: pass`.
 
-## [2026-05-19] — Redesign Fase 0d (foundation-adrs) shipped
+## [2026-05-19] —  Fase 0d (foundation-adrs) shipped
 
 Sprint 0d completa via dogfood do harness (quarta dogfood, depois de 0a, 0b, 0c). 14 items entregues em 3 waves com validator agent PASS em cada wave. 12 ADRs novos (ADR-022 a ADR-033) publicados em `docs/Decisions.md`.
 
@@ -48,22 +48,22 @@ Cada ADR: padrão do repo (`## ADR-NNN: Title` + `**Date**` + `**Status**` + Dec
 - Validator agent 2+1 passes: padrão validado pela 4ª vez. Excelente cost-benefit.
 - 12 ADRs em ~3h (incluindo erro de ordem) — sprint pequena com escopo bem delimitado pelo checklist.
 
-**Branch strategy**: `feat/redesign-foundation-adrs` stacked sobre `feat/redesign-foundation-memory` aguardando merge de PR #6. PR #7 (este) será retargetado para `develop` após merge de PR #6.
+**Branch strategy**: `feat/-foundation-adrs` stacked sobre `feat/-foundation-memory` aguardando merge de PR #6. PR #7 (este) será retargetado para `develop` após merge de PR #6.
 
 **Próximo passo**: Fase 0.5 — Cleanup textual (remover refs Asaas/SuitPay/Google Data Studio em docs/UI sem implementar nada novo).
 
 ---
 
-## [2026-05-19] — Redesign Fase 0c (foundation-memory) shipped
+## [2026-05-19] —  Fase 0c (foundation-memory) shipped
 
 Sprint 0c completa via dogfood do harness (terceira dogfood, depois da 0a e 0b). 16 items entregues em 3 waves com validator agent PASS em cada wave.
 
-**Nota crítica**: memórias vivem em `~/.claude/projects/.../memory/` — state local fora do repo. Este PR contém apenas os artifacts da sprint + EXECUTION-CHECKLIST update + CHANGES (próprio); o efeito real das memórias (1 delete + 3 updates + 10 creates) só visível na máquina do dev. Design intencional dessa fase.
+**Nota crítica**: memórias vivem em `~/.claude/projects/.../memory/` — state local fora do repo. Este PR contém apenas os artifacts da sprint +  update + CHANGES (próprio); o efeito real das memórias (1 delete + 3 updates + 10 creates) só visível na máquina do dev. Design intencional dessa fase.
 
 **Wave 1 — Cleanup (4 items)**:
 - Deletado: `suitpay_deprecated.md` (SuitPay removido em ADR-021; memória vira ruído; histórico em `docs/Decisions.md`)
 - Atualizado: `firebase_secrets.md` com bloco "Planned secrets" documentando `ANTHROPIC_API_KEY` + `DEEPSEEK_API_KEY` (status: planned, Fase 3.5)
-- Atualizado: `admin_overhaul_roadmap.md` com cross-link para `docs/redesign/EXECUTION-CHECKLIST.md` (Subprojetos 3+ antes da Fase 1)
+- Atualizado: `admin_overhaul_roadmap.md` com cross-link para `docs//` (Subprojetos 3+ antes da Fase 1)
 - Atualizado: `MEMORY.md` index (sem suitpay + 10 entries novas) — 19 bullets totais
 
 **Wave 2 — 10 memórias novas em `.claude/projects/.../memory/`**:
@@ -82,7 +82,7 @@ Sprint 0c completa via dogfood do harness (terceira dogfood, depois da 0a e 0b).
 
 ---
 
-## [2026-05-19] — Redesign Fase 0b (foundation-tooling) shipped
+## [2026-05-19] —  Fase 0b (foundation-tooling) shipped
 
 Sprint 0b completa via dogfood do harness. 37 items entregues em 4 waves com validator agent PASS em cada wave.
 
@@ -90,16 +90,16 @@ Sprint 0b completa via dogfood do harness. 37 items entregues em 4 waves com val
 - `src/AGENTS.md` atualizado: bloco "Current vs target stack" (não preempt Tailwind v4 / React 19 antes da Fase 1) + seção i18n mandatory
 - `functions/AGENTS.md`: novas seções `## Idempotência` (padrão `processedRequests/{id}` com code sample) e `## Structured logging` (`logger.info` v2, snake_case events, regras sobre PII/secrets)
 - `packages/shared/AGENTS.md` criado: propósito + estrutura + Zod 4 idioms + tests co-located mandatórios + 4-step flow + auth helpers + What NOT to do
-- `AGENTS.md` root: bloco "Sub-AGENTS by area" + tabela Current/Target stack + seção "Princípios do projeto" (16) linkando FEATURES-INVENTORY + "Sprint workflow" linkando HARNESS-RUNBOOK
-- `CLAUDE.md` root: refs para redesign/, FEATURES-INVENTORY § Princípios, research/, docs/specs/, HARNESS-RUNBOOK
+- `AGENTS.md` root: bloco "Sub-AGENTS by area" + tabela Current/Target stack + seção "Princípios do projeto" (16) linkando  + "Sprint workflow" linkando HARNESS-RUNBOOK
+- `CLAUDE.md` root: refs para /,  § Princípios, research/, docs/specs/, HARNESS-RUNBOOK
 
 **Wave 2 — 7 skills novas em `.claude/skills/`**:
-- redesign-screen, new-zod-schema, new-report-business-type, verify-i18n, validate-llm-call, negotiate-contract, bootstrap-fresh-session
+- -screen, new-zod-schema, new-report-business-type, verify-i18n, validate-llm-call, negotiate-contract, bootstrap-fresh-session
 - Cada SKILL.md: frontmatter name + description (gatilhos PT-BR+EN), corpo com passos numerados + bash/code samples, anti-patterns, cross-refs
 
 **Wave 3 — 13 slash commands em `.claude/commands/`**:
 - Workflow harness (8): /new-sprint, /research-sprint, /plan-sprint, /negotiate-contract, /execute-sprint, /validate-sprint, /ship-sprint, /update-progress
-- Workflow domínio (5): /new-screen-redesign, /check-i18n, /check-no-hardcoded, /new-ai-prompt-version, /run-research
+- Workflow domínio (5): /new-screen-, /check-i18n, /check-no-hardcoded, /new-ai-prompt-version, /run-research
 
 **Wave 4 — 8 hooks PreToolUse + settings.json + smoke**:
 - 8 bash scripts em `scripts/hooks/` (pasta nova): check-no-hardcoded-literal, check-zod-schema-test, check-llm-call-via-logger, check-firestore-rule-defaults-deny, check-contract-exists, check-progress-updated (warn), check-sensors-passed (warn), check-implementer-not-validator (warn)
@@ -110,7 +110,7 @@ Sprint 0b completa via dogfood do harness. 37 items entregues em 4 waves com val
 
 **Aprendizados**: skills + commands carregam dinamicamente (sem precisar Reload Window — comportamento diferente dos agents da Fase 0a). Validator agent multi-process funcionou bem com 4 passes intermediários + 1 final, evitando retrabalho.
 
-**Próximo passo**: Fase 0c — memória cleanup + criação. Ver [docs/redesign/EXECUTION-CHECKLIST.md § FASE 0c](redesign/EXECUTION-CHECKLIST.md).
+**Próximo passo**: Fase 0c — memória cleanup + criação. Ver [docs// § FASE 0c](/).
 
 Format conventions:
 - One section per logical change set (a phase, a migration, an incident, a major decision).
@@ -120,11 +120,11 @@ Format conventions:
 
 ---
 
-## [2026-05-19] — Redesign Fase -1 (foundation schemas) + Fase 0a (foundation harness)
+## [2026-05-19] —  Fase -1 (foundation schemas) + Fase 0a (foundation harness)
 
-Início real da execução do redesign do AdSmart. Duas fases entregues no mesmo dia, em branches separadas, sem usuários em prod (refactor estrutural autorizado).
+Início real da execução  do AdSmart. Duas fases entregues no mesmo dia, em branches separadas, sem usuários em prod (refactor estrutural autorizado).
 
-**Fase -1 — Foundation Schemas** (PR [#3](https://github.com/Elo-Vision-Digital/adsmart.app/pull/3), branch `feat/redesign-foundation-schemas`):
+**Fase -1 — Foundation Schemas** (PR [#3](https://github.com/Elo-Vision-Digital/adsmart.app/pull/3), branch `feat/-foundation-schemas`):
 
 - **6 schemas Zod novos** em `packages/shared/src/schemas/`: `businessType`, `processedRequest`, `publicReportShare`, `aiReportInsight`, `llmCall`, `reportPlatformData`
 - **4 schemas refatorados aditivamente** (legacy preservado para Fase 0.5): `report.ts` (`templateId` agora optional + `platforms[]`, `businessType`, `accountIds`, `creditsByPlatform`, `lastRefreshedAt`, `nextAutoRefreshAt`, `shareIds`), `transaction.ts` (provider enum + clientRequestId + stripe fields opcionais), `userWallet.ts` (`creditsBalance` opcional), `productPrice.ts` (`creditsPerReport` opcional)
@@ -134,9 +134,9 @@ Início real da execução do redesign do AdSmart. Duas fases entregues no mesmo
 - Cleanup textual (Asaas/SuitPay/Looker Studio) e remoção de campos legacy (`lookerStudioUrl`, `payerName`, `payerCpf`, `templateId` required) ficaram para **Fase 0.5** com refactor dos callers
 - Detalhes em [docs/specs/-1-foundation-schemas/PROGRESS.md](specs/-1-foundation-schemas/PROGRESS.md)
 
-**Fase 0a — Foundation Harness** (branch `feat/redesign-foundation-harness`):
+**Fase 0a — Foundation Harness** (branch `feat/-foundation-harness`):
 
-Instalação da infraestrutura de Harness Engineering (Martin Fowler abr/2026 + GSD framework + Anthropic SDK). Base para zero entropia em todo o roadmap restante.
+Instalação da infraestrutura de Harness Engineering (Martin Fowler abr/2026 + GSD framework + Anthropic SDK). Base para zero entropia em todo o  restante.
 
 - **6 agents multi-process** em `.claude/agents/`: `orchestrator` (coordena, tem `Agent`), `researcher` (read-only, Context7+WebSearch+Firebase MCP), `planner` (Write apenas em `docs/specs/`), `implementer` (`Edit/Write` mas **sem `Agent`** — não spawna), `validator` (`Read/Bash`, **sem `Edit/Write`** — só julga), `debugger` (diagnose + fix plan, **sem `Edit/Write`**)
 - **4 templates de sprint** em `docs/specs/_templates/`: `SPEC.md` (feedforward), `CONTRACT.md` (negociado Implementer×Validator), `PROGRESS.md` (memory entre sessions), `EVALUATION.md` (score binário)
@@ -145,11 +145,11 @@ Instalação da infraestrutura de Harness Engineering (Martin Fowler abr/2026 + 
 - **Dogfood**: a própria Sprint 0a tem SPEC + CONTRACT (`status: locked`) + PROGRESS + EVALUATION (`verdict: pass` — 19/19 items) preenchidos com os templates novos. Primeira EVALUATION real do harness.
 - Detalhes em [docs/specs/0a-foundation-harness/PROGRESS.md](specs/0a-foundation-harness/PROGRESS.md) e EVALUATION
 
-**Princípios 13-16** introduzidos no roadmap (já estavam em FEATURES-INVENTORY.md desde Fase -2): multi-process agents · contracts before execution · score binário · progress files persistidos.
+**Princípios 13-16** introduzidos  (já estavam em  desde Fase -2): multi-process agents · contracts before execution · score binário · progress files persistidos.
 
 **Sensors verdes em ambas as fases**: `bun run test` (packages/shared) 195/195, `bun run typecheck` verde, `bun run lint` 0 errors (112 warnings pré-existentes), `bun run build` (functions) verde. Zero regressão.
 
-**Próximo passo**: Fase 0b — Sub-AGENTS.md por área (`src/`, `functions/`, `packages/shared/`) + 7 skills novas em `.claude/skills/` + 13 slash commands em `.claude/commands/` + 8 hooks PreToolUse novos. Ver [EXECUTION-CHECKLIST.md § FASE 0b](redesign/EXECUTION-CHECKLIST.md).
+**Próximo passo**: Fase 0b — Sub-AGENTS.md por área (`src/`, `functions/`, `packages/shared/`) + 7 skills novas em `.claude/skills/` + 13 slash commands em `.claude/commands/` + 8 hooks PreToolUse novos. Ver [ § FASE 0b](/).
 
 ---
 
@@ -169,7 +169,7 @@ Closing the last open Subprojeto-2 audit item: confirm the historical INTERNAL/5
 
 Subprojeto 2 row in `admin_overhaul_roadmap.md` updated from "Done (pending operator validation)" → "Done (validated 2026-05-18)". The validation method itself is also captured in the same memory for future audits of similar `Promise.allSettled`-labeled callables.
 
-**Next pending in the admin roadmap:** Subprojeto 3 (painel usuários CRUD).
+**Next pending in the admin :** Subprojeto 3 (painel usuários CRUD).
 
 ---
 

@@ -1,7 +1,7 @@
 import * as z from 'zod'
 import { zTimestamp } from '../firestore'
 
-// Share-link público de um relatório gerado (SHARE-1/2/3 do roadmap).
+// Share-link público de um relatório gerado (SHARE-1/2/3 ).
 //
 // Top-level collection `publicReportShares/{shareId}` — não fica em
 // users/{uid}/... porque rules em hierarquia exigiriam auth para chegar

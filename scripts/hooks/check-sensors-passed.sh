@@ -37,7 +37,7 @@ fi
 cat >&2 <<EOF
 ⚠ Warning: sensors não rodaram nos últimos 30 min antes deste push/PR.
 
-Princípio 15 do roadmap: score binário. Sensors passam ou não passam.
+Princípio 15: score binário. Sensors passam ou não passam.
 
 Antes de continuar, rode local:
 

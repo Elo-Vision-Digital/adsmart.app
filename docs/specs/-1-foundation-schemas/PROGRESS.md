@@ -1,10 +1,10 @@
 # Sprint -1 — Foundation Schemas — PROGRESS
 
-**Branch**: `feat/redesign-foundation-schemas`
+**Branch**: `feat/-foundation-schemas`
 **Started**: 2026-05-19
 **Status**: ✅ **CONCLUÍDA** (pronta para PR)
 
-## Scope (from EXECUTION-CHECKLIST.md Fase -1)
+## Scope (from  Fase -1)
 
 Refactor + criar schemas em `packages/shared/src/schemas/` + documentar API contracts + Data Model. **Aditivo apenas** nesta sprint — remoção de campos legacy (lookerStudioUrl, payerName, payerCpf) fica para Fase 0.5 quando refatoramos os callers.
 
@@ -19,7 +19,7 @@ Refactor + criar schemas em `packages/shared/src/schemas/` + documentar API cont
 
 | Hash | Tipo | Descrição |
 |---|---|---|
-| `fbccdf6` | `docs(redesign)` | Roadmap inicial, research Fase -2 (10 docs), execution checklist + sprint PROGRESS provisional |
+| `fbccdf6` | `docs()` | , research Fase -2 (10 docs), execution checklist + sprint PROGRESS provisional |
 | `d8d7f97` | `feat(shared)` | 6 foundation schemas novos + index re-exports (79 tests novos) |
 | `a302cdc` | `feat(shared)` | Refactor aditivo de 4 schemas existentes (22 tests novos) |
 | _pending_ | `docs(api,model)` | API-CONTRACTS.md + DATA-MODEL.md atualizados + este PROGRESS |
@@ -28,10 +28,10 @@ Refactor + criar schemas em `packages/shared/src/schemas/` + documentar API cont
 
 ### 2026-05-19 — Session 1: setup + new schemas
 
-- [x] Branch criada: `feat/redesign-foundation-schemas`
+- [x] Branch criada: `feat/-foundation-schemas`
 - [x] Sprint folder criada em `docs/specs/-1-foundation-schemas/`
 - [x] PROGRESS.md criado
-- [x] **Commit 1**: docs (52 arquivos — redesign + research + checklist + sprint structure)
+- [x] **Commit 1**: docs (52 arquivos —  + research + checklist + sprint structure)
 - [x] **Schemas novos** (6 arquivos + 6 tests):
   - [x] `businessType.ts` + test (9 testes)
   - [x] `processedRequest.ts` + test (10 testes)
@@ -84,7 +84,7 @@ Refactor + criar schemas em `packages/shared/src/schemas/` + documentar API cont
 
 Após esta sprint:
 
-1. Push da branch `feat/redesign-foundation-schemas`
+1. Push da branch `feat/-foundation-schemas`
 2. Abrir PR para `develop` (4 commits, 81 arquivos, ~16k linhas adicionadas — maioria docs)
 3. Code review via `pr-review-toolkit:code-reviewer` subagent
 4. Mergear após aprovação

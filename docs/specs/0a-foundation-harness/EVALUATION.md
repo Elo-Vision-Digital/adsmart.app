@@ -107,7 +107,7 @@ Vazio (verdict: pass).
 
 ## Verificação fechada (post-Reload Window, 2026-05-19 04:30)
 
-Critério #1 do EXECUTION-CHECKLIST § Fase 0a ("6 agents criados **e testados (cada um responde a invocação)**") cumprido.
+Critério #1 do  § Fase 0a ("6 agents criados **e testados (cada um responde a invocação)**") cumprido.
 
 **Caminho até fechar**:
 1. Mid-session (antes de `/compact`): invocação retornou `Agent type 'X' not found`. Lista de agents disponíveis: só os 3 legados (`firestore-*-reviewer`, `functions-security-reviewer`) + os pacotes.
@@ -127,7 +127,7 @@ Critério #1 do EXECUTION-CHECKLIST § Fase 0a ("6 agents criados **e testados (
 | validator | validator | Read, Grep, Glob, Bash | sem Edit/Write/Agent | ✅ |
 | debugger | debugger | Read, Grep, Glob, Bash, TodoWrite | sem Edit/Write/Agent | ✅ |
 
-**Impacto no verdict**: `verdict: pass` no nível do CONTRACT e no critério mais amplo do EXECUTION-CHECKLIST. Fase 0a entregue.
+**Impacto no verdict**: `verdict: pass` no nível do CONTRACT e no critério mais amplo do . Fase 0a entregue.
 
 **Aprendizado para o `HARNESS-RUNBOOK.md`** (próximo update): após criar novos agents em `.claude/agents/`, **reiniciar o extension host (Reload Window)** é mandatório antes do primeiro smoke test. `/compact` não basta.
 
