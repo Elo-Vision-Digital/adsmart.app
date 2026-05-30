@@ -24,13 +24,15 @@ current-step: research  # research | plan | contract | implement | validate | sh
 
 ## Sessions log
 
-### 2026-05-29 — Session N: {short name}
+### 2026-05-30 — Refatoração Integrations e Transactions
 
-- [x] Action taken
-- [x] Action taken
-- [ ] Pending action
+- [x] Refatorado `IntegrationsPage.tsx` para o layout V2 (Projects-first).
+- [x] Refatorado `TransactionsPage.tsx` incluindo correção pontual para alinhar o extrato perfeitamente ao protótipo.
+- [x] Antiga `IntegrationsPage.tsx` renomeada para `ProjectsPage.tsx` na rota `/projects`.
+- [x] Nova `IntegrationsPage.tsx` criada baseada no protótipo HTML (Figma) na rota `/integrations`.
+- [x] Atualizado `Sidebar.tsx` e `App.tsx` refletindo as rotas independentes de Projetos e Integrações.
 
-**Saída para próxima session**: …
+**Saída para próxima session**: Layouts de Projetos, Integrações e Créditos implementados com sucesso e typecheck passando verde.
 
 ## Decisions taken
 

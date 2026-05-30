@@ -5,6 +5,7 @@ import {
   HeadphonesIcon,
   Home,
   Inbox,
+  Link2,
   Settings,
   Shield,
   Sparkles,
@@ -22,8 +23,9 @@ export function Sidebar() {
 
   const items = [
     { id: '/dashboard', icon: Home, label: 'Início' },
+    { id: '/integrations', icon: Link2, label: 'Integrações' },
     { id: '/reports', icon: FileText, label: 'Relatórios' },
-    { id: '/accounts', icon: Folder, label: 'Projetos' },
+    { id: '/projects', icon: Folder, label: 'Projetos' },
     { id: '/transactions', icon: Wallet, label: 'Créditos' },
   ]
 

@@ -14,6 +14,8 @@ verdict: pass
 | 1. `Dashboard.tsx` refatorada | Pass | O componente agora reflete exatamente a estrutura do protótipo `DesktopDashboard` (Hero balance, Grid duplo para relatórios e integrações). |
 | 2. Tokens e Layout | Pass | CSS inserido bate com o visual glassmorphism, background elev e bordas sutis. |
 | 3. Estado (Hooks e Firestore) | Pass | `useReports()` e query de `adAccounts` via `onSnapshot` mantidos. Listagem preenchida com `reports` e `connections` do banco, formatadas e renderizadas adequadamente. |
+| 4. Separação Projetos/Integrações | Pass | `/accounts` original foi movido para `/projects` (hub de sub-contas clientes), e uma nova `/integrations` recriada do zero 100% fiel ao design de OAuth Accounts. |
+| 5. `TransactionsPage.tsx` | Pass | UI corrigida com badge menor e tabela alinhada ao design-system fidelizado. |
 
 ## Sensors Executados
 
