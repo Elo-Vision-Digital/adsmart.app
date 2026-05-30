@@ -1,11 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import {
-  FinanceIcon,
-  HomeIcon,
-  IntegrationsIcon,
-  ReportsIcon,
-  TemplatesIcon,
-} from '@/components/icons'
+import { FinanceIcon, HomeIcon, IntegrationsIcon, ReportsIcon } from '@/components/icons'
 import { useTheme } from '@/contexts/ThemeContext'
 
 interface NavItem {
@@ -23,7 +17,6 @@ export function BottomNavigation() {
     { id: 'dashboard', label: 'Dashboard', icon: <HomeIcon />, path: '/dashboard' },
     { id: 'integrations', label: 'Integrações', icon: <IntegrationsIcon />, path: '/accounts' },
     { id: 'reports', label: 'Relatórios', icon: <ReportsIcon />, path: '/reports' },
-    { id: 'templates', label: 'Templates', icon: <TemplatesIcon />, path: '/templates' },
     { id: 'finance', label: 'Financeiro', icon: <FinanceIcon />, path: '/transactions' },
   ]
 

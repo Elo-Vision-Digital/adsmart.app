@@ -101,7 +101,6 @@ export interface Translations {
   dashboard: {
     myReports: string
     integrations: string
-    viewTemplates: string
     searchPlaceholder: string
     noReportsFound: string
     noAccountsConnected: string
@@ -117,7 +116,6 @@ export interface Translations {
     dashboard: string
     integrations: string
     reports: string
-    templates: string
     finance: string
     settings: string
     administration: string
@@ -207,26 +205,12 @@ export interface Translations {
         description: string
       }
     }
-    templates: {
-      title: string
-      subtitle: string
-    }
     pricing: {
       title: string
       subtitle: string
       simple: {
         title: string
         subtitle: string
-      }
-      templates: {
-        google: {
-          launch: string
-          localBusiness: string
-        }
-        meta: {
-          launch: string
-          localBusiness: string
-        }
       }
     }
     cta: {
@@ -259,75 +243,6 @@ export interface Translations {
     }
   }
 
-  // TemplatesPage translations
-  templatesPage: {
-    title: string
-    subtitle: string
-    backToDashboard: string
-    currentBalance: string
-    warning: string
-    insufficientBalance: {
-      title: string
-      message: string
-      button: string
-    }
-    howItWorks: {
-      title: string
-      step1: string
-      step2: string
-      step3: string
-      step4: string
-      step5: string
-    }
-  }
-
-  // TemplateCard translations
-  templateCard: {
-    featuresIncluded: string
-    loading: string
-    insufficientBalance: string
-    useTemplate: string
-    defaultTitle: string
-    defaultDescription: string
-    templateTypes: {
-      launch: string
-      localBusiness: string
-    }
-    templateDescriptions: {
-      googleLaunch: string
-      metaLaunch: string
-      googleLocal: string
-      metaLocal: string
-    }
-  }
-
-  // Template features translations
-  templateFeatures: {
-    googleLaunch: {
-      feature1: string
-      feature2: string
-      feature3: string
-      feature4: string
-    }
-    metaLaunch: {
-      feature1: string
-      feature2: string
-      feature3: string
-      feature4: string
-    }
-    googleLocal: {
-      feature1: string
-      feature2: string
-      feature3: string
-      feature4: string
-    }
-    metaLocal: {
-      feature1: string
-      feature2: string
-      feature3: string
-      feature4: string
-    }
-  }
 
   // AccountsPage translations
   accountsPage: {

@@ -96,7 +96,6 @@
   "dashboard": {
     "myReports": "Mis informes",
     "integrations": "Integraciones",
-    "viewTemplates": "Ver plantillas de Informe",
     "searchPlaceholder": "Buscar...",
     "noReportsFound": "No se encontraron informes",
     "noAccountsConnected": "No hay cuentas conectadas",
@@ -110,7 +109,6 @@
     "dashboard": "Dashboard",
     "integrations": "Integraciones",
     "reports": "Informes",
-    "templates": "Plantillas",
     "finance": "Financiero",
     "settings": "Configuraciones",
     "administration": "Administración"
@@ -190,26 +188,12 @@
         "description": "Análisis avanzados y recomendaciones basadas en IA"
       }
     },
-    "templates": {
-      "title": "Plantillas Profesionales Listas para Usar",
-      "subtitle": "Elige entre nuestras plantillas optimizadas para diferentes tipos de negocio"
-    },
     "pricing": {
       "title": "Precios Simples y Transparentes",
       "subtitle": "Paga solo por los informes que generes",
       "simple": {
         "title": "Modelo Simple",
         "subtitle": "Sin mensualidades, paga solo por lo que uses"
-      },
-      "templates": {
-        "google": {
-          "launch": "Google Ads - Lanzamiento",
-          "localBusiness": "Google Ads - Negocio Local"
-        },
-        "meta": {
-          "launch": "Meta Ads - Lanzamiento",
-          "localBusiness": "Meta Ads - Negocio Local"
-        }
       }
     },
     "cta": {
@@ -237,70 +221,6 @@
     },
     "stats": {
       "thisMonth": "Este mes"
-    }
-  },
-  "templatesPage": {
-    "title": "Plantillas de Informes",
-    "subtitle": "Elige la plantilla ideal para tus análisis de marketing",
-    "backToDashboard": "Volver al Dashboard",
-    "currentBalance": "Tu saldo actual",
-    "warning": "Advertencia",
-    "insufficientBalance": {
-      "title": "Saldo Insuficiente",
-      "message": "Necesitas agregar créditos para generar informes. Tu saldo actual es {balance}.",
-      "button": "Agregar Créditos"
-    },
-    "howItWorks": {
-      "title": "¿Cómo funciona?",
-      "step1": "Elige la plantilla adecuada para tu plataforma de anuncios",
-      "step2": "Conecta tu cuenta de Google Ads o Meta Ads",
-      "step3": "Selecciona las campañas y el período de análisis",
-      "step4": "Confirma el pago (valores actualizados en tiempo real)",
-      "step5": "¡Recibe el enlace de tu dashboard personalizado en minutos!"
-    }
-  },
-  "templateCard": {
-    "featuresIncluded": "Recursos incluidos:",
-    "loading": "Cargando...",
-    "insufficientBalance": "Saldo Insuficiente",
-    "useTemplate": "Usar esta Plantilla",
-    "defaultTitle": "Dashboard {platform}",
-    "defaultDescription": "Dashboard profesional para tus campañas",
-    "templateTypes": {
-      "launch": "Lanzamiento",
-      "localBusiness": "Negocios Locales"
-    },
-    "templateDescriptions": {
-      "googleLaunch": "Dashboard para campañas de lanzamiento en Google Ads",
-      "metaLaunch": "Dashboard para campañas de lanzamiento en Meta Ads",
-      "googleLocal": "Dashboard para negocios locales en Google Ads",
-      "metaLocal": "Dashboard para negocios locales en Meta Ads"
-    }
-  },
-  "templateFeatures": {
-    "googleLaunch": {
-      "feature1": "Análisis de conversiones y ROI",
-      "feature2": "Métricas de engagement detalladas",
-      "feature3": "Comparativo de períodos",
-      "feature4": "Insights automáticos de rendimiento"
-    },
-    "metaLaunch": {
-      "feature1": "Análisis de público objetivo",
-      "feature2": "Rendimiento por formato de anuncio",
-      "feature3": "Embudo de conversión detallado",
-      "feature4": "Optimizaciones sugeridas"
-    },
-    "googleLocal": {
-      "feature1": "Análisis geográfico de conversiones",
-      "feature2": "Rendimiento por ubicación",
-      "feature3": "Horarios pico de conversión",
-      "feature4": "ROI por región"
-    },
-    "metaLocal": {
-      "feature1": "Alcance por región",
-      "feature2": "Engagement local",
-      "feature3": "Análisis demográfico detallado",
-      "feature4": "Costo por lead local"
     }
   },
   "accountsPage": {
@@ -428,8 +348,14 @@
       "categoryLabel": "Categoría",
       "typeLabel": "Tipo",
       "updatedAtLabel": "Actualizado",
-      "category": { "google": "Google Ads", "meta": "Meta Ads" },
-      "type": { "lancamento": "Lanzamiento", "negocioLocal": "Negocio Local" },
+      "category": {
+        "google": "Google Ads",
+        "meta": "Meta Ads"
+      },
+      "type": {
+        "lancamento": "Lanzamiento",
+        "negocioLocal": "Negocio Local"
+      },
       "currency": "R$"
     },
     "wallet": {

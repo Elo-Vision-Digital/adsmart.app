@@ -93,7 +93,6 @@ describe('users/{userId}', () => {
 describe('client-write-blocked collections', () => {
   const blocked = [
     'productPrices/p1',
-    'reportTemplates/t1',
     'systemConfig/c1',
     'securityLogs/l1',
     'backupMetadata/b1',

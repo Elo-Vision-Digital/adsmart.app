@@ -154,10 +154,10 @@ export function HomePage() {
             : '¿Los informes son personalizables?',
       answer:
         language === 'pt'
-          ? 'Sim! Oferecemos templates profissionais de relatórios que podem ser customizados com sua marca.'
+          ? 'Sim! Nossos relatórios são gerados dinamicamente e podem ser customizados com sua marca.'
           : language === 'en'
-            ? 'Yes! We offer professional report templates that can be customized with your brand.'
-            : '¡Sí! Ofrecemos plantillas profesionales de informes que pueden personalizarse con tu marca.',
+            ? 'Yes! Our reports are dynamically generated and can be customized with your brand.'
+            : '¡Sí! Nuestros informes se generan dinámicamente y pueden personalizarse con tu marca.',
     },
     {
       question:
@@ -449,16 +449,16 @@ export function HomePage() {
               {
                 title:
                   language === 'pt'
-                    ? 'Templates prontos'
+                    ? 'Relatórios dinâmicos'
                     : language === 'en'
-                      ? 'Ready templates'
-                      : 'Plantillas listas',
+                      ? 'Dynamic reports'
+                      : 'Informes dinámicos',
                 description:
                   language === 'pt'
-                    ? 'Modelos de relatórios otimizados para suas campanhas.'
+                    ? 'Layouts inteligentes otimizados para suas campanhas.'
                     : language === 'en'
-                      ? 'Report templates optimized for your campaigns.'
-                      : 'Plantillas de informes optimizadas para tus campañas.',
+                      ? 'Smart layouts optimized for your campaigns.'
+                      : 'Diseños inteligentes optimizados para tus campañas.',
                 icon: BarChart3,
               },
             ].map((feature, index) => (
@@ -578,16 +578,16 @@ export function HomePage() {
                 num: '2',
                 title:
                   language === 'pt'
-                    ? 'Escolha um template'
+                    ? 'Configure os dados'
                     : language === 'en'
-                      ? 'Choose a template'
-                      : 'Elige una plantilla',
+                      ? 'Configure the data'
+                      : 'Configura los datos',
                 desc:
                   language === 'pt'
-                    ? 'Modelos profissionais de relatórios'
+                    ? 'Métricas inteligentes sob demanda'
                     : language === 'en'
-                      ? 'Professional report templates'
-                      : 'Plantillas profesionales de informes',
+                      ? 'Smart metrics on demand'
+                      : 'Métricas inteligentes bajo demanda',
               },
               {
                 num: '3',
@@ -883,7 +883,7 @@ export function HomePage() {
                         : 'text-gray-600 hover:text-black'
                     }`}
                   >
-                    Templates
+                    Configurações
                   </Link>
                 </li>
               </ul>

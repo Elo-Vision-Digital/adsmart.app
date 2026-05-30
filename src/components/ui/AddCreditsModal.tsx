@@ -15,7 +15,7 @@ interface AddCreditsModalProps {
 }
 
 // SuitPay was removed in ADR-021 (2026-05-18). This modal stays in the UI
-// because three callers reference it (Header, MobileHeader, TemplatesPage)
+// because multiple callers reference it (Header, MobileHeader)
 // and the "add credits" feature itself is permanent — only the payment
 // backend changed. When Stripe integration ships (FUTURE §8), restore the
 // amount input + redirect to Stripe Checkout. Until then, surface a clear
