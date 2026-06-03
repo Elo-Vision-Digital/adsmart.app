@@ -16,10 +16,8 @@ functions/
     reserveUserDocument.ts  # reserveUserDocument (onCall) — CPF/CNPJ uniqueness + immutability (ADR-012)
     recaptcha.ts        # verifyRecaptcha (onCall)
     adminWalletManager.ts  # addUserCredits (onCall, admin-only)
-    googleAdsOAuth.ts   # V1 deprecated: getGoogleAdsAuthUrl, getGoogleAdsCampaigns
-    googleAdsOAuthV2.ts # V2: handleGoogleAdsCallbackWithSelection, confirmGoogleAdsAccountSelection
-    metaAdsOAuth.ts     # V1 deprecated: getMetaAdsAuthUrl, getMetaAdsCampaigns
-    metaAdsOAuthV2.ts   # V2: handleMetaAdsCallbackWithSelection, confirmMetaAdsAccountSelection
+    googleAdsOAuth.ts   # Google Ads OAuth: getGoogleAdsAuthUrl, handleGoogleAdsCallback, confirmGoogleAdsAccountSelection
+    metaAdsOAuth.ts     # Meta Ads OAuth: getMetaAdsAuthUrl, handleMetaAdsCallback, confirmMetaAdsAccountSelection
     priceManager.ts     # getProductPrices, updateProductPrices, initializeDefaultPrices
     getPublicProductPrices.ts  # getPublicProductPrices (no auth required, invoker:'public')
     securityStats.ts    # getSecurityStats (admin-only)

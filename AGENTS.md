@@ -97,7 +97,7 @@ Sprints fechadas: `docs/specs/-1-foundation-schemas/`, `docs/specs/0a-foundation
 | Change Firestore rules | `firestore.rules`, `docs/DATA-MODEL.md`, `functions/test/firestore-rules.test.ts` |
 | Change wallet / billing | `docs/DOMAIN.md`, `functions/src/adminWalletManager.ts`, `src/hooks/useWallet.ts`, `packages/shared/src/schemas/userWallet.ts` + `transaction.ts` |
 | Change user profile shape | `packages/shared/src/schemas/user.ts` (source of truth: `UserSchema` + strict `UserClientUpdateSchema`), `functions/src/bootstrapUser.ts`, `functions/src/reserveUserDocument.ts`, `src/pages/SettingsPage.tsx` |
-| Add OAuth provider | `docs/OAUTH.md`, `functions/src/googleAdsOAuthV2.ts`, `src/services/oauthServices.ts`, `packages/shared/src/schemas/oauthState.ts` (state + temp token schemas), `functions/src/lib/oauthCrypto.ts` (AES-256-GCM for tokens at rest — ADR-019) |
+| Add OAuth provider | `docs/OAUTH.md`, `functions/src/googleAdsOAuth.ts`, `src/services/oauthServices.ts`, `packages/shared/src/schemas/oauthState.ts` (state + temp token schemas), `functions/src/lib/oauthCrypto.ts` (AES-256-GCM for tokens at rest — ADR-019) |
 | Work on payments | `docs/PAYMENTS.md` — SuitPay was REMOVED in ADR-021 (2026-05-18); Stripe integration is the planned replacement (FUTURE §8 — see `docs/research/08-stripe-future.md`). `AddCreditsModal` is a maintenance-notice placeholder. Reference for atomic wallet credit: `functions/src/adminWalletManager.ts` |
 | Add a translation key | `docs/I18N.md`, `src/locales/pt-BR.json` (then en.json and es.json) |
 | Write tests | `docs/TESTING.md`, `vitest.config.ts` (root + functions/) |

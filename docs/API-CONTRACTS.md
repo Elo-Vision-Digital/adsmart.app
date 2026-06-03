@@ -153,7 +153,7 @@ Returns only `isActive: true` prices.
 
 ---
 
-## handleGoogleAdsCallbackWithSelection
+## handleGoogleAdsCallback
 
 **File:** `functions/src/googleAdsOAuthV2.ts`  
 **Trigger:** `onCall`  
@@ -222,7 +222,7 @@ Step 2 of Google Ads OAuth V2. Saves selected accounts + encrypted tokens, delet
 
 ---
 
-## handleMetaAdsCallbackWithSelection
+## handleMetaAdsCallback
 
 **File:** `functions/src/metaAdsOAuthV2.ts`  
 **Trigger:** `onCall`  
@@ -379,24 +379,6 @@ SuitPay was removed end-to-end in [ADR-021](Decisions.md#adr-021-remove-suitpay-
 
 ---
 
-## getGoogleAdsAuthUrl (V1 — deprecated)
-
-**File:** `functions/src/googleAdsOAuth.ts`  
-**Status:** V1 deprecated. Use V2 flow (`handleGoogleAdsCallbackWithSelection`).
-
-## getGoogleAdsCampaigns (V1 — deprecated)
-
-**File:** `functions/src/googleAdsOAuth.ts`
-
-## getMetaAdsAuthUrl (V1 — deprecated)
-
-**File:** `functions/src/metaAdsOAuth.ts`
-
-## getMetaAdsCampaigns (V1 — deprecated)
-
-**File:** `functions/src/metaAdsOAuth.ts`
-
----
 
 # Foundation Callables — Planned (FOUND-1)
 

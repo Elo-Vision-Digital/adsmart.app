@@ -26,9 +26,7 @@ export function OAuthCallbackPage() {
       try {
         // Chamar função que processa o OAuth e retorna os dados
         const functionName =
-          platform === 'google'
-            ? 'handleGoogleAdsCallbackWithSelection'
-            : 'handleMetaAdsCallbackWithSelection'
+          platform === 'google' ? 'handleGoogleAdsCallback' : 'handleMetaAdsCallback'
 
         const handleCallback = httpsCallable<{ code: string; state: string }, any>(
           functions,
