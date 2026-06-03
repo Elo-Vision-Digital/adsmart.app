@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "es2022",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "./lib",
@@ -13,6 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "moduleResolution": "bundler",
     "lib": ["es2017"],
     "typeRoots": ["./node_modules/@types"]
   },
