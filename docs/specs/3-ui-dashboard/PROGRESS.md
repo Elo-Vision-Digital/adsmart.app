@@ -2,7 +2,7 @@
 sprint-id: "3"
 name: "ui-dashboard"
 started: "2026-05-29"
-status: in-progress  # in-progress | blocked | done
+status: done  # in-progress | blocked | done
 current-step: research  # research | plan | contract | implement | validate | ship
 ---
 

@@ -1,7 +1,7 @@
 ---
 sprint-id: "1"
 name: "ui-tokens"
-status: contract  # planning | research | contract | implementing | validating | shipped
+status: shipped  # planning | research | contract | implementing | validating | shipped
 depends-on: []    # [{sprint-id}, ...]
 est-days: 0
 references:

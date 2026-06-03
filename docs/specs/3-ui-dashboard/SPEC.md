@@ -1,7 +1,7 @@
 ---
 sprint-id: "3"
 name: "ui-dashboard"
-status: contract
+status: shipped
 depends-on: ["2"]
 est-days: 0
 references:

@@ -2,7 +2,7 @@
 sprint-id: "2"
 name: "ui-shell"
 started: "2026-05-29"
-status: in-progress  # in-progress | blocked | done
+status: done  # in-progress | blocked | done
 current-step: research  # research | plan | contract | implement | validate | ship
 ---
 

@@ -1,7 +1,7 @@
 ---
 sprint-id: "2"
 name: "ui-shell"
-status: contract
+status: shipped
 depends-on: ["1"]
 est-days: 0
 references:

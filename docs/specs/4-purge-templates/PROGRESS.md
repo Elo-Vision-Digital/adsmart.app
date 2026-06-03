@@ -2,7 +2,7 @@
 sprint-id: "4"
 name: "purge-templates"
 started: "2026-05-30"
-status: in-progress  # in-progress | blocked | done
+status: done  # in-progress | blocked | done
 current-step: validate  # research | plan | contract | implement | validate | ship
 ---
 

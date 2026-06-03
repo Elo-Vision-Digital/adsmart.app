@@ -1,7 +1,7 @@
 ---
 sprint-id: "4"
 name: "purge-templates"
-status: planning
+status: shipped
 depends-on: ["3"]
 est-days: 1
 references:
