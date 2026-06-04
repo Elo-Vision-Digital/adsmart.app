@@ -467,7 +467,7 @@ export function AccountSelectionModal({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between">
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between">
                   <span>{t('accountSelectionModal.project')}</span>
                   <button
                     type="button"
