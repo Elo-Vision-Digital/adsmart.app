@@ -68,7 +68,7 @@ Tokens at rest are encrypted with AES-256-GCM via `functions/src/lib/oauthCrypto
 - `encryptionKey` — `defineSecret`.
 - `metaAdsRedirectUri` / `metaAdsRedirectUriDev` — `defineString`. Registered in Meta App Dashboard:
   - Production: `https://adsmart.app/auth/meta-ads/callback`
-  - Development: `http://localhost:5173/auth/meta-ads/callback`
+  - Development: `https://adsmart-web-dev.web.app/auth/meta-ads/callback` (Meta's Enforce HTTPS and Strict Mode rules reject `http://localhost`, so the Firebase Hosting URL must be used for dev)
 
 ### Step-by-step
 
