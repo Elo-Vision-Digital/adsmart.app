@@ -1,6 +1,6 @@
 import { AdAccountSchema } from '@adsmart/shared'
 import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
+
 import {
   Check,
   ChevronRight,
@@ -16,20 +16,14 @@ import {
   X,
 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
-import {
-  type AccountOption,
-  AccountSelectionModal,
-  type BusinessManagerGroup,
-} from '@/components/ui/AccountSelectionModal'
 import { Toast, useToast } from '@/components/ui/toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { db, functions } from '@/firebase/config'
+import { db } from '@/firebase/config'
 import { useProjects } from '@/hooks/useProjects'
 import { zodConverter } from '@/schemas/firestore-converter'
-import { oauthService } from '@/services/oauthServices'
 import type { AdAccount } from '@/types'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -129,24 +123,10 @@ function ProjectAvatar({
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Types
-// ────────────────────────────────────────────────────────────────────────────
-interface OAuthData {
-  success: boolean
-  accountsAvailable: AccountOption[]
-  businessManagers?: BusinessManagerGroup[]
-  mainAccount: {
-    name: string
-    email?: string
-  }
-  temporaryToken: string
-}
-
-// ────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ────────────────────────────────────────────────────────────────────────────
 export function ProjectsPage() {
-  const location = useLocation()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useLanguage()
 
@@ -155,12 +135,6 @@ export function ProjectsPage() {
   const [loadingAccounts, setLoadingAccounts] = useState(true)
   const { projects, createProject } = useProjects()
 
-  // Estados de conexão OAuth
-  const [connectingGoogle, setConnectingGoogle] = useState(false)
-  const [connectingMeta, setConnectingMeta] = useState(false)
-  const [showAccountSelection, setShowAccountSelection] = useState(false)
-  const [oauthData, setOauthData] = useState<OAuthData | null>(null)
-  const [oauthPlatform, setOauthPlatform] = useState<'google_ads' | 'meta_ads'>('meta_ads')
   const { toasts, showToast, removeToast } = useToast()
 
   // UI States
@@ -186,59 +160,6 @@ export function ProjectsPage() {
 
     return () => unsubscribe()
   }, [user])
-
-  // Processar callback OAuth
-  useEffect(() => {
-    if (location.state?.oauthData && location.state?.platform) {
-      const data = location.state.oauthData as OAuthData
-      const platform = location.state.platform as 'google_ads' | 'meta_ads'
-
-      window.history.replaceState({}, document.title)
-      setOauthData(data)
-      setOauthPlatform(platform)
-      setShowAccountSelection(true)
-    }
-
-    if (location.state?.error) {
-      showToast({ message: location.state.error, type: 'error' })
-      window.history.replaceState({}, document.title)
-    }
-
-    if (location.state?.success && location.state?.message) {
-      showToast({ message: location.state.message, type: 'success' })
-      window.history.replaceState({}, document.title)
-    }
-  }, [location.state])
-
-  const handleConnectGoogle = async () => {
-    try {
-      setConnectingGoogle(true)
-      const authUrl = await oauthService.getGoogleAdsAuthUrl()
-      if (authUrl && authUrl !== '#') window.location.href = authUrl
-    } catch (error: any) {
-      showToast({
-        message: error.message || t('accountsPage.error.connectGoogle'),
-        type: 'error',
-      })
-    } finally {
-      setConnectingGoogle(false)
-    }
-  }
-
-  const handleConnectMeta = async () => {
-    try {
-      setConnectingMeta(true)
-      const authUrl = await oauthService.getMetaAdsAuthUrl()
-      if (authUrl && authUrl !== '#') window.location.href = authUrl
-    } catch (error: any) {
-      showToast({
-        message: error.message || t('accountsPage.error.connectMeta'),
-        type: 'error',
-      })
-    } finally {
-      setConnectingMeta(false)
-    }
-  }
 
   const handleRemoveAccount = async (accountId: string) => {
     if (!user) return
@@ -285,44 +206,6 @@ export function ProjectsPage() {
     }
   }
 
-  const handleAccountSelection = async (accountsWithDetails: any[]) => {
-    if (!oauthData || !user) return
-
-    try {
-      const functionName =
-        oauthPlatform === 'google_ads'
-          ? 'confirmGoogleAdsAccountSelection'
-          : 'confirmMetaAdsAccountSelection'
-
-      const confirmSelection = httpsCallable<
-        { temporaryToken: string; accountsWithDetails: any[] },
-        { success: boolean }
-      >(functions, functionName)
-
-      await confirmSelection({
-        temporaryToken: oauthData.temporaryToken,
-        accountsWithDetails,
-      })
-
-      setShowAccountSelection(false)
-      setOauthData(null)
-
-      const platformName = oauthPlatform === 'google_ads' ? 'Google Ads' : 'Meta Ads'
-      showToast({
-        message: t('accountsPage.accountsConnectedSuccess', {
-          count: accountsWithDetails.length,
-          platform: platformName,
-        }),
-        type: 'success',
-      })
-    } catch (error: any) {
-      showToast({
-        message: error.message || t('accountsPage.error.saveAccounts'),
-        type: 'error',
-      })
-    }
-  }
-
   // Agregações
   const orphans = accounts.filter((a) => !a.projectId)
   const googleCount = accounts.filter((a) => a.platform === 'google_ads').length
@@ -350,20 +233,9 @@ export function ProjectsPage() {
             <button
               type="button"
               className="inline-flex items-center gap-2 px-4 h-10 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[14px] font-semibold text-[var(--text)] hover:bg-[var(--bg-elev-2)] transition-colors"
-              onClick={() => {
-                if (confirm('Conectar Google Ads? Cancelar para Meta Ads.')) {
-                  handleConnectGoogle()
-                } else {
-                  handleConnectMeta()
-                }
-              }}
-              disabled={connectingGoogle || connectingMeta}
+              onClick={() => navigate('/integrations')}
             >
-              {connectingGoogle || connectingMeta ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <Link2 size={15} />
-              )}
+              <Link2 size={15} />
               {t('projectsPage.connectAccount')}
             </button>
             <button
@@ -460,7 +332,7 @@ export function ProjectsPage() {
               </button>
               <button
                 type="button"
-                onClick={handleConnectMeta}
+                onClick={() => navigate('/integrations')}
                 className="inline-flex items-center gap-2 px-5 h-11 bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] rounded-xl text-[14px] font-semibold hover:bg-[var(--bg-elev-2)] transition-colors"
               >
                 <Link2 size={15} /> {t('projectsPage.connectAccount')}
@@ -654,20 +526,6 @@ export function ProjectsPage() {
         )}
       </div>
 
-      {/* Modal de Seleção de Contas (Existente para o fluxo OAuth) */}
-      {oauthData && (
-        <AccountSelectionModal
-          open={showAccountSelection}
-          onOpenChange={setShowAccountSelection}
-          platform={oauthPlatform}
-          accounts={oauthData.accountsAvailable}
-          businessManagers={oauthData.businessManagers}
-          mainAccountName={oauthData.mainAccount.name}
-          mainAccountEmail={oauthData.mainAccount.email}
-          onConfirm={handleAccountSelection}
-        />
-      )}
-
       {/* Modal Visual de Novo Projeto (Mock UI) */}
       {isNewProjectModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -736,6 +594,7 @@ export function ProjectsPage() {
 
               <button
                 type="button"
+                onClick={() => navigate('/integrations')}
                 className="w-full py-3 px-3.5 rounded-xl bg-transparent border border-dashed border-[var(--border-strong)] text-[13.5px] font-semibold text-[var(--text-2)] flex items-center justify-center gap-2 hover:bg-[var(--bg-elev)] transition-colors"
               >
                 <Plus size={14} strokeWidth={2.2} /> Conectar nova conta agora
