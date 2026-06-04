@@ -40,7 +40,7 @@ class OAuthService {
 
   // Helper para obter o callback URL baseado no ambiente
   private getCallbackUrl(platform: 'google-ads' | 'meta-ads'): string {
-    const baseUrl = this.isLocalEnvironment() ? `http://localhost:5173` : `https://adsmart.app`
+    const baseUrl = this.isLocalEnvironment() ? window.location.origin : `https://adsmart.app`
 
     return `${baseUrl}/auth/${platform}/callback`
   }
