@@ -38,14 +38,18 @@ All non-deprecated functions use Firebase Functions v2:
 
 ```typescript
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
+import { config } from './config'
 
-export const myFunction = onCall({ secrets: [mySecret], region: 'us-central1' }, async (request) => {
+export const myFunction = onCall({ secrets: [mySecret], region: config.project.region }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', '...')
   // ...
 })
 ```
 
-Default region is `us-central1`. Do not deploy to other regions without updating the client (`getFunctions(app, 'us-central1')` in `src/firebase/config.ts`).
+A região DEFAULT do Firebase é `us-central1`, mas no AdSmart a região DEVE ser explicitamente declarada usando `config.project.region` em todos os `onCall` para evitar falhas silenciosas de CORS e roteamento. Não faça deploy de outras regiões sem garantir o espelhamento da config e atualização do client (`getFunctions(app, config.project.region)` em `src/firebase/config.ts`).
+
+## Hardcoded Configurations & APIs
+Nunca deixe hardcoded em requisições HTTP (`axios` ou fetch) versões fixas de APIs de integrações (como `v19` do Google Ads ou `v18.0` do Meta). As APIs sofrem *sunsetting* anualmente. A versão deve ser importada de `config/index.ts` (`config.googleAds.apiVersion`), mantendo a rastreabilidade do projeto em apenas um arquivo centralizado de configurações.
 
 ## Secrets
 

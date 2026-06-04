@@ -2,6 +2,19 @@
 
 Append-only log of significant changes. Most recent at the top. Each entry uses the parseable header `## [YYYY-MM-DD] — Title` for tooling/lint.
 
+## [2026-06-04] — Fix OAuth 404: Sunsetting de API Versions + Explicit Region
+
+Correção do erro silencioso de OAuth "Request failed with status code 404" e mitigação de debt técnico.
+
+**Bug 1: API Sunsetting**: As integrações com `Google Ads` e `Meta Ads` estavam quebrando silenciosamente porque as chamadas via `axios` em `googleAdsOAuth.ts` e `metaAdsOAuth.ts` usavam as versões hardcoded `/v19/` (Google) e `/v18.0/` (Meta). A v19 do Google Ads já havia alcançado seu fim de vida útil (sunsetting) no início de 2026.
+- Solução: Centralizou-se as versões de API no arquivo `config/index.ts` usando `v24` para Google Ads e `v25.0` para Meta Ads.
+- Refatorou-se as strings nos callbacks das requisições para injetar dinamicamente `appConfig.googleAds.apiVersion` e `appConfig.metaAds.apiVersion`.
+- Nova Regra Adicionada no `functions/AGENTS.md` para proibir *hardcoding* de versões de APIs externas.
+
+**Bug 2: Missing Explicit Region (CORS Risk)**: A arquitetura do projeto ditava em `AGENTS.md` que as requisições `onCall` (v2) deveriam definir `config.project.region` para evitar problemas silenciosos de roteamento/CORS caso o projeto estivesse em uma região diferente do `us-central1`. 
+- Solução: Adicionado `{ region: appConfig.project.region }` aos 6 _callables_ OAuth presentes nestes módulos. `functions/AGENTS.md` atualizado para reforçar a regra.
+
+
 ## [2026-05-23] —  Fase 0.5 (cleanup-legacy) shipped
 
 Sprint 0.5 completa — quinta dogfood do harness. 4 microsprints com pausa entre cada (workflow novo confirmado com user 2026-05-19), validator agent PASS em todas, 27 items do CONTRACT entregues.
