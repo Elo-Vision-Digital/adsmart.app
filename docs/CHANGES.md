@@ -2,6 +2,47 @@
 
 Append-only log of significant changes. Most recent at the top. Each entry uses the parseable header `## [YYYY-MM-DD] — Title` for tooling/lint.
 
+## [2026-06-04] — Fix Meta Ads Dev Environment OAuth & Secrets Isolation
+
+Correção na isolação dos ambientes de Dev e Prod para o Firebase Functions e integração com o OAuth da Meta Ads.
+
+**Bug: Mixed Credentials and Invalid Meta Redirect URI**: As funções rodando no ambiente de desenvolvimento (`adsmart-web-dev`) estavam recebendo credenciais e App IDs de produção via fallback ou via `functions/.env`. Além disso, a Meta possui um "Strict Mode" que bloqueia URIs `http://localhost`, impedindo que o login funcione no ambiente de desenvolvimento se usarmos localhost na Meta.
+- Solução 1: Utilizado o comportamento nativo do Firebase Functions de `environment specific overrides`. O arquivo base `functions/.env` agora é estritamente o fallback de produção (ex. `META_ADS_APP_ID=4052927898253765`). Criado o arquivo `functions/.env.adsmart-web-dev` com o App ID exclusivo de dev (`868260879616608`) para que o CLI do Firebase injete a variável correta dependendo do `--project` de deploy.
+- Solução 2: A secret `META_ADS_APP_SECRET` de dev foi ejetada do código e salva nativamente no Google Cloud Secret Manager do projeto `adsmart-web-dev` via comando `firebase functions:secrets:set META_ADS_APP_SECRET --project adsmart-web-dev`.
+- Solução 3: Devido às regras estritas da Meta, o Redirect URI de dev (`META_ADS_REDIRECT_URI_DEV`) no `.env.adsmart-web-dev` foi ajustado para `https://adsmart-web-dev.web.app/auth/meta-ads/callback` ao invés de `http://localhost:5173`.
+- Atualizado `docs/OAUTH.md` e `docs/ENVIRONMENT.md` documentando esse comportamento. O GitHub Actions (`.github/workflows`) já reflete essas separações de variáveis e segredos no ambiente do repo.
+
+## [2026-06-04] — Fix CI Environment Mixed Deploy
+
+**Bug: Mixed Environments in CI**: O GitHub Actions estava compilando a branch `develop` (para deploy em `adsmart-web-dev`) usando `vite build` no modo `production` por padrão. Isso fazia com que o frontend empacotasse as credenciais do arquivo `.env.production` e apontasse todas as chamadas de banco e autenticação para o projeto `adsmart-web` de produção.
+- Solução 1: Copiado o arquivo `.env` local para um `.env.development` versionado no Git. Variáveis web do Firebase são públicas, e o GitHub Actions precisa lê-las durante o build.
+- Solução 2: Adicionado o script `"build:dev": "tsc && vite build --mode development"` no `package.json`.
+- Solução 3: Atualizado `.github/workflows/deploy.yml` para rodar `bun run build:dev` no frontend quando a branch for `develop`, forçando o Vite a usar o modo development e injetar as credenciais certas. Regra adicionada ao `AGENTS.md` e `docs/DEPLOYMENT.md`.
+
+## [2026-06-04] — Fix OAuth 404: Sunsetting de API Versions + Explicit Region
+
+Correção do erro silencioso de OAuth "Request failed with status code 404" e mitigação de debt técnico.
+
+**Bug 1: API Sunsetting**: As integrações com `Google Ads` e `Meta Ads` estavam quebrando silenciosamente porque as chamadas via `axios` em `googleAdsOAuth.ts` e `metaAdsOAuth.ts` usavam as versões hardcoded `/v19/` (Google) e `/v18.0/` (Meta). A v19 do Google Ads já havia alcançado seu fim de vida útil (sunsetting) no início de 2026.
+- Solução: Centralizou-se as versões de API no arquivo `config/index.ts` usando `v24` para Google Ads e `v25.0` para Meta Ads.
+- Refatorou-se as strings nos callbacks das requisições para injetar dinamicamente `appConfig.googleAds.apiVersion` e `appConfig.metaAds.apiVersion`.
+- Nova Regra Adicionada no `functions/AGENTS.md` para proibir *hardcoding* de versões de APIs externas.
+
+**Bug 2: Missing Explicit Region (CORS Risk)**: A arquitetura do projeto ditava em `AGENTS.md` que as requisições `onCall` (v2) deveriam definir `config.project.region` para evitar problemas silenciosos de roteamento/CORS caso o projeto estivesse em uma região diferente do `us-central1`. 
+- Solução: Adicionado `{ region: appConfig.project.region }` aos 6 _callables_ OAuth presentes nestes módulos. `functions/AGENTS.md` atualizado para reforçar a regra.
+
+## [2026-06-04] — Sprint 0.8: Projects Schema & Integrations Redesign
+
+**1. Data Model & Schemas**
+- Criada a collection `users/{uid}/projects/{id}` com schema `ProjectSchema` e schema estrito para update via client `ProjectClientUpdateSchema`.
+- Adicionado campo opcional `projectId?: string` em `AdAccountSchema` para permitir o mapeamento N:1 entre contas de anúncio e projetos.
+- Atualizado o `docs/DATA-MODEL.md` (fonte da verdade) refletindo as duas adições acima, garantindo compliance com as regras do AdSmart (ADR-018 e AGENTS.md).
+
+**2. Integrations Redesign**
+- Redesign completo das páginas de integrações e projetos. Fluxo OAuth ajustado para dar suporte ao redirecionamento mapeado via projeto e botão "Conectar conta" em `/projects` agora redireciona corretamente para `/integrations`.
+
+
+
 ## [2026-05-23] —  Fase 0.5 (cleanup-legacy) shipped
 
 Sprint 0.5 completa — quinta dogfood do harness. 4 microsprints com pausa entre cada (workflow novo confirmado com user 2026-05-19), validator agent PASS em todas, 27 items do CONTRACT entregues.

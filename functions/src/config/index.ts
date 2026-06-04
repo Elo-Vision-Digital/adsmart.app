@@ -20,13 +20,13 @@ export const config = {
     scope: 'https://www.googleapis.com/auth/adwords',
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenUrl: 'https://oauth2.googleapis.com/token',
-    apiVersion: 'v17',
+    apiVersion: 'v24',
   },
   metaAds: {
     scope:
       'ads_read,ads_management,business_management,pages_show_list,pages_read_engagement,read_insights',
-    authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
-    tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token',
-    apiVersion: 'v18.0',
+    authUrl: 'https://www.facebook.com/v25.0/dialog/oauth',
+    tokenUrl: 'https://graph.facebook.com/v25.0/oauth/access_token',
+    apiVersion: 'v25.0',
   },
 }

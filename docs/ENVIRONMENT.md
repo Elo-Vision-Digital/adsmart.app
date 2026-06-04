@@ -30,6 +30,16 @@ These are plain environment variables accessible as `process.env.XXX` in functio
 | `GOOGLE_ADS_TEST_MODE` | Local only | Set to `"true"` to return mock Google Ads accounts |
 | `GOOGLE_ADS_REDIRECT_URI` | No | OAuth prod callback URL (default: `https://adsmart.app/auth/google-ads/callback`) |
 | `GOOGLE_ADS_REDIRECT_URI_DEV` | No | OAuth dev callback URL (default: `http://localhost:5173/auth/google-ads/callback`) |
+| `META_ADS_REDIRECT_URI` | No | OAuth prod callback URL (default: `https://adsmart.app/auth/meta-ads/callback`) |
+| `META_ADS_REDIRECT_URI_DEV` | No | OAuth dev callback URL (default: `https://adsmart-web-dev.web.app/auth/meta-ads/callback`. Meta forbids `localhost`) |
+
+### Environment-Specific Overrides
+
+Firebase Functions automatically applies environment overrides during deploy.
+- `functions/.env`: Production defaults.
+- `functions/.env.adsmart-web-dev`: Development overrides (e.g. `META_ADS_APP_ID=868260879616608`).
+
+**NEVER** mix production and development variables in the same `.env` file. Do not use `.env` conditionally in code. Let the Firebase CLI pick up `.env.<project-alias>` upon deployment.
 
 ## Secrets (Secret Manager via defineSecret)
 

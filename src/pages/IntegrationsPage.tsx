@@ -1,9 +1,9 @@
 import { AdAccountSchema } from '@adsmart/shared'
 import { collection, doc, onSnapshot, query, where, writeBatch } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
-import { Bell, CheckCircle2, Loader2, Plus, RefreshCw, Settings, Shield } from 'lucide-react'
+import { Bell, CheckCircle2, Loader2, Shield } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
 import {
   type AccountOption,
@@ -91,6 +91,7 @@ interface OAuthData {
 
 export function IntegrationsPage() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useLanguage()
 
@@ -101,6 +102,9 @@ export function IntegrationsPage() {
   const [showAccountSelection, setShowAccountSelection] = useState(false)
   const [oauthData, setOauthData] = useState<OAuthData | null>(null)
   const [oauthPlatform, setOauthPlatform] = useState<'google_ads' | 'meta_ads'>('meta_ads')
+  const [preConnectPlatform, setPreConnectPlatform] = useState<'google_ads' | 'meta_ads' | null>(
+    null
+  )
   const { toasts, showToast, removeToast } = useToast()
 
   useEffect(() => {
@@ -119,32 +123,55 @@ export function IntegrationsPage() {
   }, [user])
 
   useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'OAUTH_CALLBACK') {
+        const payload = event.data.payload
+        if (payload.oauthData && payload.platform) {
+          setOauthData(payload.oauthData)
+          setOauthPlatform(payload.platform)
+          setShowAccountSelection(true)
+        } else if (payload.error) {
+          showToast({ message: payload.error, type: 'error' })
+        }
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [showToast])
+
+  useEffect(() => {
     if (location.state?.oauthData && location.state?.platform) {
       const data = location.state.oauthData as OAuthData
       const platform = location.state.platform as 'google_ads' | 'meta_ads'
 
-      window.history.replaceState({}, document.title)
       setOauthData(data)
       setOauthPlatform(platform)
       setShowAccountSelection(true)
+
+      // Clear state properly using React Router
+      navigate(location.pathname, { replace: true, state: {} })
+      return
     }
 
     if (location.state?.error) {
       showToast({ message: location.state.error, type: 'error' })
-      window.history.replaceState({}, document.title)
+      navigate(location.pathname, { replace: true, state: {} })
+      return
     }
 
     if (location.state?.success && location.state?.message) {
       showToast({ message: location.state.message, type: 'success' })
-      window.history.replaceState({}, document.title)
+      navigate(location.pathname, { replace: true, state: {} })
     }
-  }, [location.state, showToast])
+  }, [location.state, location.pathname, navigate, showToast])
 
   const handleConnectGoogle = async () => {
     try {
       setConnectingGoogle(true)
       const authUrl = await oauthService.getGoogleAdsAuthUrl()
-      if (authUrl && authUrl !== '#') window.location.href = authUrl
+      if (authUrl && authUrl !== '#') {
+        window.open(authUrl, 'OAuthPopup', 'width=600,height=700,left=200,top=100')
+      }
     } catch (error: any) {
       showToast({
         message: error.message || t('accountsPage.error.connectGoogle'),
@@ -152,6 +179,7 @@ export function IntegrationsPage() {
       })
     } finally {
       setConnectingGoogle(false)
+      setPreConnectPlatform(null)
     }
   }
 
@@ -159,7 +187,9 @@ export function IntegrationsPage() {
     try {
       setConnectingMeta(true)
       const authUrl = await oauthService.getMetaAdsAuthUrl()
-      if (authUrl && authUrl !== '#') window.location.href = authUrl
+      if (authUrl && authUrl !== '#') {
+        window.open(authUrl, 'OAuthPopup', 'width=600,height=700,left=200,top=100')
+      }
     } catch (error: any) {
       showToast({
         message: error.message || t('accountsPage.error.connectMeta'),
@@ -167,6 +197,7 @@ export function IntegrationsPage() {
       })
     } finally {
       setConnectingMeta(false)
+      setPreConnectPlatform(null)
     }
   }
 
@@ -193,7 +224,9 @@ export function IntegrationsPage() {
     }
   }
 
-  const handleAccountSelection = async (selectedAccountIds: string[]) => {
+  const handleAccountSelection = async (
+    accountsWithDetails: { accountId: string; timezone: string; projectId: string }[]
+  ) => {
     if (!oauthData || !user) return
 
     try {
@@ -203,13 +236,16 @@ export function IntegrationsPage() {
           : 'confirmMetaAdsAccountSelection'
 
       const confirmSelection = httpsCallable<
-        { temporaryToken: string; selectedAccountIds: string[] },
+        {
+          temporaryToken: string
+          accountsWithDetails: { accountId: string; timezone: string; projectId: string }[]
+        },
         { success: boolean }
       >(functions, functionName)
 
       await confirmSelection({
         temporaryToken: oauthData.temporaryToken,
-        selectedAccountIds,
+        accountsWithDetails,
       })
 
       setShowAccountSelection(false)
@@ -218,7 +254,7 @@ export function IntegrationsPage() {
       const platformName = oauthPlatform === 'google_ads' ? 'Google Ads' : 'Meta Ads'
       showToast({
         message: t('accountsPage.accountsConnectedSuccess', {
-          count: selectedAccountIds.length,
+          count: accountsWithDetails.length,
           platform: platformName,
         }),
         type: 'success',
@@ -246,14 +282,9 @@ export function IntegrationsPage() {
               Integrações
             </h1>
             <p className="text-[15px] text-[var(--text-2)] mt-2 max-w-[680px] leading-[1.5]">
-              Conecte as plataformas de anúncio que alimentam a AdSmart. Cada conexão usa{' '}
-              <strong>OAuth com acesso somente de leitura</strong> — nunca pedimos sua senha.
+              Conecte as suas plataformas à AdSmart.
             </p>
           </div>
-
-          <button className="h-11 px-5 bg-[var(--text)] text-[var(--bg)] rounded-xl flex items-center justify-center gap-2 text-[14px] font-semibold hover:opacity-90 transition-opacity whitespace-nowrap">
-            <Plus size={16} strokeWidth={2.5} /> Conectar plataforma
-          </button>
         </div>
 
         {/* Status Strip */}
@@ -285,16 +316,22 @@ export function IntegrationsPage() {
                   <h3 className="text-[18px] font-bold tracking-[-0.01em] text-[var(--text)]">
                     Google Ads
                   </h3>
-                  <p className="text-[13px] text-[var(--text-3)] mt-1.5 font-medium">
-                    Search • Performance Max • Display • YouTube
-                  </p>
+                  {googleAccounts.length > 0 && (
+                    <div className="mt-1.5">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[11px] font-bold tracking-wide flex-shrink-0">
+                        <CheckCircle2 size={12} strokeWidth={3} /> Conectada
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              {googleAccounts.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[12px] font-bold tracking-wide flex-shrink-0">
-                  <CheckCircle2 size={13} strokeWidth={3} /> Conectada
-                </span>
-              )}
+              <button
+                type="button"
+                onClick={() => setPreConnectPlatform('google_ads')}
+                className="h-9 px-4 rounded-xl bg-[var(--text)] text-[var(--bg)] text-[13px] font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+              >
+                Conectar
+              </button>
             </div>
 
             <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-3)] mb-3">
@@ -333,37 +370,17 @@ export function IntegrationsPage() {
               </div>
             )}
 
-            <div className="mt-auto flex items-center justify-between pt-5 border-t border-[var(--separator)]">
-              <button
-                onClick={handleConnectGoogle}
-                disabled={connectingGoogle}
-                className="h-9 px-4 rounded-xl border border-[var(--border)] flex items-center gap-2 text-[13px] font-semibold text-[var(--text-2)] hover:bg-[var(--bg-elev-2)] hover:text-[var(--text)] transition-colors"
-              >
-                {connectingGoogle ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Settings size={14} />
-                )}{' '}
-                Gerenciar contas
-              </button>
-
-              <div className="flex items-center gap-3 text-[13px] font-semibold text-[var(--text-3)]">
+            {googleAccounts.length > 0 && (
+              <div className="mt-auto flex items-center justify-end pt-5 border-t border-[var(--separator)]">
                 <button
-                  onClick={handleConnectGoogle}
-                  disabled={connectingGoogle}
-                  className="flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
-                >
-                  <RefreshCw size={13} /> Reautorizar
-                </button>
-                <div className="w-[1px] h-3.5 bg-[var(--separator)]" />
-                <button
+                  type="button"
                   onClick={() => handleDisconnectPlatform('google_ads')}
-                  className="text-[var(--danger)] hover:opacity-80 transition-opacity"
+                  className="text-[13px] font-semibold text-[var(--danger)] hover:opacity-80 transition-opacity"
                 >
                   Desconectar
                 </button>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Card Meta Ads */}
@@ -377,16 +394,22 @@ export function IntegrationsPage() {
                   <h3 className="text-[18px] font-bold tracking-[-0.01em] text-[var(--text)]">
                     Meta Ads
                   </h3>
-                  <p className="text-[13px] text-[var(--text-3)] mt-1.5 font-medium">
-                    Facebook • Instagram • Stories • Reels
-                  </p>
+                  {metaAccounts.length > 0 && (
+                    <div className="mt-1.5">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[11px] font-bold tracking-wide flex-shrink-0">
+                        <CheckCircle2 size={12} strokeWidth={3} /> Conectada
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              {metaAccounts.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[12px] font-bold tracking-wide flex-shrink-0">
-                  <CheckCircle2 size={13} strokeWidth={3} /> Conectada
-                </span>
-              )}
+              <button
+                type="button"
+                onClick={() => setPreConnectPlatform('meta_ads')}
+                className="h-9 px-4 rounded-xl bg-[var(--text)] text-[var(--bg)] text-[13px] font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+              >
+                Conectar
+              </button>
             </div>
 
             <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-3)] mb-3">
@@ -425,37 +448,17 @@ export function IntegrationsPage() {
               </div>
             )}
 
-            <div className="mt-auto flex items-center justify-between pt-5 border-t border-[var(--separator)]">
-              <button
-                onClick={handleConnectMeta}
-                disabled={connectingMeta}
-                className="h-9 px-4 rounded-xl border border-[var(--border)] flex items-center gap-2 text-[13px] font-semibold text-[var(--text-2)] hover:bg-[var(--bg-elev-2)] hover:text-[var(--text)] transition-colors"
-              >
-                {connectingMeta ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Settings size={14} />
-                )}{' '}
-                Gerenciar contas
-              </button>
-
-              <div className="flex items-center gap-3 text-[13px] font-semibold text-[var(--text-3)]">
+            {metaAccounts.length > 0 && (
+              <div className="mt-auto flex items-center justify-end pt-5 border-t border-[var(--separator)]">
                 <button
-                  onClick={handleConnectMeta}
-                  disabled={connectingMeta}
-                  className="flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
-                >
-                  <RefreshCw size={13} /> Reautorizar
-                </button>
-                <div className="w-[1px] h-3.5 bg-[var(--separator)]" />
-                <button
+                  type="button"
                   onClick={() => handleDisconnectPlatform('meta_ads')}
-                  className="text-[var(--danger)] hover:opacity-80 transition-opacity"
+                  className="text-[13px] font-semibold text-[var(--danger)] hover:opacity-80 transition-opacity"
                 >
                   Desconectar
                 </button>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Card TikTok Ads (Coming soon) */}
@@ -485,7 +488,10 @@ export function IntegrationsPage() {
             </div>
 
             <div className="mt-auto">
-              <button className="w-full h-11 border border-[var(--border-strong)] rounded-xl flex items-center justify-center gap-2 text-[14px] font-semibold text-[var(--text-2)] hover:bg-[var(--bg-elev)] hover:text-[var(--text)] transition-colors">
+              <button
+                type="button"
+                className="w-full h-11 border border-[var(--border-strong)] rounded-xl flex items-center justify-center gap-2 text-[14px] font-semibold text-[var(--text-2)] hover:bg-[var(--bg-elev)] hover:text-[var(--text)] transition-colors"
+              >
                 <Bell size={16} strokeWidth={2.5} /> Avise-me quando chegar
               </button>
             </div>
@@ -504,6 +510,52 @@ export function IntegrationsPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Pré-conexão */}
+      {preConnectPlatform && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[var(--bg)] w-full max-w-md rounded-2xl p-6 shadow-xl border border-[var(--border)]">
+            <h2 className="text-xl font-bold mb-4">Conectar plataforma</h2>
+            <ul className="space-y-3 mb-6 text-sm text-[var(--text-2)]">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 size={18} className="text-[var(--success)] shrink-0 mt-0.5" />
+                <span>Uma janela popup será aberta para autenticação segura no provedor.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 size={18} className="text-[var(--success)] shrink-0 mt-0.5" />
+                <span>Somente leitura: nunca solicitamos acesso de edição das suas campanhas.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 size={18} className="text-[var(--success)] shrink-0 mt-0.5" />
+                <span>Nós não armazenamos as suas senhas.</span>
+              </li>
+            </ul>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPreConnectPlatform(null)}
+                className="px-4 py-2 font-semibold text-sm border border-[var(--border)] rounded-xl hover:bg-[var(--bg-elev)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (preConnectPlatform === 'google_ads') handleConnectGoogle()
+                  else handleConnectMeta()
+                }}
+                disabled={connectingGoogle || connectingMeta}
+                className="px-4 py-2 font-semibold text-sm bg-[var(--text)] text-[var(--bg)] rounded-xl hover:opacity-90 flex items-center gap-2"
+              >
+                {(connectingGoogle || connectingMeta) && (
+                  <Loader2 size={14} className="animate-spin" />
+                )}
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Seleção de Contas (Existente para o fluxo OAuth) */}
       {oauthData && (

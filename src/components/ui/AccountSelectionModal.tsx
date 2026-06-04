@@ -1,9 +1,36 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { Building, ChevronDown, ChevronRight, Loader2, Mail, User, X } from 'lucide-react'
-import { useState } from 'react'
+import {
+  ArrowLeft,
+  Building,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Mail,
+  Plus,
+  User,
+  X,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { useProjects } from '@/hooks/useProjects'
 import { cn } from '@/lib/utils'
+
+const COMMON_TIMEZONES = [
+  'America/Sao_Paulo',
+  'America/Argentina/Buenos_Aires',
+  'America/Santiago',
+  'America/Bogota',
+  'America/Lima',
+  'America/Mexico_City',
+  'America/New_York',
+  'America/Los_Angeles',
+  'Europe/Lisbon',
+  'Europe/London',
+  'Europe/Madrid',
+  'Europe/Paris',
+]
 
 export interface AccountOption {
   id: string
@@ -21,15 +48,21 @@ export interface BusinessManagerGroup {
   accounts: AccountOption[]
 }
 
+export interface SelectedAccountDetail {
+  accountId: string
+  timezone: string
+  projectId: string
+}
+
 interface AccountSelectionModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   platform: 'google_ads' | 'meta_ads'
   accounts: AccountOption[]
-  businessManagers?: BusinessManagerGroup[] // Nova prop para BMs organizadas
+  businessManagers?: BusinessManagerGroup[]
   mainAccountName: string
   mainAccountEmail?: string
-  onConfirm: (selectedAccounts: string[]) => Promise<void>
+  onConfirm: (accountsWithDetails: SelectedAccountDetail[]) => Promise<void>
 }
 
 export function AccountSelectionModal({
@@ -42,21 +75,69 @@ export function AccountSelectionModal({
   mainAccountEmail,
   onConfirm,
 }: AccountSelectionModalProps) {
+  const { t } = useLanguage()
+  const [step, setStep] = useState<'select' | 'configure'>('select')
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([])
+  const [accountConfigs, setAccountConfigs] = useState<
+    Record<string, { timezone: string; projectId: string }>
+  >({})
+
   const [loading, setLoading] = useState(false)
-  const [expandedBMs, setExpandedBMs] = useState<string[]>(['personal']) // Expandir "Contas Pessoais" por padrão
+  const [expandedBMs, setExpandedBMs] = useState<string[]>(['personal'])
+
+  const { projects, loading: loadingProjects, createProject } = useProjects()
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+  const [creatingProject, setCreatingProject] = useState(false)
+
+  useMemo(() => {
+    if (open) {
+      setStep('select')
+      setSelectedAccounts([])
+      setAccountConfigs({})
+      setIsCreatingProject(false)
+      setNewProjectName('')
+    }
+  }, [open])
 
   const handleToggleAccount = (accountId: string) => {
-    setSelectedAccounts((prev) =>
-      prev.includes(accountId) ? prev.filter((id) => id !== accountId) : [...prev, accountId]
-    )
+    setSelectedAccounts((prev) => {
+      const isSelected = prev.includes(accountId)
+      if (isSelected) {
+        const next = prev.filter((id) => id !== accountId)
+        const nextConfigs = { ...accountConfigs }
+        delete nextConfigs[accountId]
+        setAccountConfigs(nextConfigs)
+        return next
+      } else {
+        const defaultTimezone =
+          Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'
+        const defaultProjectId = projects.length > 0 ? projects[0].id : ''
+        setAccountConfigs((curr) => ({
+          ...curr,
+          [accountId]: { timezone: defaultTimezone, projectId: defaultProjectId },
+        }))
+        return [...prev, accountId]
+      }
+    })
   }
 
   const handleToggleAll = () => {
     if (selectedAccounts.length === accounts.length) {
       setSelectedAccounts([])
+      setAccountConfigs({})
     } else {
-      setSelectedAccounts(accounts.map((acc) => acc.id))
+      const allIds = accounts.map((acc) => acc.id)
+      setSelectedAccounts(allIds)
+
+      const defaultTimezone =
+        Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'
+      const defaultProjectId = projects.length > 0 ? projects[0].id : ''
+      const newConfigs: Record<string, { timezone: string; projectId: string }> = {}
+      allIds.forEach((id) => {
+        newConfigs[id] = { timezone: defaultTimezone, projectId: defaultProjectId }
+      })
+      setAccountConfigs(newConfigs)
     }
   }
 
@@ -72,17 +153,71 @@ export function AccountSelectionModal({
 
     if (allSelected) {
       setSelectedAccounts((prev) => prev.filter((id) => !bmAccountIds.includes(id)))
+      const nextConfigs = { ...accountConfigs }
+      bmAccountIds.forEach((id) => {
+        delete nextConfigs[id]
+      })
+      setAccountConfigs(nextConfigs)
     } else {
       setSelectedAccounts((prev) => [...new Set([...prev, ...bmAccountIds])])
+
+      const defaultTimezone =
+        Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'
+      const defaultProjectId = projects.length > 0 ? projects[0].id : ''
+      const nextConfigs = { ...accountConfigs }
+      bmAccountIds.forEach((id) => {
+        if (!nextConfigs[id]) {
+          nextConfigs[id] = { timezone: defaultTimezone, projectId: defaultProjectId }
+        }
+      })
+      setAccountConfigs(nextConfigs)
+    }
+  }
+
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) return
+    setCreatingProject(true)
+    try {
+      const projectId = await createProject({
+        name: newProjectName.trim(),
+        initials: newProjectName.trim().substring(0, 2).toUpperCase(),
+        color: '#1A73E8',
+      })
+      // Set the newly created project for all currently selected accounts without a project
+      setAccountConfigs((curr) => {
+        const next = { ...curr }
+        Object.keys(next).forEach((accountId) => {
+          if (!next[accountId].projectId) {
+            next[accountId].projectId = projectId
+          }
+        })
+        return next
+      })
+      setIsCreatingProject(false)
+      setNewProjectName('')
+    } catch (error) {
+      console.error('Error creating project:', error)
+    } finally {
+      setCreatingProject(false)
     }
   }
 
   const handleConfirm = async () => {
+    if (step === 'select') {
+      setStep('configure')
+      return
+    }
+
     if (selectedAccounts.length === 0) return
 
     setLoading(true)
     try {
-      await onConfirm(selectedAccounts)
+      const details: SelectedAccountDetail[] = selectedAccounts.map((id) => ({
+        accountId: id,
+        timezone: accountConfigs[id]?.timezone || 'America/Sao_Paulo',
+        projectId: accountConfigs[id]?.projectId || '',
+      }))
+      await onConfirm(details)
       onOpenChange(false)
     } catch (error) {
       console.error('Erro ao salvar contas:', error)
@@ -90,6 +225,8 @@ export function AccountSelectionModal({
       setLoading(false)
     }
   }
+
+  const isConfigValid = selectedAccounts.every((id) => accountConfigs[id]?.projectId)
 
   const platformIcon =
     platform === 'google_ads' ? (
@@ -131,29 +268,21 @@ export function AccountSelectionModal({
       </svg>
     )
 
-  // Função melhorada para obter o texto do header
-  const getHeaderText = () => {
-    if (platform === 'google_ads') {
-      return {
-        icon: <User className="w-4 h-4 text-gray-500" />,
-        label: 'Conta Google:',
-        value: mainAccountName,
-        email: mainAccountEmail,
-      }
-    } else {
-      // Para Meta Ads, sempre mostrar o email como principal
-      return {
-        icon: <Mail className="w-4 h-4 text-gray-500" />,
-        label: 'Conta Facebook:',
-        value: mainAccountEmail || mainAccountName, // Priorizar email
-        email: null, // Não mostrar email duplicado se já estiver no value
-      }
-    }
-  }
+  const headerInfo =
+    platform === 'google_ads'
+      ? {
+          icon: <User className="w-4 h-4 text-gray-500" />,
+          label: t('accountSelectionModal.googleAccount'),
+          value: mainAccountName,
+          email: mainAccountEmail,
+        }
+      : {
+          icon: <Mail className="w-4 h-4 text-gray-500" />,
+          label: t('accountSelectionModal.metaAccount'),
+          value: mainAccountEmail || mainAccountName,
+          email: null,
+        }
 
-  const headerInfo = getHeaderText()
-
-  // Renderizar contas organizadas por BM se disponível
   const renderBusinessManagerGroups = () => {
     if (!businessManagers || businessManagers.length === 0) {
       return renderFlatAccountList()
@@ -167,7 +296,6 @@ export function AccountSelectionModal({
 
       return (
         <div key={bm.id} className="mb-4">
-          {/* BM Header */}
           <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg mb-2">
             <button
               onClick={() => handleToggleBM(bm.id)}
@@ -183,7 +311,7 @@ export function AccountSelectionModal({
             <Building className="w-4 h-4 text-gray-500" />
             <span className="font-medium text-sm flex-1">{bm.name}</span>
             <span className="text-xs text-gray-500">
-              {selectedCount}/{bm.accounts.length} selecionada{selectedCount !== 1 ? 's' : ''}
+              {selectedCount}/{bm.accounts.length} {t('accountSelectionModal.selected')}
             </span>
             {bm.accounts.length > 0 && (
               <Checkbox
@@ -194,7 +322,6 @@ export function AccountSelectionModal({
             )}
           </div>
 
-          {/* BM Accounts */}
           {isExpanded && bm.accounts.length > 0 && (
             <div className="ml-6 space-y-2">
               {bm.accounts.map((account) => (
@@ -231,10 +358,9 @@ export function AccountSelectionModal({
             </div>
           )}
 
-          {/* Mensagem se BM não tem contas */}
           {isExpanded && bm.accounts.length === 0 && (
             <div className="ml-6 p-3 text-sm text-gray-500 dark:text-gray-400 italic">
-              Nenhuma conta de anúncios ativa neste Business Manager
+              {t('accountSelectionModal.noActiveAccounts')}
             </div>
           )}
         </div>
@@ -242,7 +368,6 @@ export function AccountSelectionModal({
     })
   }
 
-  // Renderizar lista plana de contas (fallback)
   const renderFlatAccountList = () => {
     return accounts.map((account) => (
       <div
@@ -276,6 +401,109 @@ export function AccountSelectionModal({
     ))
   }
 
+  const renderConfigureAccounts = () => {
+    const selectedAccsData = accounts.filter((a) => selectedAccounts.includes(a.id))
+    return (
+      <div className="space-y-4">
+        {isCreatingProject && (
+          <div className="p-4 border border-[var(--border)] rounded-xl bg-gray-50 dark:bg-slate-800/50 mb-4">
+            <h4 className="text-sm font-semibold mb-2">
+              {t('accountSelectionModal.createProject')}
+            </h4>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                placeholder={t('accountSelectionModal.projectNamePlaceholder')}
+                className="flex-1 h-9 px-3 rounded-lg border border-[var(--border)] text-sm bg-[var(--bg)]"
+              />
+              <Button
+                onClick={handleCreateProject}
+                disabled={creatingProject || !newProjectName.trim()}
+              >
+                {creatingProject ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  t('accountSelectionModal.create')
+                )}
+              </Button>
+              <Button variant="outline" onClick={() => setIsCreatingProject(false)}>
+                {t('accountSelectionModal.cancel')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {selectedAccsData.map((acc) => (
+          <div
+            key={acc.id}
+            className="p-4 rounded-xl border border-[var(--border)] bg-gray-50 dark:bg-slate-800/30"
+          >
+            <div className="mb-3">
+              <p className="font-medium text-gray-900 dark:text-white">{acc.name}</p>
+              <p className="text-xs text-gray-500">ID: {acc.id}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  {t('accountSelectionModal.timezone')}
+                </label>
+                <select
+                  className="w-full h-9 px-3 rounded-lg border border-[var(--border)] text-sm bg-[var(--bg)]"
+                  value={accountConfigs[acc.id]?.timezone || 'America/Sao_Paulo'}
+                  onChange={(e) =>
+                    setAccountConfigs((curr) => ({
+                      ...curr,
+                      [acc.id]: { ...curr[acc.id], timezone: e.target.value },
+                    }))
+                  }
+                >
+                  {COMMON_TIMEZONES.map((tz) => (
+                    <option key={tz} value={tz}>
+                      {tz}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between">
+                  <span>{t('accountSelectionModal.project')}</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingProject(true)}
+                    className="text-primary flex items-center hover:underline"
+                  >
+                    <Plus size={12} className="mr-0.5" /> {t('accountSelectionModal.newProject')}
+                  </button>
+                </label>
+                <select
+                  className="w-full h-9 px-3 rounded-lg border border-[var(--border)] text-sm bg-[var(--bg)]"
+                  value={accountConfigs[acc.id]?.projectId || ''}
+                  onChange={(e) =>
+                    setAccountConfigs((curr) => ({
+                      ...curr,
+                      [acc.id]: { ...curr[acc.id], projectId: e.target.value },
+                    }))
+                  }
+                >
+                  <option value="" disabled>
+                    {t('accountSelectionModal.selectProject')}
+                  </option>
+                  {projects.map((proj) => (
+                    <option key={proj.id} value={proj.id}>
+                      {proj.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -294,8 +522,20 @@ export function AccountSelectionModal({
               </DialogPrimitive.Close>
 
               <DialogPrimitive.Title className="flex items-center gap-3 mb-4">
+                {step === 'configure' && (
+                  <button
+                    onClick={() => setStep('select')}
+                    className="text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                )}
                 {platformIcon}
-                <h2 className="text-xl font-semibold">Selecionar Contas de Anúncios</h2>
+                <div className="text-xl font-semibold">
+                  {step === 'select'
+                    ? t('accountSelectionModal.stepAccounts')
+                    : t('accountSelectionModal.stepConfigure')}
+                </div>
               </DialogPrimitive.Title>
 
               <div id="dialog-description" className="bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
@@ -312,34 +552,41 @@ export function AccountSelectionModal({
               </div>
             </div>
 
-            {/* Account List */}
+            {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-4" style={{ scrollbarWidth: 'thin' }}>
-              {accounts.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">
-                    Nenhuma conta de anúncios encontrada.
-                  </p>
+              {step === 'select' ? (
+                accounts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Nenhuma conta de anúncios encontrada.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg mb-3">
+                      <Checkbox
+                        id="select-all"
+                        checked={selectedAccounts.length === accounts.length && accounts.length > 0}
+                        onCheckedChange={handleToggleAll}
+                      />
+                      <label
+                        htmlFor="select-all"
+                        className="text-sm font-medium cursor-pointer flex-1"
+                      >
+                        Selecionar todas ({accounts.length})
+                      </label>
+                    </div>
+
+                    {businessManagers ? renderBusinessManagerGroups() : renderFlatAccountList()}
+                  </div>
+                )
+              ) : loadingProjects ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                  <p className="text-gray-500">Carregando projetos...</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {/* Select All */}
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg mb-3">
-                    <Checkbox
-                      id="select-all"
-                      checked={selectedAccounts.length === accounts.length && accounts.length > 0}
-                      onCheckedChange={handleToggleAll}
-                    />
-                    <label
-                      htmlFor="select-all"
-                      className="text-sm font-medium cursor-pointer flex-1"
-                    >
-                      Selecionar todas ({accounts.length})
-                    </label>
-                  </div>
-
-                  {/* Render accounts */}
-                  {businessManagers ? renderBusinessManagerGroups() : renderFlatAccountList()}
-                </div>
+                renderConfigureAccounts()
               )}
             </div>
 
@@ -347,27 +594,26 @@ export function AccountSelectionModal({
             <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/30 border-t border-gray-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {selectedAccounts.length} de {accounts.length} conta
-                  {accounts.length !== 1 ? 's' : ''} selecionada
-                  {selectedAccounts.length !== 1 ? 's' : ''}
+                  {selectedAccounts.length} / {accounts.length}{' '}
+                  {t('accountSelectionModal.selected')}
                 </p>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                    Cancelar
+                    {t('accountSelectionModal.cancel')}
                   </Button>
-                  <Button
-                    onClick={handleConfirm}
-                    disabled={selectedAccounts.length === 0 || loading}
-                  >
-                    {loading ? (
-                      <>
+                  {step === 'select' ? (
+                    <Button onClick={handleConfirm} disabled={selectedAccounts.length === 0}>
+                      {t('accountSelectionModal.continue')}
+                    </Button>
+                  ) : (
+                    <Button onClick={handleConfirm} disabled={loading || !isConfigValid}>
+                      {loading ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Salvando...
-                      </>
-                    ) : (
-                      'Confirmar Seleção'
-                    )}
-                  </Button>
+                      ) : (
+                        t('accountSelectionModal.confirm')
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

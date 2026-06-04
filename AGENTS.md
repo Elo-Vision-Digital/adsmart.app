@@ -97,7 +97,7 @@ Sprints fechadas: `docs/specs/-1-foundation-schemas/`, `docs/specs/0a-foundation
 | Change Firestore rules | `firestore.rules`, `docs/DATA-MODEL.md`, `functions/test/firestore-rules.test.ts` |
 | Change wallet / billing | `docs/DOMAIN.md`, `functions/src/adminWalletManager.ts`, `src/hooks/useWallet.ts`, `packages/shared/src/schemas/userWallet.ts` + `transaction.ts` |
 | Change user profile shape | `packages/shared/src/schemas/user.ts` (source of truth: `UserSchema` + strict `UserClientUpdateSchema`), `functions/src/bootstrapUser.ts`, `functions/src/reserveUserDocument.ts`, `src/pages/SettingsPage.tsx` |
-| Add OAuth provider | `docs/OAUTH.md`, `functions/src/googleAdsOAuthV2.ts`, `src/services/oauthServices.ts`, `packages/shared/src/schemas/oauthState.ts` (state + temp token schemas), `functions/src/lib/oauthCrypto.ts` (AES-256-GCM for tokens at rest — ADR-019) |
+| Add OAuth provider | `docs/OAUTH.md`, `functions/src/googleAdsOAuth.ts`, `src/services/oauthServices.ts`, `packages/shared/src/schemas/oauthState.ts` (state + temp token schemas), `functions/src/lib/oauthCrypto.ts` (AES-256-GCM for tokens at rest — ADR-019) |
 | Work on payments | `docs/PAYMENTS.md` — SuitPay was REMOVED in ADR-021 (2026-05-18); Stripe integration is the planned replacement (FUTURE §8 — see `docs/research/08-stripe-future.md`). `AddCreditsModal` is a maintenance-notice placeholder. Reference for atomic wallet credit: `functions/src/adminWalletManager.ts` |
 | Add a translation key | `docs/I18N.md`, `src/locales/pt-BR.json` (then en.json and es.json) |
 | Write tests | `docs/TESTING.md`, `vitest.config.ts` (root + functions/) |
@@ -160,3 +160,4 @@ Sprints fechadas: `docs/specs/-1-foundation-schemas/`, `docs/specs/0a-foundation
 - Do not add new routes without adding them to the route table in `src/App.tsx`.
 - Do not write raw SQL or use any SQL library — this project is Firestore-only.
 - Do not modify `docs/SECURITY.md` without updating the corresponding code.
+- Do not compile the frontend for development using `vite build` (which defaults to production and loads `.env.production`). Always use `bun run build:dev` (which runs `--mode development` and loads `.env.development`) when deploying to the `adsmart-web-dev` environment in CI or locally. Mixed environments corrupt production databases.

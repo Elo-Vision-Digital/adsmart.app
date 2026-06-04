@@ -27,7 +27,8 @@ The `firestore:rules,firestore:indexes` scope is critical: without it, rules and
 **Manual deploy from local machine:**
 ```bash
 # Deploy to dev
-bun run build:all
+bunx turbo run build --filter=@adsmart/shared --filter=@adsmart/functions
+bun run build:dev
 bash scripts/firebase/test-rules.sh
 bunx firebase-tools deploy --only hosting,functions,firestore:rules,firestore:indexes --project adsmart-web-dev
 
@@ -224,7 +225,7 @@ File: `.github/workflows/ci.yml`
 Triggers: push to `main`, `develop`, or `migrate`; PR to `main` or `develop`.
 
 Jobs:
-- **Frontend**: `bun install --frozen-lockfile` → Biome lint → `bun run typecheck` → `bun run build`
+- **Frontend**: `bun install --frozen-lockfile` → Biome lint → `bun run typecheck` → `bun run build:dev` (for `develop`) or `bun run build` (for `main`)
 - **Functions**: `bun install --frozen-lockfile` → ESLint (non-blocking, `continue-on-error: true`) → `bun run build`
 
 Tests are not in CI yet (to be added in Phase 2).

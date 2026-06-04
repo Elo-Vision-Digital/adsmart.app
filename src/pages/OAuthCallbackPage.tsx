@@ -14,21 +14,24 @@ export function OAuthCallbackPage() {
 
   useEffect(() => {
     const handleCallback = async () => {
+      const postMessageOrNavigate = (payload: any) => {
+        if (window.opener) {
+          window.opener.postMessage({ type: 'OAUTH_CALLBACK', payload }, window.location.origin)
+          window.close()
+        } else {
+          navigate('/integrations', { state: payload })
+        }
+      }
+
       if (!code || !state) {
-        navigate('/accounts', {
-          state: {
-            error: 'Parâmetros de autorização inválidos',
-          },
-        })
+        postMessageOrNavigate({ error: 'Parâmetros de autorização inválidos' })
         return
       }
 
       try {
         // Chamar função que processa o OAuth e retorna os dados
         const functionName =
-          platform === 'google'
-            ? 'handleGoogleAdsCallbackWithSelection'
-            : 'handleMetaAdsCallbackWithSelection'
+          platform === 'google' ? 'handleGoogleAdsCallback' : 'handleMetaAdsCallback'
 
         const handleCallback = httpsCallable<{ code: string; state: string }, any>(
           functions,
@@ -37,20 +40,13 @@ export function OAuthCallbackPage() {
 
         const result = await handleCallback({ code, state })
 
-        // Redirecionar para accounts com os dados do OAuth
-        navigate('/accounts', {
-          state: {
-            oauthData: result.data,
-            platform: platform === 'google' ? 'google_ads' : 'meta_ads',
-          },
+        postMessageOrNavigate({
+          oauthData: result.data,
+          platform: platform === 'google' ? 'google_ads' : 'meta_ads',
         })
       } catch (error: any) {
         console.error('Erro no callback OAuth:', error)
-        navigate('/accounts', {
-          state: {
-            error: error.message || 'Erro ao conectar conta',
-          },
-        })
+        postMessageOrNavigate({ error: error.message || 'Erro ao conectar conta' })
       }
     }
 

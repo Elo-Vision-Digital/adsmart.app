@@ -1,10 +1,9 @@
 import { AdAccountSchema } from '@adsmart/shared'
 import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
+
 import {
   Check,
   ChevronRight,
-  Database,
   FileText,
   LayoutGrid,
   Link2,
@@ -17,21 +16,15 @@ import {
   X,
 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
-import {
-  type AccountOption,
-  AccountSelectionModal,
-  type BusinessManagerGroup,
-} from '@/components/ui/AccountSelectionModal'
 import { Toast, useToast } from '@/components/ui/toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { db, functions } from '@/firebase/config'
+import { db } from '@/firebase/config'
+import { useProjects } from '@/hooks/useProjects'
 import { zodConverter } from '@/schemas/firestore-converter'
-import { oauthService } from '@/services/oauthServices'
 import type { AdAccount } from '@/types'
-import { addMockAccounts } from '@/utils/mockAccounts'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Ícones de Plataforma
@@ -97,50 +90,6 @@ const PROJECT_COLORS = [
   { id: 'rose', hue: 'oklch(0.60 0.15 20)' },
 ]
 
-const SAMPLE_PROJECTS = [
-  {
-    id: 'acme',
-    name: 'Acme · Loja',
-    color: PROJECT_COLORS[0].hue,
-    initials: 'AC',
-    reports: 8,
-    lastActivity: 'há 2h',
-    accounts: [
-      {
-        id: 'g1',
-        plat: 'google',
-        name: 'Acme Loja BR',
-        accountId: '947-281-3094',
-        sub: 'Conta principal · BR',
-      },
-      {
-        id: 'm1',
-        plat: 'meta',
-        name: 'Acme Loja BR',
-        accountId: 'act_2849172',
-        sub: 'Conta de anúncios principal',
-      },
-    ],
-  },
-  {
-    id: 'beta',
-    name: 'Beta · Curso online',
-    color: PROJECT_COLORS[1].hue,
-    initials: 'BE',
-    reports: 3,
-    lastActivity: 'há 1 dia',
-    accounts: [
-      {
-        id: 'g3',
-        plat: 'google',
-        name: 'Beta Education',
-        accountId: '521-440-8821',
-        sub: 'Search + PMax',
-      },
-    ],
-  },
-]
-
 // Avatar do Projeto
 function ProjectAvatar({
   color,
@@ -174,42 +123,26 @@ function ProjectAvatar({
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Types
-// ────────────────────────────────────────────────────────────────────────────
-interface OAuthData {
-  success: boolean
-  accountsAvailable: AccountOption[]
-  businessManagers?: BusinessManagerGroup[]
-  mainAccount: {
-    name: string
-    email?: string
-  }
-  temporaryToken: string
-}
-
-// ────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ────────────────────────────────────────────────────────────────────────────
 export function ProjectsPage() {
-  const location = useLocation()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useLanguage()
 
   // State principal de Contas do Firestore
   const [accounts, setAccounts] = useState<AdAccount[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loadingAccounts, setLoadingAccounts] = useState(true)
+  const { projects, createProject } = useProjects()
 
-  // Estados de conexão OAuth
-  const [connectingGoogle, setConnectingGoogle] = useState(false)
-  const [connectingMeta, setConnectingMeta] = useState(false)
-  const [showAccountSelection, setShowAccountSelection] = useState(false)
-  const [oauthData, setOauthData] = useState<OAuthData | null>(null)
-  const [oauthPlatform, setOauthPlatform] = useState<'google_ads' | 'meta_ads'>('meta_ads')
   const { toasts, showToast, removeToast } = useToast()
 
   // UI States
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+  const [newProjectColorIndex, setNewProjectColorIndex] = useState(2)
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
 
   // Buscar contas do Firestore
   useEffect(() => {
@@ -222,64 +155,11 @@ export function ProjectsPage() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setAccounts(snapshot.docs.map((doc) => doc.data()))
-      setLoading(false)
+      setLoadingAccounts(false)
     })
 
     return () => unsubscribe()
   }, [user])
-
-  // Processar callback OAuth
-  useEffect(() => {
-    if (location.state?.oauthData && location.state?.platform) {
-      const data = location.state.oauthData as OAuthData
-      const platform = location.state.platform as 'google_ads' | 'meta_ads'
-
-      window.history.replaceState({}, document.title)
-      setOauthData(data)
-      setOauthPlatform(platform)
-      setShowAccountSelection(true)
-    }
-
-    if (location.state?.error) {
-      showToast({ message: location.state.error, type: 'error' })
-      window.history.replaceState({}, document.title)
-    }
-
-    if (location.state?.success && location.state?.message) {
-      showToast({ message: location.state.message, type: 'success' })
-      window.history.replaceState({}, document.title)
-    }
-  }, [location.state])
-
-  const handleConnectGoogle = async () => {
-    try {
-      setConnectingGoogle(true)
-      const authUrl = await oauthService.getGoogleAdsAuthUrl()
-      if (authUrl && authUrl !== '#') window.location.href = authUrl
-    } catch (error: any) {
-      showToast({
-        message: error.message || t('accountsPage.error.connectGoogle'),
-        type: 'error',
-      })
-    } finally {
-      setConnectingGoogle(false)
-    }
-  }
-
-  const handleConnectMeta = async () => {
-    try {
-      setConnectingMeta(true)
-      const authUrl = await oauthService.getMetaAdsAuthUrl()
-      if (authUrl && authUrl !== '#') window.location.href = authUrl
-    } catch (error: any) {
-      showToast({
-        message: error.message || t('accountsPage.error.connectMeta'),
-        type: 'error',
-      })
-    } finally {
-      setConnectingMeta(false)
-    }
-  }
 
   const handleRemoveAccount = async (accountId: string) => {
     if (!user) return
@@ -292,68 +172,44 @@ export function ProjectsPage() {
     }
   }
 
-  const handleAccountSelection = async (selectedAccountIds: string[]) => {
-    if (!oauthData || !user) return
-
-    try {
-      const functionName =
-        oauthPlatform === 'google_ads'
-          ? 'confirmGoogleAdsAccountSelection'
-          : 'confirmMetaAdsAccountSelection'
-
-      const confirmSelection = httpsCallable<
-        { temporaryToken: string; selectedAccountIds: string[] },
-        { success: boolean }
-      >(functions, functionName)
-
-      await confirmSelection({
-        temporaryToken: oauthData.temporaryToken,
-        selectedAccountIds,
-      })
-
-      setShowAccountSelection(false)
-      setOauthData(null)
-
-      const platformName = oauthPlatform === 'google_ads' ? 'Google Ads' : 'Meta Ads'
-      showToast({
-        message: t('accountsPage.accountsConnectedSuccess', {
-          count: selectedAccountIds.length,
-          platform: platformName,
-        }),
-        type: 'success',
-      })
-    } catch (error: any) {
-      showToast({
-        message: error.message || t('accountsPage.error.saveAccounts'),
-        type: 'error',
-      })
-    }
-  }
-
-  const handleAddMockAccounts = async () => {
+  const handleUpdateAccountProject = async (accountId: string, projectId: string) => {
     if (!user) return
     try {
-      await addMockAccounts(user.uid)
-      showToast({
-        message: t('accountsPage.mockAccountsAdded'),
-        type: 'success',
+      const { updateDoc } = await import('firebase/firestore')
+      await updateDoc(doc(db, 'users', user.uid, 'adAccounts', accountId), {
+        projectId,
       })
+      showToast({ message: t('projectsPage.success.accountAssigned'), type: 'success' })
     } catch (error) {
-      console.error('Erro ao adicionar contas mock:', error)
+      console.error('Erro ao atualizar projeto da conta:', error)
+      showToast({ message: t('projectsPage.error.assignAccount'), type: 'error' })
     }
   }
 
-  // Agregações (Misturando Mocks e Dados reais por enquanto)
-  const projects = SAMPLE_PROJECTS // No futuro virá do Firebase
-  const orphans = accounts // Contas reais não vinculadas a nenhum projeto
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) return
+    setIsCreatingProject(true)
+    try {
+      await createProject({
+        name: newProjectName.trim(),
+        initials: newProjectName.trim().substring(0, 2).toUpperCase(),
+        color: PROJECT_COLORS[newProjectColorIndex].hue,
+      })
+      setIsNewProjectModalOpen(false)
+      setNewProjectName('')
+      setNewProjectColorIndex(2)
+      showToast({ message: t('projectsPage.success.projectCreated'), type: 'success' })
+    } catch (error: any) {
+      showToast({ message: error.message || t('projectsPage.error.createProject'), type: 'error' })
+    } finally {
+      setIsCreatingProject(false)
+    }
+  }
 
-  const googleCount =
-    orphans.filter((a) => a.platform === 'google_ads').length +
-    projects.reduce((s, p) => s + p.accounts.filter((a) => a.plat === 'google').length, 0)
-
-  const metaCount =
-    orphans.filter((a) => a.platform === 'meta_ads').length +
-    projects.reduce((s, p) => s + p.accounts.filter((a) => a.plat === 'meta').length, 0)
+  // Agregações
+  const orphans = accounts.filter((a) => !a.projectId)
+  const googleCount = accounts.filter((a) => a.platform === 'google_ads').length
+  const metaCount = accounts.filter((a) => a.platform === 'meta_ads').length
 
   const totalAccounts = googleCount + metaCount
 
@@ -366,51 +222,29 @@ export function ProjectsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-7 gap-6">
           <div>
-            <h1 className="text-[36px] font-bold tracking-[-0.025em] leading-[1.05] text-[var(--text)]">
-              Projetos
+            <h1 className="text-2xl font-bold text-[var(--text)] tracking-[-0.01em]">
+              {t('projectsPage.title')}
             </h1>
-            <p className="text-[15px] text-[var(--text-2)] mt-2 max-w-[620px]">
-              Organize suas contas em <strong className="text-[var(--text)]">Projetos</strong> —
-              cada projeto agrupa as contas de Google Ads e Meta Ads de um mesmo negócio ou cliente.
+            <p className="text-[14.5px] text-[var(--text-3)] mt-1.5 leading-relaxed">
+              {t('projectsPage.subtitle')}
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5 flex-shrink-0">
-            {process.env.NODE_ENV === 'development' && accounts.length === 0 && (
-              <button
-                type="button"
-                onClick={handleAddMockAccounts}
-                className="inline-flex items-center gap-2 px-4 h-10 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[14px] font-semibold text-[var(--text)] hover:bg-[var(--bg-elev-2)] transition-colors"
-              >
-                <Database size={15} /> Demo
-              </button>
-            )}
             <button
               type="button"
               className="inline-flex items-center gap-2 px-4 h-10 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-[14px] font-semibold text-[var(--text)] hover:bg-[var(--bg-elev-2)] transition-colors"
-              onClick={() => {
-                // Dropdown temporário simplificado para conectar conta.
-                // Num ambiente real, pode ser um menu
-                if (confirm('Conectar Google Ads? Cancelar para Meta Ads.')) {
-                  handleConnectGoogle()
-                } else {
-                  handleConnectMeta()
-                }
-              }}
-              disabled={connectingGoogle || connectingMeta}
+              onClick={() => navigate('/integrations')}
             >
-              {connectingGoogle || connectingMeta ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <Link2 size={15} />
-              )}
-              Conectar conta
+              <Link2 size={15} />
+              {t('projectsPage.connectAccount')}
             </button>
             <button
               type="button"
               onClick={() => setIsNewProjectModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 h-10 bg-[var(--accent)] text-[var(--accent-fg)] rounded-xl text-[14px] font-semibold hover:opacity-90 transition-opacity"
+              className="h-10 px-4 rounded-xl bg-[var(--accent)] text-[var(--accent-fg)] text-[14px] font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity"
             >
-              <Plus size={16} strokeWidth={2.2} /> Novo projeto
+              <Plus size={16} strokeWidth={2.5} />
+              <span className="hidden sm:inline">{t('projectsPage.newProject')}</span>
             </button>
           </div>
         </div>
@@ -418,8 +252,8 @@ export function ProjectsPage() {
         {/* Stats strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-7">
           {[
-            { l: 'Projetos', v: projects.length, icon: <FileText size={14} /> },
-            { l: 'Contas conectadas', v: totalAccounts, icon: <Link2 size={14} /> },
+            { l: t('projectsPage.statProjects'), v: projects.length, icon: <FileText size={14} /> },
+            { l: t('projectsPage.statAccounts'), v: totalAccounts, icon: <Link2 size={14} /> },
             { l: 'Google Ads', v: googleCount, icon: <GoogleAdsIcon size={14} /> },
             { l: 'Meta Ads', v: metaCount, icon: <MetaAdsIcon size={14} /> },
           ].map((s, i) => (
@@ -442,12 +276,10 @@ export function ProjectsPage() {
         <div className="flex items-center justify-between mb-3.5">
           <div>
             <h2 className="text-[17px] font-[650] tracking-[-0.01em] text-[var(--text)]">
-              Seus projetos
+              {t('projectsPage.yourProjects')}
             </h2>
             <p className="text-[13px] text-[var(--text-2)] mt-0.5">
-              {empty
-                ? 'Crie seu primeiro projeto para começar a organizar suas contas'
-                : 'Clique em um projeto para gerenciar as contas vinculadas'}
+              {empty ? t('projectsPage.emptySubtitle') : t('projectsPage.subtitleActive')}
             </p>
           </div>
           {!empty && (
@@ -485,11 +317,10 @@ export function ProjectsPage() {
               <FileText size={28} />
             </div>
             <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[var(--text)] mb-2">
-              Crie seu primeiro projeto
+              {t('projectsPage.createFirst')}
             </h2>
             <p className="text-[15px] text-[var(--text-2)] max-w-[460px] leading-relaxed mb-6">
-              Projetos agrupam todas as contas (Google Ads + Meta Ads) de um mesmo cliente ou
-              negócio. Assim você vê tudo junto em um único relatório.
+              {t('projectsPage.createDescription')}
             </p>
             <div className="flex gap-2.5">
               <button
@@ -497,22 +328,33 @@ export function ProjectsPage() {
                 onClick={() => setIsNewProjectModalOpen(true)}
                 className="inline-flex items-center gap-2 px-5 h-11 bg-[var(--accent)] text-[var(--accent-fg)] rounded-xl text-[14px] font-semibold hover:opacity-90 transition-opacity"
               >
-                <Plus size={15} strokeWidth={2.2} /> Criar projeto
+                <Plus size={15} strokeWidth={2.2} /> {t('projectsPage.createProject')}
               </button>
               <button
                 type="button"
-                onClick={handleConnectMeta}
+                onClick={() => navigate('/integrations')}
                 className="inline-flex items-center gap-2 px-5 h-11 bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] rounded-xl text-[14px] font-semibold hover:bg-[var(--bg-elev-2)] transition-colors"
               >
-                <Link2 size={15} /> Conectar uma conta
+                <Link2 size={15} /> {t('projectsPage.connectAccount')}
               </button>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-8">
             {projects.map((p) => {
-              const pGoogle = p.accounts.filter((a) => a.plat === 'google').length
-              const pMeta = p.accounts.filter((a) => a.plat === 'meta').length
+              const projectAccounts = accounts.filter((a) => a.projectId === p.id)
+              const pGoogle = projectAccounts.filter((a) => a.platform === 'google_ads').length
+              const pMeta = projectAccounts.filter((a) => a.platform === 'meta_ads').length
+
+              const dateVal = p.updatedAt
+                ? typeof (p.updatedAt as any).toDate === 'function'
+                  ? (p.updatedAt as any).toDate()
+                  : typeof (p.updatedAt as any).toMillis === 'function'
+                    ? new Date((p.updatedAt as any).toMillis())
+                    : new Date(p.updatedAt as any)
+                : null
+
+              const dateStr = dateVal ? dateVal.toLocaleDateString() : 'Recente'
 
               return (
                 <div
@@ -527,7 +369,7 @@ export function ProjectsPage() {
                         {p.name}
                       </div>
                       <div className="text-[13px] text-[var(--text-3)] mt-0.5">
-                        Atualizado {p.lastActivity}
+                        {t('projectsPage.updatedAt')} {dateStr}
                       </div>
                     </div>
                     <button
@@ -540,18 +382,18 @@ export function ProjectsPage() {
 
                   {/* Account chips */}
                   <div className="flex flex-wrap gap-1.5">
-                    {p.accounts.slice(0, 3).map((a) => (
+                    {projectAccounts.slice(0, 3).map((a) => (
                       <span
                         key={a.id}
                         className="inline-flex items-center gap-1.5 px-[9px] py-[5px] rounded-full bg-[var(--bg)] border border-[var(--border)] text-[11.5px] font-semibold text-[var(--text-2)] max-w-[200px] truncate"
                       >
-                        <PlatformIcon plat={a.plat} size={11} />
-                        <span className="truncate">{a.name}</span>
+                        <PlatformIcon plat={a.platform} size={11} />
+                        <span className="truncate">{a.accountName}</span>
                       </span>
                     ))}
-                    {p.accounts.length > 3 && (
+                    {projectAccounts.length > 3 && (
                       <span className="px-[9px] py-[5px] rounded-full bg-[var(--bg)] border border-[var(--border)] text-[11.5px] font-semibold text-[var(--text-3)]">
-                        +{p.accounts.length - 3}
+                        +{projectAccounts.length - 3}
                       </span>
                     )}
                   </div>
@@ -575,7 +417,7 @@ export function ProjectsPage() {
                       type="button"
                       className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[var(--text)] hover:text-[var(--accent)] transition-colors"
                     >
-                      Abrir <ChevronRight size={12} />
+                      {t('projectsPage.open')} <ChevronRight size={12} />
                     </button>
                   </div>
                 </div>
@@ -591,9 +433,11 @@ export function ProjectsPage() {
               <div className="w-11 h-11 rounded-xl bg-[var(--bg-elev)] border border-[var(--border)] flex items-center justify-center text-[var(--text)]">
                 <Plus size={20} strokeWidth={2.2} />
               </div>
-              <div className="text-[14.5px] font-[650] text-[var(--text)] mt-1">Novo projeto</div>
+              <div className="text-[14.5px] font-[650] text-[var(--text)] mt-1">
+                {t('projectsPage.newProject')}
+              </div>
               <div className="text-[13px] max-w-[200px] leading-[1.4]">
-                Agrupe contas de Google Ads e Meta Ads que pertencem ao mesmo negócio
+                {t('projectsPage.newProjectDesc')}
               </div>
             </button>
           </div>
@@ -605,21 +449,21 @@ export function ProjectsPage() {
             <div className="flex items-center justify-between mb-3.5">
               <div>
                 <div className="text-[17px] font-[650] tracking-[-0.01em] text-[var(--text)] flex items-center">
-                  Contas sem projeto
+                  {t('projectsPage.orphanAccounts')}
                   <span className="ml-2 px-2 py-0.5 rounded-full bg-[var(--warning-bg)] text-[var(--warning)] text-[12px] font-bold tracking-[0.01em]">
                     {orphans.length}
                   </span>
                 </div>
                 <div className="text-[13px] text-[var(--text-2)] mt-0.5">
-                  Contas conectadas ativas que ainda não foram atribuídas a um projeto
+                  {t('projectsPage.orphanAccountsSubtitle')}
                 </div>
               </div>
             </div>
 
             <div className="rounded-[18px] bg-[var(--bg-elev)] border border-[var(--border)] overflow-hidden mb-8">
-              {loading ? (
+              {loadingAccounts ? (
                 <div className="p-6 text-center text-[var(--text-3)] flex items-center justify-center gap-2">
-                  <Loader2 size={16} className="animate-spin" /> Carregando contas...
+                  <Loader2 size={16} className="animate-spin" /> {t('projectsPage.loadingAccounts')}
                 </div>
               ) : (
                 orphans.map((a, i, arr) => (
@@ -645,19 +489,24 @@ export function ProjectsPage() {
                           backgroundPosition: 'right 10px center',
                         }}
                         defaultValue=""
-                        onChange={() => {
-                          // No-op for mock Phase
+                        onChange={(e) => {
+                          if (e.target.value === '__new') {
+                            setIsNewProjectModalOpen(true)
+                            e.target.value = ''
+                          } else {
+                            handleUpdateAccountProject(a.id, e.target.value)
+                          }
                         }}
                       >
                         <option value="" disabled>
-                          Atribuir a um projeto…
+                          {t('projectsPage.assignToProject')}
                         </option>
                         {projects.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
                           </option>
                         ))}
-                        <option value="__new">+ Criar novo projeto</option>
+                        <option value="__new">+ {t('projectsPage.createProject')}</option>
                       </select>
                       <button
                         type="button"
@@ -676,20 +525,6 @@ export function ProjectsPage() {
           </>
         )}
       </div>
-
-      {/* Modal de Seleção de Contas (Existente para o fluxo OAuth) */}
-      {oauthData && (
-        <AccountSelectionModal
-          open={showAccountSelection}
-          onOpenChange={setShowAccountSelection}
-          platform={oauthPlatform}
-          accounts={oauthData.accountsAvailable}
-          businessManagers={oauthData.businessManagers}
-          mainAccountName={oauthData.mainAccount.name}
-          mainAccountEmail={oauthData.mainAccount.email}
-          onConfirm={handleAccountSelection}
-        />
-      )}
 
       {/* Modal Visual de Novo Projeto (Mock UI) */}
       {isNewProjectModalOpen && (
@@ -719,11 +554,13 @@ export function ProjectsPage() {
             <div className="p-6 pt-4 overflow-y-auto flex-1">
               <div className="mb-4">
                 <label className="block text-[13px] font-semibold text-[var(--text)] mb-1.5">
-                  Nome do projeto
+                  {t('projectsPage.projectName')}
                 </label>
                 <input
                   type="text"
-                  placeholder="Ex: Acme · Loja online"
+                  placeholder={t('projectsPage.projectNamePlaceholder')}
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] text-[14px] text-[var(--text)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
@@ -736,13 +573,17 @@ export function ProjectsPage() {
                   <button
                     key={c.id}
                     type="button"
+                    onClick={() => setNewProjectColorIndex(i)}
                     className="w-9 h-9 rounded-[10px] border-none cursor-pointer relative"
                     style={{
                       background: c.hue,
-                      boxShadow: i === 2 ? `0 0 0 2px var(--bg), 0 0 0 4px var(--text)` : 'none',
+                      boxShadow:
+                        i === newProjectColorIndex
+                          ? `0 0 0 2px var(--bg), 0 0 0 4px var(--text)`
+                          : 'none',
                     }}
                   >
-                    {i === 2 && (
+                    {i === newProjectColorIndex && (
                       <span className="absolute inset-0 flex items-center justify-center text-white">
                         <Check size={16} strokeWidth={2.6} />
                       </span>
@@ -753,6 +594,7 @@ export function ProjectsPage() {
 
               <button
                 type="button"
+                onClick={() => navigate('/integrations')}
                 className="w-full py-3 px-3.5 rounded-xl bg-transparent border border-dashed border-[var(--border-strong)] text-[13.5px] font-semibold text-[var(--text-2)] flex items-center justify-center gap-2 hover:bg-[var(--bg-elev)] transition-colors"
               >
                 <Plus size={14} strokeWidth={2.2} /> Conectar nova conta agora
@@ -784,10 +626,16 @@ export function ProjectsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setIsNewProjectModalOpen(false)}
-                className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-[var(--accent)] text-[var(--accent-fg)] text-[14px] font-semibold hover:opacity-90 transition-opacity"
+                onClick={handleCreateProject}
+                disabled={isCreatingProject || !newProjectName.trim()}
+                className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-[var(--accent)] text-[var(--accent-fg)] text-[14px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                <Check size={15} strokeWidth={2.4} /> Criar projeto
+                {isCreatingProject ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Check size={15} strokeWidth={2.4} />
+                )}{' '}
+                {t('projectsPage.createProject')}
               </button>
             </div>
           </div>

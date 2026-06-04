@@ -13,6 +13,7 @@ export const AdAccountSchema = z.object({
   email: z.email().optional(),
   currency: z.string(),
   timezone: z.string().optional(),
+  projectId: z.string().optional(),
   isActive: z.boolean(),
   lastSyncAt: zTimestamp().optional(),
   createdAt: zTimestamp(),

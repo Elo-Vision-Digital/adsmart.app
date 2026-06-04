@@ -24,27 +24,18 @@ export { getPublicProductPrices } from './getPublicProductPrices'
 // ✅ NOVO: Exportar funções OAuth Google Ads
 export {
   getGoogleAdsAuthUrl,
-  // handleGoogleAdsCallback_DEPRECATED, // NÃO EXPORTAR - Usar v2
+  handleGoogleAdsCallback,
+  confirmGoogleAdsAccountSelection,
   getGoogleAdsCampaigns
 } from './googleAdsOAuth'
 
 // ✅ NOVO: Exportar funções OAuth Meta Ads
 export {
   getMetaAdsAuthUrl,
-  // handleMetaAdsCallback_DEPRECATED, // NÃO EXPORTAR - Usar v2
+  handleMetaAdsCallback,
+  confirmMetaAdsAccountSelection,
   getMetaAdsCampaigns
 } from './metaAdsOAuth'
-
-// ✅ NOVO: Exportar funções OAuth v2 com seleção de contas
-export {
-  handleGoogleAdsCallbackWithSelection,
-  confirmGoogleAdsAccountSelection
-} from './googleAdsOAuthV2'
-
-export {
-  handleMetaAdsCallbackWithSelection,
-  confirmMetaAdsAccountSelection
-} from './metaAdsOAuthV2'
 
 // SuitPay (suitpayWebhook, createPixPayment, checkPaymentStatus) removed
 // in ADR-021 (2026-05-18). Stripe integration is the planned replacement
