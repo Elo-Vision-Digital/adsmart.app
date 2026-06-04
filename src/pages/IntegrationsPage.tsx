@@ -273,6 +273,10 @@ export function IntegrationsPage() {
   const connectedPlatformsCount =
     (googleAccounts.length > 0 ? 1 : 0) + (metaAccounts.length > 0 ? 1 : 0)
 
+  const connectedAccountIds = (oauthPlatform === 'google_ads' ? googleAccounts : metaAccounts).map(
+    (a) => a.accountId
+  )
+
   return (
     <MainLayout>
       <div className="w-full px-4 py-8 md:px-8 max-w-[1280px] mx-auto">
@@ -564,6 +568,7 @@ export function IntegrationsPage() {
           onOpenChange={setShowAccountSelection}
           platform={oauthPlatform}
           accounts={oauthData.accountsAvailable}
+          connectedAccountIds={connectedAccountIds}
           businessManagers={oauthData.businessManagers}
           mainAccountName={oauthData.mainAccount.name}
           mainAccountEmail={oauthData.mainAccount.email}
