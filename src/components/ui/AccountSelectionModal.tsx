@@ -531,11 +531,11 @@ export function AccountSelectionModal({
                   </button>
                 )}
                 {platformIcon}
-                <h2 className="text-xl font-semibold">
+                <div className="text-xl font-semibold">
                   {step === 'select'
                     ? t('accountSelectionModal.stepAccounts')
                     : t('accountSelectionModal.stepConfigure')}
-                </h2>
+                </div>
               </DialogPrimitive.Title>
 
               <div id="dialog-description" className="bg-gray-50 dark:bg-slate-800 rounded-lg p-3">

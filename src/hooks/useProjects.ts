@@ -32,7 +32,7 @@ export function useProjects() {
       (snapshot) => {
         const projectsList: Project[] = []
         snapshot.forEach((docSnap) => {
-          const data = docSnap.data()
+          const data = docSnap.data({ serverTimestamps: 'estimate' })
           try {
             // Zod validates and transforms the timestamp object
             const project = ProjectSchema.parse({ id: docSnap.id, ...data })

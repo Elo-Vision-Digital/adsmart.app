@@ -798,7 +798,12 @@ async function getGoogleAdsAccountDetails(accessToken: string, accountIds: strin
 
       const customerData = response.data.results?.[0]?.customer
       if (customerData) {
-        accounts.push(customerData)
+        accounts.push({
+          customerId: String(customerData.id),
+          descriptiveName: customerData.descriptiveName || customerData.descriptive_name,
+          currencyCode: customerData.currencyCode || customerData.currency_code,
+          timeZone: customerData.timeZone || customerData.time_zone
+        })
       }
     } catch (error: any) {
       console.error(`Erro ao buscar detalhes da conta ${accountId}:`, {
