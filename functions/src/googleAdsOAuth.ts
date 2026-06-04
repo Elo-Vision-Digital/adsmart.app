@@ -52,7 +52,7 @@ const GOOGLE_ADS_CONFIG = {
   ].join(' '),
   authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenUrl: 'https://oauth2.googleapis.com/token',
-  apiVersion: 'v17',
+  apiVersion: 'v19',
 }
 
 /**
@@ -394,12 +394,14 @@ export const confirmGoogleAdsAccountSelection = onCall(
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
   }
 
-  const { temporaryToken, selectedAccountIds } = request.data
+  const { temporaryToken, accountsWithDetails } = request.data
   const userId = request.auth.uid
 
-  if (!temporaryToken || !selectedAccountIds || selectedAccountIds.length === 0) {
+  if (!temporaryToken || !accountsWithDetails || accountsWithDetails.length === 0) {
     throw new HttpsError('invalid-argument', 'Token ou contas não especificadas')
   }
+
+  const selectedAccountIds = accountsWithDetails.map((a: any) => a.accountId)
 
   try {
     // Buscar token temporário
@@ -457,6 +459,10 @@ export const confirmGoogleAdsAccountSelection = onCall(
 
     // Salvar informações das contas selecionadas
     for (const account of selectedAccounts) {
+      const detail = accountsWithDetails.find((a: any) => a.accountId === account.customerId)
+      const timezone = detail?.timezone || account.timeZone
+      const projectId = detail?.projectId
+
       const accountRef = admin.firestore()
         .collection('users')
         .doc(userId)
@@ -474,7 +480,8 @@ export const confirmGoogleAdsAccountSelection = onCall(
         accountName: account.descriptiveName,
         email: account.email || request.auth.token.email,
         currency: account.currencyCode,
-        timezone: account.timeZone,
+        timezone,
+        projectId,
         isActive: true,
       })
 
@@ -615,8 +622,8 @@ async function listAccessibleGoogleAdsAccounts(accessToken: string): Promise<any
       prefix: developerToken?.substring(0, 5) + '...'
     })
     
-    // Usar Google Ads API v17
-    const apiEndpoint = 'https://googleads.googleapis.com/v17/customers:listAccessibleCustomers'
+    // Usar Google Ads API v19
+    const apiEndpoint = 'https://googleads.googleapis.com/v19/customers:listAccessibleCustomers'
     
     console.log('Preparando requisição para Google Ads API:')
     console.log('Endpoint:', apiEndpoint)
@@ -659,7 +666,7 @@ async function listAccessibleGoogleAdsAccounts(accessToken: string): Promise<any
         try {
           console.log(`Buscando detalhes da conta ${customerId}...`)
           const customerResponse = await axios.post(
-            `https://googleads.googleapis.com/v17/customers/${customerId}/googleAds:search`,
+            `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`,
             {
               query: `
                 SELECT 
@@ -767,7 +774,7 @@ async function getGoogleAdsAccountDetails(accessToken: string, accountIds: strin
   for (const accountId of accountIds) {
     try {
       const response = await axios.post(
-        `https://googleads.googleapis.com/v17/customers/${accountId}/googleAds:search`,
+        `https://googleads.googleapis.com/v19/customers/${accountId}/googleAds:search`,
         {
           query: `
             SELECT 

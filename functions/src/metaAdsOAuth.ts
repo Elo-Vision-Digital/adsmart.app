@@ -359,12 +359,14 @@ export const confirmMetaAdsAccountSelection = onCall(
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
   }
 
-  const { temporaryToken, selectedAccountIds } = request.data
+  const { temporaryToken, accountsWithDetails } = request.data
   const userId = request.auth.uid
 
-  if (!temporaryToken || !selectedAccountIds || selectedAccountIds.length === 0) {
+  if (!temporaryToken || !accountsWithDetails || accountsWithDetails.length === 0) {
     throw new HttpsError('invalid-argument', 'Token ou contas não especificadas')
   }
+
+  const selectedAccountIds = accountsWithDetails.map((a: any) => a.accountId)
 
   try {
     // Buscar token temporário
@@ -424,6 +426,10 @@ export const confirmMetaAdsAccountSelection = onCall(
 
     // Salvar informações das contas selecionadas
     for (const account of selectedAccounts) {
+      const detail = accountsWithDetails.find((a: any) => a.accountId === account.id)
+      const timezone = detail?.timezone || account.timezone_name
+      const projectId = detail?.projectId
+
       const accountRef = admin.firestore()
         .collection('users')
         .doc(userId)
@@ -441,7 +447,8 @@ export const confirmMetaAdsAccountSelection = onCall(
         accountName: account.name,
         email: account.email || request.auth.token.email,
         currency: account.currency,
-        timezone: account.timezone_name,
+        timezone,
+        projectId,
         isActive: true,
       })
 

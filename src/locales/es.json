@@ -244,10 +244,67 @@
       "description": "Para conectar tus cuentas de anuncios, deberás autorizar a adsmart a acceder a tus datos. Utilizamos conexiones seguras OAuth2 y no almacenamos tus contraseñas. Puedes revocar el acceso en cualquier momento."
     },
     "error": {
-      "connectGoogle": "Error al conectar con Google Ads. Intenta nuevamente.",
-      "connectMeta": "Error al conectar con Meta Ads. Intenta nuevamente.",
-      "saveAccounts": "Error al guardar las cuentas seleccionadas"
+      "connectGoogle": "Error al conectar con Google Ads. Intenta de nuevo.",
+      "connectMeta": "Error al conectar con Meta Ads. Intenta de nuevo.",
+      "saveAccounts": "Error al guardar cuentas seleccionadas"
     }
+  },
+  "projectsPage": {
+    "title": "Proyectos",
+    "subtitle": "Agrupa tus cuentas de anuncios en proyectos para organizar informes",
+    "connectAccount": "Conectar cuenta",
+    "newProject": "Nuevo proyecto",
+    "newProjectDesc": "Agrupa cuentas de Google Ads y Meta Ads que pertenecen al mismo negocio",
+    "createProject": "Crear proyecto",
+    "projectName": "Nombre del proyecto",
+    "projectNamePlaceholder": "Ej: Acme · Tienda online",
+    "updatedAt": "Actualizado",
+    "recent": "Reciente",
+    "assignToProject": "Asignar a un proyecto...",
+    "orphanAccounts": "Cuentas huérfanas",
+    "orphanAccountsSubtitle": "Cuentas conectadas activas que aún no han sido asignadas a un proyecto",
+    "orphanAccountsDesc": "Estas cuentas aún no pertenecen a ningún proyecto.",
+    "organizeHint": "Organiza tus cuentas en Proyectos —",
+    "organizeHintBold": "Proyectos",
+    "summary": "Resumen",
+    "totalProjects": "proyectos",
+    "loadingAccounts": "Cargando cuentas...",
+    "statProjects": "Proyectos",
+    "statAccounts": "Cuentas",
+    "yourProjects": "Tus Proyectos",
+    "emptySubtitle": "Aún no tienes proyectos.",
+    "subtitleActive": "Gestiona tus proyectos y cuentas de anuncios.",
+    "createFirst": "Crea tu primer proyecto",
+    "createDescription": "Organiza tus cuentas de anuncios en un solo lugar para análisis unificado.",
+    "open": "Abrir",
+    "success": {
+      "projectCreated": "Proyecto creado con éxito",
+      "accountAssigned": "Cuenta asignada al proyecto"
+    },
+    "error": {
+      "createProject": "Error al crear proyecto",
+      "assignAccount": "Error al asignar cuenta"
+    }
+  },
+  "accountSelectionModal": {
+    "title": "Conectar {platform}",
+    "stepAccounts": "Seleccionar cuentas",
+    "stepConfigure": "Configuraciones",
+    "back": "Volver",
+    "continue": "Continuar",
+    "confirm": "Confirmar y Guardar",
+    "noActiveAccounts": "No hay cuentas de anuncios activas en este Business Manager",
+    "selected": "seleccionada(s)",
+    "timezone": "Zona Horaria",
+    "project": "Proyecto",
+    "newProject": "Nuevo",
+    "createProject": "Crear nuevo proyecto",
+    "create": "Crear",
+    "cancel": "Cancelar",
+    "projectNamePlaceholder": "Nombre del proyecto...",
+    "selectProject": "Selecciona un proyecto...",
+    "googleAccount": "Cuenta de Google:",
+    "metaAccount": "Cuenta de Facebook:"
   },
   "transactionsPage": {
     "loading": "Cargando transacciones...",

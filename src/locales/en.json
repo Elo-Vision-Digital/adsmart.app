@@ -244,10 +244,67 @@
       "description": "To connect your ad accounts, you will need to authorize adsmart to access your data. We use secure OAuth2 connections and do not store your passwords. You can revoke access at any time."
     },
     "error": {
-      "connectGoogle": "Error connecting to Google Ads. Please try again.",
-      "connectMeta": "Error connecting to Meta Ads. Please try again.",
+      "connectGoogle": "Error connecting to Google Ads. Try again.",
+      "connectMeta": "Error connecting to Meta Ads. Try again.",
       "saveAccounts": "Error saving selected accounts"
     }
+  },
+  "projectsPage": {
+    "title": "Projects",
+    "subtitle": "Group your ad accounts into projects to organize reports",
+    "connectAccount": "Connect account",
+    "newProject": "New project",
+    "newProjectDesc": "Group Google Ads and Meta Ads accounts that belong to the same business",
+    "createProject": "Create project",
+    "projectName": "Project name",
+    "projectNamePlaceholder": "Ex: Acme · Online Store",
+    "updatedAt": "Updated",
+    "recent": "Recent",
+    "assignToProject": "Assign to a project...",
+    "orphanAccounts": "Orphan accounts",
+    "orphanAccountsSubtitle": "Active connected accounts that have not yet been assigned to a project",
+    "orphanAccountsDesc": "These accounts do not belong to any project yet.",
+    "organizeHint": "Organize your accounts in Projects —",
+    "organizeHintBold": "Projects",
+    "summary": "Summary",
+    "totalProjects": "projects",
+    "loadingAccounts": "Loading accounts...",
+    "statProjects": "Projects",
+    "statAccounts": "Accounts",
+    "yourProjects": "Your Projects",
+    "emptySubtitle": "You have no projects yet.",
+    "subtitleActive": "Manage your projects and ad accounts.",
+    "createFirst": "Create your first project",
+    "createDescription": "Organize your ad accounts in a single place for unified analysis.",
+    "open": "Open",
+    "success": {
+      "projectCreated": "Project successfully created",
+      "accountAssigned": "Account assigned to project"
+    },
+    "error": {
+      "createProject": "Error creating project",
+      "assignAccount": "Error assigning account"
+    }
+  },
+  "accountSelectionModal": {
+    "title": "Connect {platform}",
+    "stepAccounts": "Select accounts",
+    "stepConfigure": "Configuration",
+    "back": "Back",
+    "continue": "Continue",
+    "confirm": "Confirm and Save",
+    "noActiveAccounts": "No active ad accounts in this Business Manager",
+    "selected": "selected",
+    "timezone": "Timezone",
+    "project": "Project",
+    "newProject": "New",
+    "createProject": "Create new project",
+    "create": "Create",
+    "cancel": "Cancel",
+    "projectNamePlaceholder": "Project name...",
+    "selectProject": "Select a project...",
+    "googleAccount": "Google Account:",
+    "metaAccount": "Facebook Account:"
   },
   "transactionsPage": {
     "loading": "Loading transactions...",

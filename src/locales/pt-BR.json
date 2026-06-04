@@ -249,6 +249,63 @@
       "saveAccounts": "Erro ao salvar contas selecionadas"
     }
   },
+  "projectsPage": {
+    "title": "Projetos",
+    "subtitle": "Agrupe suas contas de anúncios em projetos para organizar relatórios",
+    "connectAccount": "Conectar conta",
+    "newProject": "Novo projeto",
+    "newProjectDesc": "Agrupe contas de Google Ads e Meta Ads que pertencem ao mesmo negócio",
+    "createProject": "Criar projeto",
+    "projectName": "Nome do projeto",
+    "projectNamePlaceholder": "Ex: Acme · Loja online",
+    "updatedAt": "Atualizado",
+    "recent": "Recente",
+    "assignToProject": "Atribuir a um projeto…",
+    "orphanAccounts": "Contas órfãs",
+    "orphanAccountsSubtitle": "Contas conectadas ativas que ainda não foram atribuídas a um projeto",
+    "orphanAccountsDesc": "Estas contas ainda não pertencem a nenhum projeto.",
+    "organizeHint": "Organize suas contas em Projetos —",
+    "organizeHintBold": "Projetos",
+    "summary": "Resumo",
+    "totalProjects": "projetos",
+    "loadingAccounts": "Carregando contas...",
+    "statProjects": "Projetos",
+    "statAccounts": "Contas",
+    "yourProjects": "Seus Projetos",
+    "emptySubtitle": "Você ainda não possui projetos.",
+    "subtitleActive": "Gerencie seus projetos e contas de anúncios.",
+    "createFirst": "Crie seu primeiro projeto",
+    "createDescription": "Organize suas contas de anúncios em um único lugar para análise unificada.",
+    "open": "Abrir",
+    "success": {
+      "projectCreated": "Projeto criado com sucesso",
+      "accountAssigned": "Conta vinculada ao projeto"
+    },
+    "error": {
+      "createProject": "Erro ao criar projeto",
+      "assignAccount": "Erro ao vincular conta"
+    }
+  },
+  "accountSelectionModal": {
+    "title": "Conectar {platform}",
+    "stepAccounts": "Selecione as contas",
+    "stepConfigure": "Configurações",
+    "back": "Voltar",
+    "continue": "Continuar",
+    "confirm": "Confirmar e Salvar",
+    "noActiveAccounts": "Nenhuma conta de anúncios ativa neste Business Manager",
+    "selected": "selecionada(s)",
+    "timezone": "Fuso Horário",
+    "project": "Projeto",
+    "newProject": "Novo",
+    "createProject": "Criar novo projeto",
+    "create": "Criar",
+    "cancel": "Cancelar",
+    "projectNamePlaceholder": "Nome do projeto...",
+    "selectProject": "Selecione um projeto...",
+    "googleAccount": "Conta Google:",
+    "metaAccount": "Conta Facebook:"
+  },
   "transactionsPage": {
     "loading": "Carregando transações...",
     "backToDashboard": "Voltar ao Dashboard",

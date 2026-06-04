@@ -142,3 +142,10 @@ export {
   validatePassword,
   type PasswordValidationResult,
 } from './auth/password'
+
+export {
+  ProjectSchema,
+  ProjectClientUpdateSchema,
+  type Project,
+  type ProjectClientUpdate,
+} from './schemas/project'
