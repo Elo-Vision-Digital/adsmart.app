@@ -10,6 +10,7 @@ Firestore database for project `adsmart-app`. All monetary values are in **BRL c
 | `users/{uid}/wallet/current` | Prepaid balance | Admin SDK only (write) |
 | `users/{uid}/transactions/{txId}` | Balance history | Admin SDK only (write) |
 | `users/{uid}/oauth_tokens/google_ads` | Encrypted Google Ads tokens | Admin SDK only (write) |
+| `users/{uid}/projects/{id}` | User projects | Owner (read/write) |
 | `users/{uid}/adAccounts/{id}` | Connected ad accounts | Owner (write via Function) |
 | `users/{uid}/campaigns/{id}` | Ads-platform-synced campaigns (cache) | Owner read; Function write (Admin SDK) |
 | `campaigns/{id}` | _Dead code_ — see note below | n/a |
@@ -174,6 +175,7 @@ One document per connected ad account. Platform prefix in document ID (e.g., `go
   email?: string,
   currency: string,
   timezone?: string,
+  projectId?: string,
   isActive: boolean,
   createdAt: Timestamp,
   updatedAt: Timestamp,
@@ -182,6 +184,26 @@ One document per connected ad account. Platform prefix in document ID (e.g., `go
 ```
 
 Source of truth: [packages/shared/src/schemas/adAccount.ts](../packages/shared/src/schemas/adAccount.ts). Ownership is encoded in the path (`users/{uid}/...`); no `userId` field is stored on the doc.
+
+---
+
+## users/{uid}/projects/{projectId}
+
+Groups connected ad accounts into logical workspaces/projects.
+
+```
+{
+  id: string,
+  name: string,
+  color: string,
+  initials: string,
+  userId: string,
+  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
+```
+
+Source of truth: [packages/shared/src/schemas/project.ts](../packages/shared/src/schemas/project.ts). Ownership is encoded in the path (`users/{uid}/...`) but `userId` is also redundantly stored for potential collectionGroup queries. `ProjectClientUpdateSchema` strictly limits client-side updates to just `name`, `color`, and `initials`.
 
 ---
 

@@ -14,6 +14,17 @@ Correção do erro silencioso de OAuth "Request failed with status code 404" e m
 **Bug 2: Missing Explicit Region (CORS Risk)**: A arquitetura do projeto ditava em `AGENTS.md` que as requisições `onCall` (v2) deveriam definir `config.project.region` para evitar problemas silenciosos de roteamento/CORS caso o projeto estivesse em uma região diferente do `us-central1`. 
 - Solução: Adicionado `{ region: appConfig.project.region }` aos 6 _callables_ OAuth presentes nestes módulos. `functions/AGENTS.md` atualizado para reforçar a regra.
 
+## [2026-06-04] — Sprint 0.8: Projects Schema & Integrations Redesign
+
+**1. Data Model & Schemas**
+- Criada a collection `users/{uid}/projects/{id}` com schema `ProjectSchema` e schema estrito para update via client `ProjectClientUpdateSchema`.
+- Adicionado campo opcional `projectId?: string` em `AdAccountSchema` para permitir o mapeamento N:1 entre contas de anúncio e projetos.
+- Atualizado o `docs/DATA-MODEL.md` (fonte da verdade) refletindo as duas adições acima, garantindo compliance com as regras do AdSmart (ADR-018 e AGENTS.md).
+
+**2. Integrations Redesign**
+- Redesign completo das páginas de integrações e projetos. Fluxo OAuth ajustado para dar suporte ao redirecionamento mapeado via projeto e botão "Conectar conta" em `/projects` agora redireciona corretamente para `/integrations`.
+
+
 
 ## [2026-05-23] —  Fase 0.5 (cleanup-legacy) shipped
 
