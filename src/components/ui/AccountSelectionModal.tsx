@@ -11,7 +11,7 @@ import {
   User,
   X,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -96,7 +96,12 @@ export function AccountSelectionModal({
     [businessManagers, connectedSet]
   )
 
-  const allAlreadyConnected = accounts.length > 0 && availableAccounts.length === 0
+  const allAlreadyConnected =
+    (accounts.length > 0 && availableAccounts.length === 0) ||
+    (accounts.length === 0 &&
+      businessManagers !== undefined &&
+      businessManagers.length > 0 &&
+      (availableBusinessManagers === undefined || availableBusinessManagers.length === 0))
   const [step, setStep] = useState<'select' | 'configure'>('select')
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([])
   const [accountConfigs, setAccountConfigs] = useState<
@@ -120,6 +125,23 @@ export function AccountSelectionModal({
       setNewProjectName('')
     }
   }, [open])
+
+  useEffect(() => {
+    const availableIds = new Set(availableAccounts.map((a) => a.id))
+    setSelectedAccounts((prev) => {
+      const pruned = prev.filter((id) => availableIds.has(id))
+      if (pruned.length === prev.length) return prev
+      const removedIds = prev.filter((id) => !availableIds.has(id))
+      setAccountConfigs((curr) => {
+        const next = { ...curr }
+        removedIds.forEach((id) => {
+          delete next[id]
+        })
+        return next
+      })
+      return pruned
+    })
+  }, [availableAccounts])
 
   const handleToggleAccount = (accountId: string) => {
     setSelectedAccounts((prev) => {
