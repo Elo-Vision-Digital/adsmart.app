@@ -312,24 +312,26 @@ export function IntegrationsPage() {
                 <div className="w-[52px] h-[52px] rounded-2xl bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center flex-shrink-0 shadow-sm">
                   <GoogleAdsIcon size={28} />
                 </div>
-                <div className="flex items-center gap-3">
+                <div>
                   <h3 className="text-[18px] font-bold tracking-[-0.01em] text-[var(--text)]">
                     Google Ads
                   </h3>
-                  <button
-                    type="button"
-                    onClick={() => setPreConnectPlatform('google_ads')}
-                    className="h-8 px-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[12px] font-semibold hover:bg-[var(--bg-elev-2)] transition-colors"
-                  >
-                    Conectar
-                  </button>
+                  {googleAccounts.length > 0 && (
+                    <div className="mt-1.5">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[11px] font-bold tracking-wide flex-shrink-0">
+                        <CheckCircle2 size={12} strokeWidth={3} /> Conectada
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              {googleAccounts.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[12px] font-bold tracking-wide flex-shrink-0">
-                  <CheckCircle2 size={13} strokeWidth={3} /> Conectada
-                </span>
-              )}
+              <button
+                type="button"
+                onClick={() => setPreConnectPlatform('google_ads')}
+                className="h-9 px-4 rounded-xl bg-[var(--text)] text-[var(--bg)] text-[13px] font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+              >
+                Conectar
+              </button>
             </div>
 
             <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-3)] mb-3">
@@ -368,15 +370,17 @@ export function IntegrationsPage() {
               </div>
             )}
 
-            <div className="mt-auto flex items-center justify-end pt-5 border-t border-[var(--separator)]">
-              <button
-                type="button"
-                onClick={() => handleDisconnectPlatform('google_ads')}
-                className="text-[13px] font-semibold text-[var(--danger)] hover:opacity-80 transition-opacity"
-              >
-                Desconectar plataforma
-              </button>
-            </div>
+            {googleAccounts.length > 0 && (
+              <div className="mt-auto flex items-center justify-end pt-5 border-t border-[var(--separator)]">
+                <button
+                  type="button"
+                  onClick={() => handleDisconnectPlatform('google_ads')}
+                  className="text-[13px] font-semibold text-[var(--danger)] hover:opacity-80 transition-opacity"
+                >
+                  Desconectar
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Card Meta Ads */}
@@ -386,24 +390,26 @@ export function IntegrationsPage() {
                 <div className="w-[52px] h-[52px] rounded-2xl bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center flex-shrink-0 shadow-sm">
                   <MetaAdsIcon size={28} />
                 </div>
-                <div className="flex items-center gap-3">
+                <div>
                   <h3 className="text-[18px] font-bold tracking-[-0.01em] text-[var(--text)]">
                     Meta Ads
                   </h3>
-                  <button
-                    type="button"
-                    onClick={() => setPreConnectPlatform('meta_ads')}
-                    className="h-8 px-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[12px] font-semibold hover:bg-[var(--bg-elev-2)] transition-colors"
-                  >
-                    Conectar
-                  </button>
+                  {metaAccounts.length > 0 && (
+                    <div className="mt-1.5">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[11px] font-bold tracking-wide flex-shrink-0">
+                        <CheckCircle2 size={12} strokeWidth={3} /> Conectada
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              {metaAccounts.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[12px] font-bold tracking-wide flex-shrink-0">
-                  <CheckCircle2 size={13} strokeWidth={3} /> Conectada
-                </span>
-              )}
+              <button
+                type="button"
+                onClick={() => setPreConnectPlatform('meta_ads')}
+                className="h-9 px-4 rounded-xl bg-[var(--text)] text-[var(--bg)] text-[13px] font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+              >
+                Conectar
+              </button>
             </div>
 
             <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-3)] mb-3">
@@ -442,15 +448,17 @@ export function IntegrationsPage() {
               </div>
             )}
 
-            <div className="mt-auto flex items-center justify-end pt-5 border-t border-[var(--separator)]">
-              <button
-                type="button"
-                onClick={() => handleDisconnectPlatform('meta_ads')}
-                className="text-[13px] font-semibold text-[var(--danger)] hover:opacity-80 transition-opacity"
-              >
-                Desconectar plataforma
-              </button>
-            </div>
+            {metaAccounts.length > 0 && (
+              <div className="mt-auto flex items-center justify-end pt-5 border-t border-[var(--separator)]">
+                <button
+                  type="button"
+                  onClick={() => handleDisconnectPlatform('meta_ads')}
+                  className="text-[13px] font-semibold text-[var(--danger)] hover:opacity-80 transition-opacity"
+                >
+                  Desconectar
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Card TikTok Ads (Coming soon) */}
