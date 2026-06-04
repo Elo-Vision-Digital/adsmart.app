@@ -2,6 +2,15 @@
 
 Append-only log of significant changes. Most recent at the top. Each entry uses the parseable header `## [YYYY-MM-DD] — Title` for tooling/lint.
 
+## [2026-06-04] — Fix CI Environment Mixed Deploy
+
+Correção crítica no fluxo de CI/CD para evitar que o ambiente de desenvolvimento acesse o Firebase de Produção.
+
+**Bug: Mixed Environments in CI**: O GitHub Actions estava compilando a branch `develop` (para deploy em `adsmart-web-dev`) usando `vite build` no modo `production` por padrão. Isso fazia com que o frontend empacotasse as credenciais do arquivo `.env.production` e apontasse todas as chamadas de banco e autenticação para o projeto `adsmart-web` de produção.
+- Solução 1: Copiado o arquivo `.env` local para um `.env.development` versionado no Git. Variáveis web do Firebase são públicas, e o GitHub Actions precisa lê-las durante o build.
+- Solução 2: Adicionado o script `"build:dev": "tsc && vite build --mode development"` no `package.json`.
+- Solução 3: Atualizado `.github/workflows/deploy.yml` para rodar `bun run build:dev` no frontend quando a branch for `develop`, forçando o Vite a usar o modo development e injetar as credenciais certas. Regra adicionada ao `AGENTS.md` e `docs/DEPLOYMENT.md`.
+
 ## [2026-06-04] — Fix OAuth 404: Sunsetting de API Versions + Explicit Region
 
 Correção do erro silencioso de OAuth "Request failed with status code 404" e mitigação de debt técnico.

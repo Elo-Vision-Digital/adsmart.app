@@ -160,3 +160,4 @@ Sprints fechadas: `docs/specs/-1-foundation-schemas/`, `docs/specs/0a-foundation
 - Do not add new routes without adding them to the route table in `src/App.tsx`.
 - Do not write raw SQL or use any SQL library — this project is Firestore-only.
 - Do not modify `docs/SECURITY.md` without updating the corresponding code.
+- Do not compile the frontend for development using `vite build` (which defaults to production and loads `.env.production`). Always use `bun run build:dev` (which runs `--mode development` and loads `.env.development`) when deploying to the `adsmart-web-dev` environment in CI or locally. Mixed environments corrupt production databases.
