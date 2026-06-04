@@ -304,7 +304,10 @@
     "projectNamePlaceholder": "Nome do projeto...",
     "selectProject": "Selecione um projeto...",
     "googleAccount": "Conta Google:",
-    "metaAccount": "Conta Facebook:"
+    "metaAccount": "Conta Facebook:",
+    "allConnectedTitle": "Tudo conectado",
+    "allConnectedDesc": "Todas as contas de {email} já estão vinculadas à AdSmart.",
+    "noAccountsFound": "Nenhuma conta de anúncios encontrada."
   },
   "transactionsPage": {
     "loading": "Carregando transações...",
