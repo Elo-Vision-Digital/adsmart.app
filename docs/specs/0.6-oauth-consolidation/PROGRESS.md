@@ -5,3 +5,4 @@
 - **2026-06-03 20:50:00**: BACKFILL - Sprint iniciada retroativamente. O código fonte já foi alterado e o branch `refactor/oauth-consolidation` submetido, com aprovação do usuário para efetuar o registro histórico.
 - **2026-06-03 20:50:00**: CONTRACT.md verificado com os itens completados e auditado via devtools.
 - **2026-06-03 20:50:00**: Progresso arquivado com 100% dos outcomes da SPEC alcançados.
+- **2026-06-04 17:48:00**: FIX - Remoção do `export` da constante `COMMON_TIMEZONES` em `AccountSelectionModal.tsx` para corrigir erro de Fast Refresh do Vite, já que componentes React não devem exportar constantes não-componentes no mesmo arquivo. Atualizado também o browserslist.

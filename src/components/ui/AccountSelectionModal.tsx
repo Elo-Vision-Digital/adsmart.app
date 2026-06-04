@@ -17,7 +17,7 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import { useProjects } from '@/hooks/useProjects'
 import { cn } from '@/lib/utils'
 
-export const COMMON_TIMEZONES = [
+const COMMON_TIMEZONES = [
   'America/Sao_Paulo',
   'America/Argentina/Buenos_Aires',
   'America/Santiago',
