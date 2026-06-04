@@ -2,6 +2,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import {
   ArrowLeft,
   Building,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Loader2,
@@ -59,6 +60,8 @@ interface AccountSelectionModalProps {
   onOpenChange: (open: boolean) => void
   platform: 'google_ads' | 'meta_ads'
   accounts: AccountOption[]
+  /** Account ids (no platform prefix) already connected for this email; filtered out of the selectable list. */
+  connectedAccountIds?: string[]
   businessManagers?: BusinessManagerGroup[]
   mainAccountName: string
   mainAccountEmail?: string
@@ -70,12 +73,30 @@ export function AccountSelectionModal({
   onOpenChange,
   platform,
   accounts,
+  connectedAccountIds = [],
   businessManagers,
   mainAccountName,
   mainAccountEmail,
   onConfirm,
 }: AccountSelectionModalProps) {
   const { t } = useLanguage()
+
+  const connectedSet = useMemo(() => new Set(connectedAccountIds), [connectedAccountIds])
+
+  const availableAccounts = useMemo(
+    () => accounts.filter((a) => !connectedSet.has(a.id)),
+    [accounts, connectedSet]
+  )
+
+  const availableBusinessManagers = useMemo(
+    () =>
+      businessManagers
+        ?.map((bm) => ({ ...bm, accounts: bm.accounts.filter((a) => !connectedSet.has(a.id)) }))
+        .filter((bm) => bm.accounts.length > 0),
+    [businessManagers, connectedSet]
+  )
+
+  const allAlreadyConnected = accounts.length > 0 && availableAccounts.length === 0
   const [step, setStep] = useState<'select' | 'configure'>('select')
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([])
   const [accountConfigs, setAccountConfigs] = useState<
@@ -123,11 +144,11 @@ export function AccountSelectionModal({
   }
 
   const handleToggleAll = () => {
-    if (selectedAccounts.length === accounts.length) {
+    if (selectedAccounts.length === availableAccounts.length) {
       setSelectedAccounts([])
       setAccountConfigs({})
     } else {
-      const allIds = accounts.map((acc) => acc.id)
+      const allIds = availableAccounts.map((acc) => acc.id)
       setSelectedAccounts(allIds)
 
       const defaultTimezone =
@@ -284,11 +305,11 @@ export function AccountSelectionModal({
         }
 
   const renderBusinessManagerGroups = () => {
-    if (!businessManagers || businessManagers.length === 0) {
+    if (!availableBusinessManagers || availableBusinessManagers.length === 0) {
       return renderFlatAccountList()
     }
 
-    return businessManagers.map((bm) => {
+    return availableBusinessManagers.map((bm) => {
       const isExpanded = expandedBMs.includes(bm.id)
       const bmAccountIds = bm.accounts.map((acc) => acc.id)
       const selectedCount = bmAccountIds.filter((id) => selectedAccounts.includes(id)).length
@@ -369,7 +390,7 @@ export function AccountSelectionModal({
   }
 
   const renderFlatAccountList = () => {
-    return accounts.map((account) => (
+    return availableAccounts.map((account) => (
       <div
         key={account.id}
         className={cn(
@@ -402,7 +423,7 @@ export function AccountSelectionModal({
   }
 
   const renderConfigureAccounts = () => {
-    const selectedAccsData = accounts.filter((a) => selectedAccounts.includes(a.id))
+    const selectedAccsData = availableAccounts.filter((a) => selectedAccounts.includes(a.id))
     return (
       <div className="space-y-4">
         {isCreatingProject && (
@@ -558,7 +579,19 @@ export function AccountSelectionModal({
                 accounts.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500 dark:text-gray-400">
-                      Nenhuma conta de anúncios encontrada.
+                      {t('accountSelectionModal.noAccountsFound')}
+                    </p>
+                  </div>
+                ) : allAlreadyConnected ? (
+                  <div className="text-center py-10">
+                    <CheckCircle2 className="h-10 w-10 mx-auto mb-3 text-[var(--success)]" />
+                    <p className="font-medium text-gray-900 dark:text-white mb-1">
+                      {t('accountSelectionModal.allConnectedTitle')}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {t('accountSelectionModal.allConnectedDesc', {
+                        email: mainAccountEmail || mainAccountName,
+                      })}
                     </p>
                   </div>
                 ) : (
@@ -566,18 +599,23 @@ export function AccountSelectionModal({
                     <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg mb-3">
                       <Checkbox
                         id="select-all"
-                        checked={selectedAccounts.length === accounts.length && accounts.length > 0}
+                        checked={
+                          selectedAccounts.length === availableAccounts.length &&
+                          availableAccounts.length > 0
+                        }
                         onCheckedChange={handleToggleAll}
                       />
                       <label
                         htmlFor="select-all"
                         className="text-sm font-medium cursor-pointer flex-1"
                       >
-                        Selecionar todas ({accounts.length})
+                        Selecionar todas ({availableAccounts.length})
                       </label>
                     </div>
 
-                    {businessManagers ? renderBusinessManagerGroups() : renderFlatAccountList()}
+                    {availableBusinessManagers
+                      ? renderBusinessManagerGroups()
+                      : renderFlatAccountList()}
                   </div>
                 )
               ) : loadingProjects ? (
@@ -594,7 +632,7 @@ export function AccountSelectionModal({
             <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/30 border-t border-gray-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {selectedAccounts.length} / {accounts.length}{' '}
+                  {selectedAccounts.length} / {availableAccounts.length}{' '}
                   {t('accountSelectionModal.selected')}
                 </p>
                 <div className="flex gap-2">
