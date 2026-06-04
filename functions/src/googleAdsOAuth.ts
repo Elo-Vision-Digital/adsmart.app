@@ -9,6 +9,7 @@ import {
   googleAdsDeveloperToken,
   googleAdsRedirectUri,
   googleAdsRedirectUriDev,
+  config as appConfig
 } from './config'
 import { encryptString, detectAndDecrypt } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
@@ -58,7 +59,7 @@ const GOOGLE_ADS_CONFIG = {
 /**
  * Gera a URL de autorização OAuth para Google Ads
  */
-export const getGoogleAdsAuthUrl = onCall({ secrets: [googleAdsClientSecret] }, async (request) => {
+export const getGoogleAdsAuthUrl = onCall({ secrets: [googleAdsClientSecret], region: appConfig.project.region }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -119,7 +120,7 @@ export const getGoogleAdsAuthUrl = onCall({ secrets: [googleAdsClientSecret] }, 
  * Processa o callback OAuth e retorna contas disponíveis para seleção
  */
 export const handleGoogleAdsCallback = onCall(
-  { secrets: [googleAdsClientSecret, googleAdsDeveloperToken] },
+  { secrets: [googleAdsClientSecret, googleAdsDeveloperToken], region: appConfig.project.region },
   async (request) => {
   console.log('=== INICIANDO handleGoogleAdsCallback ===')
   
@@ -387,7 +388,7 @@ export const handleGoogleAdsCallback = onCall(
  * Confirma a seleção de contas e salva no Firestore
  */
 export const confirmGoogleAdsAccountSelection = onCall(
-  { secrets: [googleAdsClientSecret, googleAdsDeveloperToken, encryptionKey] },
+  { secrets: [googleAdsClientSecret, googleAdsDeveloperToken, encryptionKey], region: appConfig.project.region },
   async (request) => {
   // Verificar autenticação
   if (!request.auth) {
@@ -527,7 +528,7 @@ export const confirmGoogleAdsAccountSelection = onCall(
  * Busca campanhas do Google Ads
  */
 export const getGoogleAdsCampaigns = onCall(
-  { secrets: [googleAdsClientSecret, encryptionKey] },
+  { secrets: [googleAdsClientSecret, encryptionKey], region: appConfig.project.region },
   async (request) => {
   // Verificar autenticação
   if (!request.auth) {
@@ -622,8 +623,8 @@ async function listAccessibleGoogleAdsAccounts(accessToken: string): Promise<any
       prefix: developerToken?.substring(0, 5) + '...'
     })
     
-    // Usar Google Ads API v19
-    const apiEndpoint = 'https://googleads.googleapis.com/v19/customers:listAccessibleCustomers'
+    // Usar Google Ads API dinamicamente a partir do config
+    const apiEndpoint = `https://googleads.googleapis.com/${appConfig.googleAds.apiVersion}/customers:listAccessibleCustomers`
     
     console.log('Preparando requisição para Google Ads API:')
     console.log('Endpoint:', apiEndpoint)
@@ -666,7 +667,7 @@ async function listAccessibleGoogleAdsAccounts(accessToken: string): Promise<any
         try {
           console.log(`Buscando detalhes da conta ${customerId}...`)
           const customerResponse = await axios.post(
-            `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`,
+            `https://googleads.googleapis.com/${appConfig.googleAds.apiVersion}/customers/${customerId}/googleAds:search`,
             {
               query: `
                 SELECT 
@@ -774,7 +775,7 @@ async function getGoogleAdsAccountDetails(accessToken: string, accountIds: strin
   for (const accountId of accountIds) {
     try {
       const response = await axios.post(
-        `https://googleads.googleapis.com/v19/customers/${accountId}/googleAds:search`,
+        `https://googleads.googleapis.com/${appConfig.googleAds.apiVersion}/customers/${accountId}/googleAds:search`,
         {
           query: `
             SELECT 

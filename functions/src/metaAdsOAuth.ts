@@ -8,6 +8,7 @@ import {
   metaAdsAppSecret,
   metaAdsRedirectUri,
   metaAdsRedirectUriDev,
+  config as appConfig
 } from './config'
 import { encryptString, detectAndDecrypt } from './lib/oauthCrypto'
 import { securityLogger, SecurityEventType, SecuritySeverity } from './securityLogger'
@@ -43,17 +44,12 @@ interface MetaAdsTokens {
   tokenType: string
 }
 
-const META_ADS_CONFIG = {
-  scope: 'ads_read,ads_management,business_management,read_insights',
-  authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
-  tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token',
-  apiVersion: 'v18.0',
-}
+
 
 /**
  * Gera a URL de autorização OAuth para Meta Ads
  */
-export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret] }, async (request) => {
+export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret], region: appConfig.project.region }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -94,11 +90,11 @@ export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret] }, async (
   })
 
   // Construir URL de autorização
-  const authUrl = new URL(META_ADS_CONFIG.authUrl)
+  const authUrl = new URL(`https://www.facebook.com/${appConfig.metaAds.apiVersion}/dialog/oauth`)
   authUrl.searchParams.append('client_id', metaAdsAppId.value())
   authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('response_type', 'code')
-  authUrl.searchParams.append('scope', META_ADS_CONFIG.scope)
+  authUrl.searchParams.append('scope', appConfig.metaAds.scope)
   authUrl.searchParams.append('state', state)
 
   return {
@@ -110,7 +106,7 @@ export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret] }, async (
 /**
  * Processa o callback OAuth e retorna contas disponíveis para seleção
  */
-export const handleMetaAdsCallback = onCall({ secrets: [metaAdsAppSecret] }, async (request) => {
+export const handleMetaAdsCallback = onCall({ secrets: [metaAdsAppSecret], region: appConfig.project.region }, async (request) => {
   // Verificar autenticação
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Usuário não autenticado')
@@ -170,7 +166,7 @@ export const handleMetaAdsCallback = onCall({ secrets: [metaAdsAppSecret] }, asy
     })
 
     // Trocar código por tokens
-    const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
+    const tokenUrl = new URL(`https://graph.facebook.com/${appConfig.metaAds.apiVersion}/oauth/access_token`)
     tokenUrl.searchParams.append('client_id', config.appId)
     tokenUrl.searchParams.append('client_secret', config.appSecret)
     tokenUrl.searchParams.append('redirect_uri', redirectUri)
@@ -180,7 +176,7 @@ export const handleMetaAdsCallback = onCall({ secrets: [metaAdsAppSecret] }, asy
     const { access_token, token_type } = tokenResponse.data
 
     // Obter token de longo prazo
-    const longLivedTokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
+    const longLivedTokenUrl = new URL(`https://graph.facebook.com/${appConfig.metaAds.apiVersion}/oauth/access_token`)
     longLivedTokenUrl.searchParams.append('grant_type', 'fb_exchange_token')
     longLivedTokenUrl.searchParams.append('client_id', config.appId)
     longLivedTokenUrl.searchParams.append('client_secret', config.appSecret)
@@ -352,7 +348,7 @@ export const handleMetaAdsCallback = onCall({ secrets: [metaAdsAppSecret] }, asy
  * Confirma a seleção de contas e salva no Firestore
  */
 export const confirmMetaAdsAccountSelection = onCall(
-  { secrets: [metaAdsAppSecret, encryptionKey] },
+  { secrets: [metaAdsAppSecret, encryptionKey], region: appConfig.project.region },
   async (request) => {
   // Verificar autenticação
   if (!request.auth) {
@@ -494,7 +490,7 @@ export const confirmMetaAdsAccountSelection = onCall(
  * Busca campanhas do Meta Ads
  */
 export const getMetaAdsCampaigns = onCall(
-  { secrets: [metaAdsAppSecret, encryptionKey] },
+  { secrets: [metaAdsAppSecret, encryptionKey], region: appConfig.project.region },
   async (request) => {
   // Verificar autenticação
   if (!request.auth) {
@@ -570,7 +566,7 @@ export const getMetaAdsCampaigns = onCall(
 async function getUserInfoAndBusinessManagers(accessToken: string): Promise<any> {
   try {
     // Buscar informações do usuário
-    const userResponse = await axios.get('https://graph.facebook.com/v18.0/me', {
+    const userResponse = await axios.get(`https://graph.facebook.com/${appConfig.metaAds.apiVersion}/me`, {
       params: {
         access_token: accessToken,
         fields: 'id,name,email'
@@ -581,12 +577,12 @@ async function getUserInfoAndBusinessManagers(accessToken: string): Promise<any>
 
     // Buscar TODAS as Business Managers com paginação
     let businessManagers: any[] = []
-    let nextUrl = `https://graph.facebook.com/v18.0/${userData.id}/businesses`
+    let nextUrl = `https://graph.facebook.com/${appConfig.metaAds.apiVersion}/${userData.id}/businesses`
     let hasMore = true
 
     while (hasMore) {
       const response = await axios.get(nextUrl, {
-        params: nextUrl === `https://graph.facebook.com/v18.0/${userData.id}/businesses` ? {
+        params: nextUrl === `https://graph.facebook.com/${appConfig.metaAds.apiVersion}/${userData.id}/businesses` ? {
           access_token: accessToken,
           fields: 'id,name,created_time,primary_page',
           limit: 100  // Buscar até 100 BMs por vez
@@ -625,7 +621,7 @@ async function getAllAccessibleAdAccounts(accessToken: string, businessManagers:
 
   // Buscar contas pessoais primeiro
   try {
-    const personalAccountsResponse = await axios.get('https://graph.facebook.com/v18.0/me/adaccounts', {
+    const personalAccountsResponse = await axios.get(`https://graph.facebook.com/${appConfig.metaAds.apiVersion}/me/adaccounts`, {
       params: {
         access_token: accessToken,
         fields: 'id,name,currency,timezone_name,account_status,business',
@@ -669,7 +665,7 @@ async function getAllAccessibleAdAccounts(accessToken: string, businessManagers:
   for (const bm of businessManagers) {
     try {
       // Buscar contas owned (próprias)
-      const bmOwnedResponse = await axios.get(`https://graph.facebook.com/v18.0/${bm.id}/owned_ad_accounts`, {
+      const bmOwnedResponse = await axios.get(`https://graph.facebook.com/${appConfig.metaAds.apiVersion}/${bm.id}/owned_ad_accounts`, {
         params: {
           access_token: accessToken,
           fields: 'id,name,currency,timezone_name,account_status',
@@ -701,7 +697,7 @@ async function getAllAccessibleAdAccounts(accessToken: string, businessManagers:
       }
 
       // Buscar contas client (clientes)
-      const bmClientResponse = await axios.get(`https://graph.facebook.com/v18.0/${bm.id}/client_ad_accounts`, {
+      const bmClientResponse = await axios.get(`https://graph.facebook.com/${appConfig.metaAds.apiVersion}/${bm.id}/client_ad_accounts`, {
         params: {
           access_token: accessToken,
           fields: 'id,name,currency,timezone_name,account_status',
@@ -779,7 +775,7 @@ async function getAdAccountDetails(accessToken: string, accountIds: string[]): P
       // Adicionar prefixo act_ se não tiver
       const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`
       
-      const response = await axios.get(`https://graph.facebook.com/v18.0/${formattedAccountId}`, {
+      const response = await axios.get(`https://graph.facebook.com/${appConfig.metaAds.apiVersion}/${formattedAccountId}`, {
         params: {
           access_token: accessToken,
           fields: 'id,name,currency,timezone_name,account_status'
@@ -872,7 +868,7 @@ async function fetchMetaAdsCampaigns(accessToken: string, accountId: string): Pr
     // Adicionar prefixo act_ se não tiver
     const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`
     
-    const url = `https://graph.facebook.com/${META_ADS_CONFIG.apiVersion}/${formattedAccountId}/campaigns`
+    const url = `https://graph.facebook.com/${appConfig.metaAds.apiVersion}/${formattedAccountId}/campaigns`
     const params = {
       access_token: accessToken,
       fields: 'id,name,status,objective,daily_budget,lifetime_budget,spend,impressions,clicks',

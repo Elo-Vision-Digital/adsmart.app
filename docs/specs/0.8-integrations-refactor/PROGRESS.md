@@ -30,15 +30,23 @@ current-step: research  # research | plan | contract | implement | validate | sh
 - [x] Implementação i18n completa corrigida no arquivo `AccountSelectionModal.tsx` substituindo `react-i18next` por `useLanguage` 
 - [x] Fix no TS erro 2345: `useLanguage` não aceita default values como em outros pacotes. Chaves (`newProjectDesc`, `orphanAccountsSubtitle`) adicionadas ao `pt-BR.json`, `en.json` e `es.json`
 - [x] Removidos imports não utilizados de icons (`Database`) e utils (`addMockAccounts`) 
-- [ ] Validação visual final pelo Chrome DevTools/Playwright 
+- [x] Validação visual final pelo Chrome DevTools/Playwright 
 
-**Saída para próxima session**: Validar visualmente o fluxo final.
+### 2026-06-04 — Session N+1: Audit & Bug Fix do Erro 404 de OAuth
+
+- [x] Auditoria do fluxo OAuth concluída após o erro "Request failed with status code 404".
+- [ ] Atualização do endpoint Google Ads API para `v24` em `functions/src/googleAdsOAuth.ts` (substituindo `/v19/` hardcoded que sofreu sunsetting e gerava o 404).
+- [ ] Atualização do endpoint Meta Graph API para `v25.0` em `functions/src/metaAdsOAuth.ts`.
+- [ ] Adequação do `region: config.project.region` explicitamente declarado em todos os `@onCall` v2 (seguindo regras do AGENTS.md e `priceManager.ts`).
+
+**Saída para próxima session**: Aguardando aprovação do implementation plan para corrigir o backend.
 
 ## Decisions taken
 
 Decisões não-óbvias que afetam a sprint. Cita razão:
 
-- **Decisão**: … — **Razão**: … (referencia ADR ou research se aplicável)
+- **Decisão**: Atualizar Graph API para v25.0 e Google Ads API para v24. — **Razão**: A v19 (Google) alcançou o período de sunsetting, resultando em respostas 404 silenciosas vindas do pacote `axios` no backend, o que disfarçava o erro real no console do usuário.
+- **Decisão**: Remover strings de versões hardcoded na URL do `axios`. — **Razão**: Mitigar novos bugs de sunsetting obrigando a leitura da versão através de `config/index.ts`.
 
 ## Blockers / risks
 
