@@ -51,8 +51,11 @@ jobs:
           META_ADS_REDIRECT_URI: ${{ vars.META_ADS_REDIRECT_URI }}
           META_ADS_REDIRECT_URI_DEV: ${{ vars.META_ADS_REDIRECT_URI_DEV }}
 
-      - name: Build all (web + functions)
-        run: bun run build:all
+      - name: Build shared and functions
+        run: bunx turbo run build --filter=@adsmart/shared --filter=@adsmart/functions
+
+      - name: Build web (development)
+        run: bun run build:dev
 
       - name: Test Firestore rules (emulator)
         run: bash scripts/firebase/test-rules.sh
