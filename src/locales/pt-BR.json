@@ -343,7 +343,12 @@
     },
     "changePassword": {
       "title": "Alterar Senha",
-      "subtitle": "Mantenha sua conta segura com uma senha forte"
+      "subtitle": "Mantenha sua conta segura com uma senha forte",
+      "createPassword": "Criar senha",
+      "createPasswordSubtitle": "Sua conta foi criada via Google ou Facebook. Você pode adicionar uma senha para também conseguir fazer login com email."
+    },
+    "document": {
+      "immutable": "O documento não pode ser alterado após o cadastro."
     },
     "emailVerification": {
       "notVerified": "Email não verificado",
@@ -357,7 +362,12 @@
       "passwordChanged": "Senha alterada com sucesso!",
       "passwordsDoNotMatch": "As senhas não coincidem",
       "passwordTooShort": "A senha deve ter pelo menos 6 caracteres",
-      "currentPasswordIncorrect": "Senha atual incorreta"
+      "currentPasswordIncorrect": "Senha atual incorreta",
+      "notAuthenticated": "Usuário não autenticado",
+      "alreadyExists": "Este CPF/CNPJ já está cadastrado em outra conta",
+      "alreadyRegistered": "Documento já cadastrado e não pode ser alterado",
+      "invalidDocument": "Documento inválido",
+      "emailLinkedToGoogle": "Vinculado ao Google. O e-mail não pode ser alterado."
     }
   },
   "admin": {

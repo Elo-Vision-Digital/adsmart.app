@@ -343,7 +343,12 @@
     },
     "changePassword": {
       "title": "Change Password",
-      "subtitle": "Keep your account secure with a strong password"
+      "subtitle": "Keep your account secure with a strong password",
+      "createPassword": "Create password",
+      "createPasswordSubtitle": "Your account was created via Google or Facebook. You can add a password to also log in with email."
+    },
+    "document": {
+      "immutable": "The document cannot be changed after registration."
     },
     "emailVerification": {
       "notVerified": "Email not verified",
@@ -357,7 +362,12 @@
       "passwordChanged": "Password changed successfully!",
       "passwordsDoNotMatch": "Passwords do not match",
       "passwordTooShort": "Password must be at least 6 characters",
-      "currentPasswordIncorrect": "Current password is incorrect"
+      "currentPasswordIncorrect": "Current password is incorrect",
+      "notAuthenticated": "User not authenticated",
+      "alreadyExists": "This document is already registered to another account",
+      "alreadyRegistered": "Document already registered and cannot be changed",
+      "invalidDocument": "Invalid document",
+      "emailLinkedToGoogle": "Linked to Google. The email cannot be changed."
     }
   },
   "admin": {

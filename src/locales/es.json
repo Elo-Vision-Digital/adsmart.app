@@ -343,7 +343,12 @@
     },
     "changePassword": {
       "title": "Cambiar Contraseña",
-      "subtitle": "Mantén tu cuenta segura con una contraseña fuerte"
+      "subtitle": "Mantén tu cuenta segura con una contraseña fuerte",
+      "createPassword": "Crear contraseña",
+      "createPasswordSubtitle": "Tu cuenta fue creada a través de Google o Facebook. Puedes agregar una contraseña para también iniciar sesión con correo electrónico."
+    },
+    "document": {
+      "immutable": "El documento no se puede cambiar después del registro."
     },
     "emailVerification": {
       "notVerified": "Correo electrónico no verificado",
@@ -357,7 +362,12 @@
       "passwordChanged": "¡Contraseña cambiada con éxito!",
       "passwordsDoNotMatch": "Las contraseñas no coinciden",
       "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
-      "currentPasswordIncorrect": "La contraseña actual es incorrecta"
+      "currentPasswordIncorrect": "La contraseña actual es incorrecta",
+      "notAuthenticated": "Usuario no autenticado",
+      "alreadyExists": "Este documento ya está registrado en otra cuenta",
+      "alreadyRegistered": "Documento ya registrado y no se puede cambiar",
+      "invalidDocument": "Documento inválido",
+      "emailLinkedToGoogle": "Vinculado a Google. El correo electrónico no se puede cambiar."
     }
   },
   "admin": {
