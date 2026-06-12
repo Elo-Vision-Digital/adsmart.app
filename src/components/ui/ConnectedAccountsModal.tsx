@@ -129,7 +129,7 @@ export function ConnectedAccountsModal({
                       className="flex items-center justify-between gap-3 bg-[var(--bg)] border border-[var(--border)] px-4 py-3.5 rounded-[14px]"
                     >
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--positive)] flex-shrink-0" />
                         <div className="min-w-0">
                           <div className="text-[13.5px] font-[650] text-[var(--text)] truncate">
                             {account.accountName}

@@ -55,3 +55,7 @@ bun run build (functions)                 →  verde
 
 1. Próxima ação concreta
 2. …
+
+### 2026-06-11 22:55 — Fix account connection status UI coloring
+- Changed `bg-[var(--success)]` to `bg-[var(--positive)]` for the active account status dots in `IntegrationsPage.tsx` and `ConnectedAccountsModal.tsx` to match the project's true green tone, avoiding the monochrome mapping of `--success` in light mode.
+- Updated the "Conectada" badge in `IntegrationsPage.tsx` to use the `--positive` CSS variable set for better visibility.

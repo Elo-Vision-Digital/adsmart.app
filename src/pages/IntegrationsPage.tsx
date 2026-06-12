@@ -393,7 +393,7 @@ export function IntegrationsPage() {
                   </h3>
                   {googleAccounts.length > 0 && (
                     <div className="mt-1.5">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[11px] font-bold tracking-wide flex-shrink-0">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--positive-bg)] border border-[var(--positive)] border-opacity-20 text-[var(--positive)] text-[11px] font-bold tracking-wide flex-shrink-0">
                         <CheckCircle2 size={12} strokeWidth={3} /> Conectada
                       </span>
                     </div>
@@ -421,7 +421,7 @@ export function IntegrationsPage() {
                     className="flex items-center justify-between gap-3 bg-[var(--bg)] border border-[var(--border)] px-4 py-3.5 rounded-[14px]"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] flex-shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--positive)] flex-shrink-0" />
                       <div className="min-w-0">
                         <div className="text-[13.5px] font-[650] text-[var(--text)] truncate">
                           {account.accountName}
@@ -491,7 +491,7 @@ export function IntegrationsPage() {
                   </h3>
                   {metaAccounts.length > 0 && (
                     <div className="mt-1.5">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--success-bg)] border border-[var(--success)] border-opacity-20 text-[var(--success)] text-[11px] font-bold tracking-wide flex-shrink-0">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--positive-bg)] border border-[var(--positive)] border-opacity-20 text-[var(--positive)] text-[11px] font-bold tracking-wide flex-shrink-0">
                         <CheckCircle2 size={12} strokeWidth={3} /> Conectada
                       </span>
                     </div>
@@ -519,7 +519,7 @@ export function IntegrationsPage() {
                     className="flex items-center justify-between gap-3 bg-[var(--bg)] border border-[var(--border)] px-4 py-3.5 rounded-[14px]"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] flex-shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--positive)] flex-shrink-0" />
                       <div className="min-w-0">
                         <div className="text-[13.5px] font-[650] text-[var(--text)] truncate">
                           {account.accountName}
