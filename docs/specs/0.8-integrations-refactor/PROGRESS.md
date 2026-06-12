@@ -57,6 +57,13 @@ Decisões não-óbvias que afetam a sprint. Cita razão:
 - **Decisão**: Remover strings de versões hardcoded na URL do `axios`. — **Razão**: Mitigar novos bugs de sunsetting obrigando a leitura da versão através de `config/index.ts`.
 - **Decisão**: Usar `BroadcastChannel` para comunicação entre popup e parent. — **Razão**: Cross-origin isolation (COOP/COEP) nos browsers mais novos frequentemente anula `window.opener` em redirects complexos de OAuth.
 
+### 2026-06-12 — Session N+3: Individual Account Disconnect & Visualization UX
+
+- [x] Criação do `ConnectedAccountsModal.tsx` listando as dezenas de contas usando filtro/busca.
+- [x] Atualização de `IntegrationsPage.tsx` para suporte nativo a remoção individual de conta via `deleteDoc` em vez de apenas desvincular a plataforma por inteiro.
+- [x] Conversão do contador de "+X contas" para um `<button>` acionável que aciona o modal.
+- [x] Refatoração de tradução para adicionar chaves pt-BR, en e es sem destruir as que já existiam na tag `accountsPage`.
+
 ## Blockers / risks
 
 - **Blocker**: Nenhum
@@ -66,6 +73,7 @@ Decisões não-óbvias que afetam a sprint. Cita razão:
   2. Esquecimento de hardcoded strings (Regra 7 de i18n violada): `t()` nativo do app só recebe a key. Uso incorreto de string como valor padrão dentro da função `t()` causa crash na build no CI.
   3. Esquecer features de dev / botões falsos (como MockAccounts / Demo) nas páginas ao limpá-las para produção. Importante varrer a tela inteira em busca desses lixos.
   4. Presumir que o Firebase CLI em modo non-interactive reseta o IAM de uma Cloud Function para público (ele não faz isso se a função já for privada ou se o prompt for bypassado). Solução limpa: usar `add-iam-policy-binding` do `gcloud run` para não poluir o histórico de builds de uma função gerenciada pelo Firebase.
+  5. **Mútua exclusividade de edição JSON**: Substituir uma tag json (ex: `accountsPage`) por uma nova ao adicionar keys de tradução, apagando keys importantes que já existiam e estavam sendo usadas na mesma feature, gerando quebra silenciosa da tipagem. A checagem cuidadosa das tags preexistentes previne regressão nas traduções.
 
 ## Tests/build status
 

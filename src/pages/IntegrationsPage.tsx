@@ -1,7 +1,15 @@
 import { AdAccountSchema } from '@adsmart/shared'
-import { collection, doc, onSnapshot, query, where, writeBatch } from 'firebase/firestore'
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  where,
+  writeBatch,
+} from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
-import { Bell, CheckCircle2, Loader2, Shield } from 'lucide-react'
+import { Bell, CheckCircle2, Loader2, Shield, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
@@ -10,6 +18,7 @@ import {
   AccountSelectionModal,
   type BusinessManagerGroup,
 } from '@/components/ui/AccountSelectionModal'
+import { ConnectedAccountsModal } from '@/components/ui/ConnectedAccountsModal'
 import { Toast, useToast } from '@/components/ui/toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -106,6 +115,9 @@ export function IntegrationsPage() {
   const [preConnectPlatform, setPreConnectPlatform] = useState<'google_ads' | 'meta_ads' | null>(
     null
   )
+  const [viewAccountsPlatform, setViewAccountsPlatform] = useState<
+    'google_ads' | 'meta_ads' | null
+  >(null)
   const { toasts, showToast, removeToast } = useToast()
 
   useEffect(() => {
@@ -265,6 +277,24 @@ export function IntegrationsPage() {
     }
   }
 
+  const handleDisconnectAccount = async (accountId: string) => {
+    if (!user) return
+    const account = accounts.find((a) => a.id === accountId)
+    if (!account) return
+
+    const confirmMsg = t('accountsPage.disconnectAccountConfirm', {
+      accountName: account.accountName,
+    })
+    if (confirm(confirmMsg)) {
+      try {
+        await deleteDoc(doc(db, 'users', user.uid, 'adAccounts', accountId))
+        showToast({ message: 'Conta desconectada com sucesso.', type: 'success' })
+      } catch (error: any) {
+        showToast({ message: error.message || 'Erro ao desconectar conta.', type: 'error' })
+      }
+    }
+  }
+
   const handleAccountSelection = async (
     accountsWithDetails: { accountId: string; timezone: string; projectId: string }[]
   ) => {
@@ -391,20 +421,40 @@ export function IntegrationsPage() {
                     className="flex items-center justify-between gap-3 bg-[var(--bg)] border border-[var(--border)] px-4 py-3.5 rounded-[14px]"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
-                      <div className="text-[13.5px] font-[650] text-[var(--text)] truncate">
-                        {account.accountName}
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-[13.5px] font-[650] text-[var(--text)] truncate">
+                          {account.accountName}
+                        </div>
+                        <div className="text-[12px] font-medium text-[var(--text-3)] truncate mt-0.5">
+                          ID: {account.accountId}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-[13.5px] font-medium text-[var(--text-3)] truncate">
-                      {account.accountId}
-                    </div>
+                    <button
+                      type="button"
+                      title={t('connectedAccountsModal.disconnectTooltip')}
+                      onClick={() => handleDisconnectAccount(account.id)}
+                      className="p-2 text-[var(--text-3)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 ))}
                 {googleAccounts.length > 2 && (
-                  <div className="text-[13px] font-medium text-[var(--text-3)] mt-2 ml-1">
-                    +{googleAccounts.length - 2} outra conta
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setViewAccountsPlatform('google_ads')}
+                    className="text-[13px] font-medium text-[var(--text-3)] mt-2 ml-1 text-left hover:text-[var(--text)] transition-colors"
+                  >
+                    {t(
+                      'accountsPage.viewMoreAccounts' +
+                        (googleAccounts.length - 2 > 1 ? '_plural' : ''),
+                      {
+                        count: googleAccounts.length - 2,
+                      }
+                    )}
+                  </button>
                 )}
               </div>
             ) : (
@@ -469,20 +519,40 @@ export function IntegrationsPage() {
                     className="flex items-center justify-between gap-3 bg-[var(--bg)] border border-[var(--border)] px-4 py-3.5 rounded-[14px]"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
-                      <div className="text-[13.5px] font-[650] text-[var(--text)] truncate">
-                        {account.accountName}
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-[13.5px] font-[650] text-[var(--text)] truncate">
+                          {account.accountName}
+                        </div>
+                        <div className="text-[12px] font-medium text-[var(--text-3)] truncate mt-0.5">
+                          ID: {account.accountId}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-[13.5px] font-medium text-[var(--text-3)] truncate">
-                      {account.accountId}
-                    </div>
+                    <button
+                      type="button"
+                      title={t('connectedAccountsModal.disconnectTooltip')}
+                      onClick={() => handleDisconnectAccount(account.id)}
+                      className="p-2 text-[var(--text-3)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 ))}
                 {metaAccounts.length > 2 && (
-                  <div className="text-[13px] font-medium text-[var(--text-3)] mt-2 ml-1">
-                    +{metaAccounts.length - 2} outra conta
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setViewAccountsPlatform('meta_ads')}
+                    className="text-[13px] font-medium text-[var(--text-3)] mt-2 ml-1 text-left hover:text-[var(--text)] transition-colors"
+                  >
+                    {t(
+                      'accountsPage.viewMoreAccounts' +
+                        (metaAccounts.length - 2 > 1 ? '_plural' : ''),
+                      {
+                        count: metaAccounts.length - 2,
+                      }
+                    )}
+                  </button>
                 )}
               </div>
             ) : (
@@ -615,6 +685,17 @@ export function IntegrationsPage() {
           mainAccountEmail={oauthData?.mainAccount?.email}
           isLoading={isLoadingAccounts}
           onConfirm={handleAccountSelection}
+        />
+      )}
+
+      {/* Modal de Lista de Contas Conectadas */}
+      {viewAccountsPlatform && (
+        <ConnectedAccountsModal
+          open={true}
+          onOpenChange={(open) => !open && setViewAccountsPlatform(null)}
+          platform={viewAccountsPlatform}
+          accounts={viewAccountsPlatform === 'google_ads' ? googleAccounts : metaAccounts}
+          onDisconnectAccount={handleDisconnectAccount}
         />
       )}
 

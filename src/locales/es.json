@@ -246,8 +246,11 @@
     "error": {
       "connectGoogle": "Error al conectar con Google Ads. Intenta de nuevo.",
       "connectMeta": "Error al conectar con Meta Ads. Intenta de nuevo.",
-      "saveAccounts": "Error al guardar cuentas seleccionadas"
-    }
+      "saveAccounts": "Error al guardar las cuentas seleccionadas"
+    },
+    "disconnectAccountConfirm": "¿Estás seguro de que deseas desvincular la cuenta {accountName}?",
+    "viewMoreAccounts": "+{count} otra cuenta",
+    "viewMoreAccounts_plural": "+{count} otras cuentas"
   },
   "projectsPage": {
     "title": "Proyectos",
@@ -309,6 +312,11 @@
     "allConnectedDesc": "Todas las cuentas de {email} ya están vinculadas a AdSmart.",
     "loadingAccounts": "Cargando cuentas...",
     "noAccountsFound": "No se encontraron cuentas publicitarias."
+  },
+  "connectedAccountsModal": {
+    "title": "Cuentas vinculadas",
+    "searchPlaceholder": "Buscar por nombre o ID de la cuenta...",
+    "disconnectTooltip": "Desvincular esta cuenta"
   },
   "transactionsPage": {
     "loading": "Cargando transacciones...",

@@ -247,7 +247,10 @@
       "connectGoogle": "Error connecting to Google Ads. Try again.",
       "connectMeta": "Error connecting to Meta Ads. Try again.",
       "saveAccounts": "Error saving selected accounts"
-    }
+    },
+    "disconnectAccountConfirm": "Are you sure you want to unlink account {accountName}?",
+    "viewMoreAccounts": "+{count} other account",
+    "viewMoreAccounts_plural": "+{count} other accounts"
   },
   "projectsPage": {
     "title": "Projects",
@@ -309,6 +312,11 @@
     "allConnectedDesc": "Every ad account for {email} is already linked to AdSmart.",
     "loadingAccounts": "Loading accounts...",
     "noAccountsFound": "No ad accounts found."
+  },
+  "connectedAccountsModal": {
+    "title": "Connected accounts",
+    "searchPlaceholder": "Search by account name or ID...",
+    "disconnectTooltip": "Unlink this account"
   },
   "transactionsPage": {
     "loading": "Loading transactions...",
