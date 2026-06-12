@@ -307,7 +307,8 @@
     "metaAccount": "Cuenta de Facebook:",
     "allConnectedTitle": "Todo conectado",
     "allConnectedDesc": "Todas las cuentas de {email} ya están vinculadas a AdSmart.",
-    "noAccountsFound": "No se encontraron cuentas de anuncios."
+    "loadingAccounts": "Cargando cuentas...",
+    "noAccountsFound": "No se encontraron cuentas publicitarias."
   },
   "transactionsPage": {
     "loading": "Cargando transacciones...",

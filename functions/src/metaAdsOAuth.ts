@@ -67,7 +67,8 @@ export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret], region: a
   )
 
   // Gerar state token para prevenir CSRF
-  const state = admin.firestore().collection('oauth_states').doc().id
+  const baseState = admin.firestore().collection('oauth_states').doc().id
+  const state = isLocalEnv ? `local_${baseState}` : baseState
   
   // Salvar state no Firestore com TTL de 10 minutos
   await admin.firestore().collection('oauth_states').doc(state).set({
@@ -86,7 +87,8 @@ export const getMetaAdsAuthUrl = onCall({ secrets: [metaAdsAppSecret], region: a
   console.log('OAuth URL sendo gerada:', {
     isLocalEnv,
     redirectUri,
-    platform: 'meta_ads'
+    platform: 'meta_ads',
+    state
   })
 
   // Construir URL de autorização

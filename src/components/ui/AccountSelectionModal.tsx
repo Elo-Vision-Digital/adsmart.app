@@ -65,6 +65,7 @@ interface AccountSelectionModalProps {
   businessManagers?: BusinessManagerGroup[]
   mainAccountName: string
   mainAccountEmail?: string
+  isLoading?: boolean
   onConfirm: (accountsWithDetails: SelectedAccountDetail[]) => Promise<void>
 }
 
@@ -77,6 +78,7 @@ export function AccountSelectionModal({
   businessManagers,
   mainAccountName,
   mainAccountEmail,
+  isLoading = false,
   onConfirm,
 }: AccountSelectionModalProps) {
   const { t } = useLanguage()
@@ -598,7 +600,13 @@ export function AccountSelectionModal({
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-4" style={{ scrollbarWidth: 'thin' }}>
               {step === 'select' ? (
-                accounts.length === 0 ? (
+                isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                    <p className="text-gray-500">{t('accountSelectionModal.loadingAccounts')}</p>
+                  </div>
+                ) : accounts.length === 0 &&
+                  (!businessManagers || businessManagers.length === 0) ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500 dark:text-gray-400">
                       {t('accountSelectionModal.noAccountsFound')}

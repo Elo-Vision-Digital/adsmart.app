@@ -100,6 +100,7 @@ export function IntegrationsPage() {
   const [connectingGoogle, setConnectingGoogle] = useState(false)
   const [connectingMeta, setConnectingMeta] = useState(false)
   const [showAccountSelection, setShowAccountSelection] = useState(false)
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
   const [oauthData, setOauthData] = useState<OAuthData | null>(null)
   const [oauthPlatform, setOauthPlatform] = useState<'google_ads' | 'meta_ads'>('meta_ads')
   const [preConnectPlatform, setPreConnectPlatform] = useState<'google_ads' | 'meta_ads' | null>(
@@ -123,7 +124,11 @@ export function IntegrationsPage() {
   }, [user])
 
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
+    // Usar BroadcastChannel para receber o código do popup (suporta COOP/cross-origin redirections)
+    const channel = new BroadcastChannel('oauth_callback')
+
+    const handleMessage = async (event: MessageEvent) => {
+      // Legacy ou fallback via window.opener
       if (event.data?.type === 'OAUTH_CALLBACK') {
         const payload = event.data.payload
         if (payload.oauthData && payload.platform) {
@@ -133,10 +138,46 @@ export function IntegrationsPage() {
         } else if (payload.error) {
           showToast({ message: payload.error, type: 'error' })
         }
+      } else if (event.data?.type === 'OAUTH_ERROR') {
+        showToast({ message: event.data.payload.error || 'Erro de autenticação', type: 'error' })
+      } else if (event.data?.type === 'OAUTH_CODE_RECEIVED') {
+        // Fluxo principal usando BroadcastChannel (aba principal processa o código com auth ativo)
+        const { code, state, platform } = event.data.payload
+        try {
+          const functionName =
+            platform === 'google_ads' ? 'handleGoogleAdsCallback' : 'handleMetaAdsCallback'
+          const handleCallback = httpsCallable<{ code: string; state: string }, any>(
+            functions,
+            functionName
+          )
+
+          // Abre o modal de imediato em modo "loading"
+          setOauthPlatform(platform)
+          setIsLoadingAccounts(true)
+          setShowAccountSelection(true)
+
+          const result = await handleCallback({ code, state })
+
+          setOauthData(result.data)
+          setIsLoadingAccounts(false)
+        } catch (error: any) {
+          console.error('Erro no callback OAuth:', error)
+          showToast({ message: error.message || 'Erro ao processar autenticação.', type: 'error' })
+          setIsLoadingAccounts(false)
+          setShowAccountSelection(false)
+        }
       }
     }
+
+    // Suportar tanto o BroadcastChannel quanto o window message clássico
+    channel.addEventListener('message', handleMessage)
     window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
+
+    return () => {
+      channel.removeEventListener('message', handleMessage)
+      window.removeEventListener('message', handleMessage)
+      channel.close()
+    }
   }, [showToast])
 
   useEffect(() => {
@@ -562,16 +603,17 @@ export function IntegrationsPage() {
       )}
 
       {/* Modal de Seleção de Contas (Existente para o fluxo OAuth) */}
-      {oauthData && (
+      {(showAccountSelection || oauthData) && (
         <AccountSelectionModal
           open={showAccountSelection}
           onOpenChange={setShowAccountSelection}
           platform={oauthPlatform}
-          accounts={oauthData.accountsAvailable}
+          accounts={oauthData?.accountsAvailable || []}
           connectedAccountIds={connectedAccountIds}
-          businessManagers={oauthData.businessManagers}
-          mainAccountName={oauthData.mainAccount.name}
-          mainAccountEmail={oauthData.mainAccount.email}
+          businessManagers={oauthData?.businessManagers}
+          mainAccountName={oauthData?.mainAccount?.name || ''}
+          mainAccountEmail={oauthData?.mainAccount?.email}
+          isLoading={isLoadingAccounts}
           onConfirm={handleAccountSelection}
         />
       )}

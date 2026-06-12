@@ -41,12 +41,21 @@ current-step: research  # research | plan | contract | implement | validate | sh
 
 **Saída para próxima session**: Aguardando aprovação do implementation plan para corrigir o backend.
 
+### 2026-06-11 — Session N+2: UX Refinements & OAuth state bugfix
+
+- [x] Correção de state handling na OAuthCallbackPage usando `BroadcastChannel` para evitar null `window.opener` e state bugs.
+- [x] Diagnóstico de falha silenciosa de CORS no Cloud Functions dev: O IAM `allUsers` é dropado ao realizar redeploy de função privada sem interatividade.
+- [x] Injeção de policy `roles/run.invoker` diretamente via `gcloud run services add-iam-policy-binding` sem gerar nova revisão do serviço.
+- [x] Melhoria de UX: exibição imediata do modal de carregamento de contas ao receber o callback OAuth, ao invés de um bloqueio invisível na página.
+- [x] Inclusão de `loadingAccounts` key nos 3 arquivos de i18n (`pt-BR`, `en`, `es`).
+
 ## Decisions taken
 
 Decisões não-óbvias que afetam a sprint. Cita razão:
 
 - **Decisão**: Atualizar Graph API para v25.0 e Google Ads API para v24. — **Razão**: A v19 (Google) alcançou o período de sunsetting, resultando em respostas 404 silenciosas vindas do pacote `axios` no backend, o que disfarçava o erro real no console do usuário.
 - **Decisão**: Remover strings de versões hardcoded na URL do `axios`. — **Razão**: Mitigar novos bugs de sunsetting obrigando a leitura da versão através de `config/index.ts`.
+- **Decisão**: Usar `BroadcastChannel` para comunicação entre popup e parent. — **Razão**: Cross-origin isolation (COOP/COEP) nos browsers mais novos frequentemente anula `window.opener` em redirects complexos de OAuth.
 
 ## Blockers / risks
 
@@ -56,6 +65,7 @@ Decisões não-óbvias que afetam a sprint. Cita razão:
   1. Uso de import de bibliotecas que não estão configuradas no repo original (Ex: usar `useTranslation` do `react-i18next` no lugar do contexto nativo do projeto `useLanguage` importado de `@/contexts/LanguageContext`). A stack de i18n é custom (JSONs locais, hook próprio). 
   2. Esquecimento de hardcoded strings (Regra 7 de i18n violada): `t()` nativo do app só recebe a key. Uso incorreto de string como valor padrão dentro da função `t()` causa crash na build no CI.
   3. Esquecer features de dev / botões falsos (como MockAccounts / Demo) nas páginas ao limpá-las para produção. Importante varrer a tela inteira em busca desses lixos.
+  4. Presumir que o Firebase CLI em modo non-interactive reseta o IAM de uma Cloud Function para público (ele não faz isso se a função já for privada ou se o prompt for bypassado). Solução limpa: usar `add-iam-policy-binding` do `gcloud run` para não poluir o histórico de builds de uma função gerenciada pelo Firebase.
 
 ## Tests/build status
 

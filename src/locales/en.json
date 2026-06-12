@@ -307,6 +307,7 @@
     "metaAccount": "Facebook Account:",
     "allConnectedTitle": "All connected",
     "allConnectedDesc": "Every ad account for {email} is already linked to AdSmart.",
+    "loadingAccounts": "Loading accounts...",
     "noAccountsFound": "No ad accounts found."
   },
   "transactionsPage": {

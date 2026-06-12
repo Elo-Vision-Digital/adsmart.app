@@ -1,6 +1,6 @@
 import { httpsCallable } from 'firebase/functions'
 import { Loader2 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { functions } from '@/firebase/config'
 
@@ -12,42 +12,71 @@ export function OAuthCallbackPage() {
   const state = searchParams.get('state')
   const platform = window.location.pathname.includes('google') ? 'google' : 'meta'
 
-  useEffect(() => {
-    const handleCallback = async () => {
-      const postMessageOrNavigate = (payload: any) => {
-        if (window.opener) {
-          window.opener.postMessage({ type: 'OAUTH_CALLBACK', payload }, window.location.origin)
-          window.close()
-        } else {
-          navigate('/integrations', { state: payload })
-        }
-      }
+  const isProcessing = useRef(false)
 
+  useEffect(() => {
+    if (isProcessing.current) return
+    isProcessing.current = true
+
+    const handleCallback = async () => {
       if (!code || !state) {
-        postMessageOrNavigate({ error: 'Parâmetros de autorização inválidos' })
+        const channel = new BroadcastChannel('oauth_callback')
+        channel.postMessage({
+          type: 'OAUTH_ERROR',
+          payload: { error: 'Parâmetros de autorização inválidos' },
+        })
+        channel.close()
+        window.close()
+
+        // Fallback
+        setTimeout(() => {
+          navigate('/integrations', { state: { error: 'Parâmetros de autorização inválidos' } })
+        }, 1000)
         return
       }
 
-      try {
-        // Chamar função que processa o OAuth e retorna os dados
-        const functionName =
-          platform === 'google' ? 'handleGoogleAdsCallback' : 'handleMetaAdsCallback'
-
-        const handleCallback = httpsCallable<{ code: string; state: string }, any>(
-          functions,
-          functionName
-        )
-
-        const result = await handleCallback({ code, state })
-
-        postMessageOrNavigate({
-          oauthData: result.data,
-          platform: platform === 'google' ? 'google_ads' : 'meta_ads',
-        })
-      } catch (error: any) {
-        console.error('Erro no callback OAuth:', error)
-        postMessageOrNavigate({ error: error.message || 'Erro ao conectar conta' })
+      // NOVO FLUXO PARA DESENVOLVIMENTO LOCAL
+      if (state.startsWith('local_') && window.location.hostname !== 'localhost') {
+        const localOrigin = 'http://localhost:5173'
+        window.location.href = `${localOrigin}${window.location.pathname}?code=${code}&state=${state}`
+        return
       }
+
+      // Usar BroadcastChannel para contornar o problema de window.opener null devido ao COOP
+      const channel = new BroadcastChannel('oauth_callback')
+      channel.postMessage({
+        type: 'OAUTH_CODE_RECEIVED',
+        payload: { code, state, platform: platform === 'google' ? 'google_ads' : 'meta_ads' },
+      })
+      channel.close()
+
+      // Tentar fechar a janela. Se falhar (ex: mobile), usar o fallback.
+      window.close()
+
+      // Fallback para mobile ou navegadores que bloqueiam window.close()
+      setTimeout(async () => {
+        try {
+          const functionName =
+            platform === 'google' ? 'handleGoogleAdsCallback' : 'handleMetaAdsCallback'
+
+          const handleCallbackFn = httpsCallable<{ code: string; state: string }, any>(
+            functions,
+            functionName
+          )
+
+          const result = await handleCallbackFn({ code, state })
+
+          navigate('/integrations', {
+            state: {
+              oauthData: result.data,
+              platform: platform === 'google' ? 'google_ads' : 'meta_ads',
+            },
+          })
+        } catch (error: any) {
+          console.error('Erro no callback OAuth:', error)
+          navigate('/integrations', { state: { error: error.message || 'Erro ao conectar conta' } })
+        }
+      }, 1000)
     }
 
     // Iniciar processamento imediatamente

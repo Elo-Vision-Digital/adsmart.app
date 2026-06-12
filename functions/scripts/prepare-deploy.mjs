@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdirSync, copyFileSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs'
+import { mkdirSync, copyFileSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -66,22 +66,25 @@ function main() {
   }
   writeFileSync(resolve(deployDir, 'package.json'), JSON.stringify(deployPkg, null, 2) + '\n')
 
-  const envFile = resolve(functionsDir, '.env')
-  if (existsSync(envFile)) {
-    const envContent = readFileSync(envFile, 'utf8')
-    const configPath = resolve(functionsDir, 'src/config/index.ts')
-    const configSrc = existsSync(configPath) ? readFileSync(configPath, 'utf8') : ''
-    const secretNames = extractSecretNames(configSrc)
-    const { content, stripped } = filterEnv(envContent, secretNames)
+  const files = readdirSync(functionsDir)
+  for (const file of files) {
+    if (file.startsWith('.env')) {
+      const envFile = resolve(functionsDir, file)
+      const envContent = readFileSync(envFile, 'utf8')
+      const configPath = resolve(functionsDir, 'src/config/index.ts')
+      const configSrc = existsSync(configPath) ? readFileSync(configPath, 'utf8') : ''
+      const secretNames = extractSecretNames(configSrc)
+      const { content, stripped } = filterEnv(envContent, secretNames)
 
-    writeFileSync(resolve(deployDir, '.env'), content)
-    if (stripped.length > 0) {
-      console.warn(
-        `[prepare-deploy] stripped ${stripped.length} secret-shadow key(s) from .env: ${stripped.join(', ')}`,
-      )
-      console.warn(
-        '[prepare-deploy] these keys are declared via defineSecret() in config/index.ts and must NOT also live in .env (Cloud Run rejects the overlap)',
-      )
+      writeFileSync(resolve(deployDir, file), content)
+      if (stripped.length > 0) {
+        console.warn(
+          `[prepare-deploy] stripped ${stripped.length} secret-shadow key(s) from ${file}: ${stripped.join(', ')}`,
+        )
+        console.warn(
+          `[prepare-deploy] these keys are declared via defineSecret() in config/index.ts and must NOT also live in ${file}`,
+        )
+      }
     }
   }
 
